@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión — LAUREAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --crema:    #F5F2ED;
+      --piedra:   #E8E3DC;
+      --carbon:   #1A1916;
+      --warm-mid: #9B8E7F;
+      --fd: 'Cormorant Garamond', Georgia, serif;
+      --fb: 'DM Sans', -apple-system, sans-serif;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--fb);
+      background: var(--crema);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── Panel izquierdo ── imagen de marca ─ */
+    .brand-panel {
+      position: relative;
+      background: var(--carbon);
+      overflow: hidden;
+    }
+    .brand-panel img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.45;
+    }
+    .brand-panel-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 52px 56px;
+      color: white;
+    }
+    .brand-logo {
+      font-family: var(--fd);
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+    .brand-quote {
+      font-family: var(--fd);
+      font-size: clamp(28px, 3vw, 44px);
+      font-weight: 300;
+      line-height: 1.15;
+    }
+    .brand-quote em { font-style: italic; }
+    .brand-footer {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ─── Panel derecho ── formulario ─ */
+    .form-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 64px 72px;
+    }
+    .form-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      text-decoration: none;
+      margin-bottom: 52px;
+      transition: color 0.2s;
+    }
+    .form-back:hover { color: var(--carbon); }
+    .form-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+    .form-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 14px;
+    }
+    .form-title {
+      font-family: var(--fd);
+      font-size: clamp(32px, 3vw, 48px);
+      font-weight: 300;
+      color: var(--carbon);
+      margin-bottom: 40px;
+      line-height: 1.1;
+    }
+
+    .field { margin-bottom: 24px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 8px;
+    }
+    .field input {
+      width: 100%;
+      padding: 14px 16px;
+      background: transparent;
+      border: 1px solid var(--piedra);
+      font-family: var(--fb);
+      font-size: 15px;
+      color: var(--carbon);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: var(--carbon); }
+    .field input::placeholder { color: rgba(155,142,127,0.55); }
+
+    .password-wrap { position: relative; }
+    .password-toggle {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 4px;
+    }
+    .password-toggle svg { width: 18px; height: 18px; stroke: var(--warm-mid); fill: none; stroke-width: 1.4; }
+
+    .error-msg {
+      background: rgba(229,57,53,0.08);
+      border: 1px solid rgba(229,57,53,0.25);
+      color: #c62828;
+      font-size: 13px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    .btn-login {
+      width: 100%;
+      padding: 16px;
+      background: var(--carbon);
+      color: var(--crema);
+      font-family: var(--fb);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+    .btn-login:hover { opacity: 0.82; }
+    .btn-login:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .form-hint {
+      margin-top: 28px;
+      font-size: 12.5px;
+      color: var(--warm-mid);
+      font-weight: 300;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .form-hint a { color: var(--carbon); text-decoration: underline; }
+
+    /* ─── Responsive ─ */
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .brand-panel { display: none; }
+      .form-panel { padding: 48px 24px; justify-content: flex-start; padding-top: 64px; }
+    }
+
+    /* ─── Loader ─ */
+    #page-loader {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--carbon);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.6s ease;
+    }
+    #page-loader.fade-out { opacity: 0; pointer-events: none; }
+    .loader-logo {
+      font-family: var(--fd);
+      font-size: 22px; font-weight: 300;
+      letter-spacing: 0.42em; text-transform: uppercase;
+      color: var(--crema);
+      animation: loader-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes loader-pulse { 0%,100%{opacity:0.2;} 50%{opacity:1;} }
+
+    /* ─── Cursor ─ */
+    .cursor-dot, .cursor-ring {
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      border-radius: 50%;
+      transition: width 0.22s ease, height 0.22s ease, opacity 0.22s ease;
+      will-change: transform;
+    }
+    .cursor-dot {
+      width: 6px; height: 6px;
+      background: white; mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      width: 32px; height: 32px;
+      border: 1.5px solid white; mix-blend-mode: difference;
+    }
+    .cursor-ring.cursor-hover { width: 52px; height: 52px; }
+    @media (hover: none) { .cursor-dot, .cursor-ring { display: none; } }
+    * { cursor: none; }
+  </style>
+</head>
+<body>
+
+  <div id="page-loader"><span class="loader-logo">Laurean</span></div>
+  <div class="cursor-dot" id="cursor-dot"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <!-- Panel izquierdo -->
+  <div class="brand-panel">
+    <img src="images/laurean_editorial_familia.jpg" alt="Laurean" />
+    <div class="brand-panel-overlay">
+      <div class="brand-logo">Laurean</div>
+      <div class="brand-quote">Moda para<br>toda la <em>familia</em>.</div>
+      <div class="brand-footer">Guatemala · Colección 2026</div>
+    </div>
+  </div>
+
+  <!-- Panel derecho -->
+  <div class="form-panel">
+    <a href="Laurean.html" class="form-back">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver a la tienda
+    </a>
+
+    <p class="form-eyebrow">Área privada</p>
+    <h1 class="form-title">Iniciar<br>sesión</h1>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="field">
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" placeholder="correo@ejemplo.com" autocomplete="email" />
+    </div>
+
+    <div class="field">
+      <label for="password">Contraseña</label>
+      <div class="password-wrap">
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+        <button class="password-toggle" type="button" onclick="togglePwd()" aria-label="Mostrar contraseña">
+          <svg id="eye-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-login" id="btn-login" onclick="handleLogin()">Ingresar →</button>
+
+    <p class="form-hint">
+      ¿Eres vendedor y no tienes acceso?<br>
+      Contacta a tu administrador.
+    </p>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    // ── Loader ──
+    (function () {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.getElementById('page-loader').style.display = 'none';
+        return;
+      }
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+          var l = document.getElementById('page-loader');
+          l.classList.add('fade-out');
+          setTimeout(function () {
+            l.style.display = 'none';
+            document.body.style.overflow = '';
+          }, 640);
+        }, 520);
+      });
+    })();
+
+    // ── Cursor ──
+    (function () {
+      var dot  = document.getElementById('cursor-dot');
+      var ring = document.getElementById('cursor-ring');
+      var mx = 0, my = 0, rx = 0, ry = 0;
+      document.addEventListener('mousemove', function (e) {
+        mx = e.clientX; my = e.clientY;
+        dot.style.transform = 'translate(calc(' + mx + 'px - 50%), calc(' + my + 'px - 50%))';
+      }, { passive: true });
+      (function animateRing() {
+        rx += (mx - rx) * 0.11; ry += (my - ry) * 0.11;
+        ring.style.transform = 'translate(calc(' + rx + 'px - 50%), calc(' + ry + 'px - 50%))';
+        requestAnimationFrame(animateRing);
+      })();
+      document.querySelectorAll('a, button, input, label').forEach(function (el) {
+        el.addEventListener('mouseenter', function () { ring.classList.add('cursor-hover'); });
+        el.addEventListener('mouseleave', function () { ring.classList.remove('cursor-hover'); });
+      });
+    })();
+
+    // Si ya hay sesión, redirigir
+    (function () {
+      const s = getSession();
+      if (!s) return;
+      if (s.role === 'superuser' || s.role === 'admin') window.location.href = 'admin.html';
+      else window.location.href = 'Laurean.html';
+    })();
+
+    function togglePwd() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('eye-icon');
+      const show  = input.type === 'password';
+      input.type  = show ? 'text' : 'password';
+      icon.innerHTML = show
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+    function clearError() {
+      document.getElementById('error-msg').classList.remove('show');
+    }
+
+    function handleLogin() {
+      clearError();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('btn-login');
+
+      if (!email || !password) { showError('Completa todos los campos.'); return; }
+
+      btn.disabled    = true;
+      btn.textContent = 'Verificando…';
+
+      setTimeout(() => {
+        const result = login(email, password);
+        btn.disabled    = false;
+        btn.textContent = 'Ingresar →';
+
+        if (!result.ok) { showError(result.error); return; }
+
+        const { role } = result.session;
+        if (role === 'superuser' || role === 'admin') window.location.href = 'admin.html';
+        else window.location.href = 'Laurean.html';
+      }, 400); // pequeño delay para feedback visual
+    }
+
+    // Enter para login
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  </script>
+</body>
+</html>

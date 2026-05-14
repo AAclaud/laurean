@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programa de Vendedores — LAUREAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --crema:    #F5F2ED;
+      --piedra:   #E8E3DC;
+      --carbon:   #1A1916;
+      --warm-mid: #9B8E7F;
+      --white:    #FFFFFF;
+      --fd: 'Cormorant Garamond', Georgia, serif;
+      --fb: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--fb);
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--carbon);
+      background: var(--crema);
+      overflow-x: hidden;
+    }
+    img { display: block; max-width: 100%; }
+    a   { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* ─── Navbar ─────────────────────────────────────────────────────────────── */
+    .vd-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 52px;
+      background: rgba(245, 242, 237, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(155, 142, 127, 0.18);
+    }
+    .vd-nav-logo {
+      font-family: var(--fd);
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--carbon);
+    }
+    .vd-nav-back {
+      font-size: 11.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .vd-nav-back:hover { color: var(--carbon); }
+    .vd-nav-back svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* ─── Seller banner (si ya es vendedor) ──────────────────────────────────── */
+    .vd-seller-banner {
+      display: none;
+      position: fixed;
+      top: 64px; left: 0; right: 0;
+      z-index: 90;
+      background: var(--carbon);
+      color: var(--crema);
+      text-align: center;
+      padding: 10px 20px;
+      font-size: 12.5px;
+      letter-spacing: 0.06em;
+    }
+    .vd-seller-banner a {
+      color: var(--crema);
+      text-decoration: underline;
+      margin-left: 12px;
+      opacity: 0.75;
+      transition: opacity 0.2s;
+    }
+    .vd-seller-banner a:hover { opacity: 1; }
+
+    /* ─── Hero ────────────────────────────────────────────────────────────────── */
+    .vd-hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+      padding-top: 64px;
+    }
+    .vd-hero-img {
+      position: relative;
+      overflow: hidden;
+    }
+    .vd-hero-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .vd-hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 72px 80px 64px;
+      background: var(--crema);
+    }
+    .vd-eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 24px;
+    }
+    .vd-hero-title {
+      font-family: var(--fd);
+      font-size: clamp(40px, 4.2vw, 68px);
+      font-weight: 300;
+      line-height: 1.08;
+      letter-spacing: 0.01em;
+      margin-bottom: 28px;
+      color: var(--carbon);
+    }
+    .vd-hero-title em { font-style: italic; }
+    .vd-hero-sub {
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.75;
+      max-width: 400px;
+      margin-bottom: 44px;
+    }
+    .vd-hero-ctas {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .vd-btn-primary {
+      display: inline-block;
+      padding: 15px 36px;
+      background: var(--carbon);
+      color: var(--crema);
+      font-size: 11.5px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: opacity 0.2s, transform 0.18s;
+      transform: translateY(0);
+    }
+    .vd-btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+    .vd-btn-primary:active { opacity: 1; transform: translateY(0); transition-duration: 0.06s; }
+    .vd-link-secondary {
+      font-size: 11.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .vd-link-secondary:hover { color: var(--carbon); border-color: var(--carbon); }
+
+    /* ─── Counters ────────────────────────────────────────────────────────────── */
+    .vd-counters {
+      background: var(--carbon);
+      padding: 72px 52px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    .vd-counter-item {
+      text-align: center;
+      padding: 0 24px;
+    }
+    .vd-counter-item + .vd-counter-item {
+      border-left: 1px solid rgba(255,255,255,0.1);
+    }
+    .vd-counter-num {
+      font-family: var(--fd);
+      font-size: clamp(52px, 6vw, 80px);
+      font-weight: 300;
+      color: var(--crema);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .vd-counter-label {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(245,242,237,0.45);
+    }
+    .vd-counter-desc {
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(245,242,237,0.55);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ─── Beneficios ─────────────────────────────────────────────────────────── */
+    .vd-benefits {
+      padding: 100px 52px;
+      background: var(--crema);
+    }
+    .vd-section-eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .vd-section-title {
+      font-family: var(--fd);
+      font-size: clamp(30px, 3.2vw, 48px);
+      font-weight: 300;
+      text-align: center;
+      line-height: 1.15;
+      margin-bottom: 72px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .vd-section-title em { font-style: italic; }
+    .vd-benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .vd-benefit-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+    }
+    .vd-benefit-icon {
+      width: 40px; height: 40px;
+      stroke: var(--carbon);
+      fill: none;
+      stroke-width: 1.4;
+      margin-bottom: 20px;
+    }
+    .vd-benefit-title {
+      font-family: var(--fd);
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+    .vd-benefit-text {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.75;
+    }
+
+    /* ─── Cómo funciona ──────────────────────────────────────────────────────── */
+    .vd-how {
+      padding: 100px 52px;
+      background: var(--piedra);
+    }
+    .vd-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      max-width: 1100px;
+      margin: 0 auto 72px;
+      position: relative;
+    }
+    .vd-steps::before {
+      content: '';
+      position: absolute;
+      top: 24px;
+      left: calc(12.5% + 16px);
+      right: calc(12.5% + 16px);
+      height: 1px;
+      background: rgba(26,25,22,0.15);
+    }
+    .vd-step {
+      padding: 0 24px;
+      text-align: center;
+    }
+    .vd-step-num {
+      width: 48px; height: 48px;
+      border: 1px solid var(--carbon);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--fd);
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--carbon);
+      margin: 0 auto 20px;
+      background: var(--piedra);
+      position: relative;
+      z-index: 1;
+    }
+    .vd-step-title {
+      font-family: var(--fd);
+      font-size: 19px;
+      font-weight: 400;
+      margin-bottom: 10px;
+    }
+    .vd-step-text {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.7;
+    }
+    .vd-how-image {
+      max-width: 1100px;
+      margin: 0 auto;
+      overflow: hidden;
+      height: 380px;
+    }
+    .vd-how-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+    }
+
+    /* ─── Comparativa ────────────────────────────────────────────────────────── */
+    .vd-compare {
+      padding: 100px 52px;
+      background: var(--crema);
+    }
+    .vd-compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .vd-compare-card {
+      border: 1px solid var(--piedra);
+      padding: 44px 40px;
+      display: flex;
+      flex-direction: column;
+    }
+    .vd-compare-card.featured {
+      background: var(--carbon);
+      border-color: var(--carbon);
+      color: var(--crema);
+    }
+    .vd-compare-badge {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid currentColor;
+      margin-bottom: 20px;
+      width: fit-content;
+      opacity: 0.55;
+    }
+    .vd-compare-name {
+      font-family: var(--fd);
+      font-size: 30px;
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .vd-compare-sub {
+      font-size: 13px;
+      font-weight: 300;
+      opacity: 0.55;
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+    .vd-compare-rows {
+      flex: 1;
+      margin-bottom: 40px;
+    }
+    .vd-compare-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(155,142,127,0.2);
+      gap: 16px;
+    }
+    .vd-compare-card.featured .vd-compare-row {
+      border-color: rgba(245,242,237,0.12);
+    }
+    .vd-compare-row-label {
+      font-size: 12.5px;
+      font-weight: 300;
+      opacity: 0.65;
+      flex-shrink: 0;
+    }
+    .vd-compare-row-val {
+      font-size: 13px;
+      font-weight: 400;
+      text-align: right;
+    }
+    .vd-compare-row-val strong {
+      font-weight: 500;
+    }
+    .vd-compare-cta {
+      display: block;
+      text-align: center;
+      padding: 14px;
+      font-size: 11.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: opacity 0.2s, transform 0.18s;
+      transform: translateY(0);
+    }
+    .vd-compare-card:not(.featured) .vd-compare-cta {
+      border: 1px solid var(--carbon);
+      color: var(--carbon);
+    }
+    .vd-compare-card.featured .vd-compare-cta {
+      border: 1px solid var(--crema);
+      color: var(--crema);
+    }
+    .vd-compare-cta:hover { opacity: 0.65; transform: translateY(-1px); }
+    .vd-compare-cta:active { opacity: 1; transform: translateY(0); transition-duration: 0.06s; }
+
+    /* ─── FAQ ─────────────────────────────────────────────────────────────────── */
+    .vd-faq {
+      padding: 100px 52px;
+      background: var(--piedra);
+    }
+    .vd-faq-list {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .vd-faq-item {
+      border-bottom: 1px solid rgba(26,25,22,0.12);
+    }
+    .vd-faq-q {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 0;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--carbon);
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      gap: 24px;
+      transition: opacity 0.2s;
+    }
+    .vd-faq-q:hover { opacity: 0.7; }
+    .vd-faq-q svg {
+      width: 18px; height: 18px;
+      stroke: var(--warm-mid);
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+      transition: transform 0.28s var(--ease);
+    }
+    .vd-faq-item.open .vd-faq-q svg { transform: rotate(180deg); }
+    .vd-faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.36s var(--ease);
+    }
+    .vd-faq-item.open .vd-faq-a { max-height: 200px; }
+    .vd-faq-a p {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--warm-mid);
+      line-height: 1.8;
+      padding-bottom: 22px;
+      max-width: 640px;
+    }
+
+    /* ─── CTA Final ───────────────────────────────────────────────────────────── */
+    .vd-cta {
+      position: relative;
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .vd-cta-bg {
+      position: absolute;
+      inset: 0;
+    }
+    .vd-cta-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 40%;
+    }
+    .vd-cta-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(26, 25, 22, 0.56);
+    }
+    .vd-cta-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 80px 40px;
+      max-width: 560px;
+    }
+    .vd-cta-eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(245,242,237,0.55);
+      margin-bottom: 20px;
+    }
+    .vd-cta-title {
+      font-family: var(--fd);
+      font-size: clamp(36px, 4vw, 58px);
+      font-weight: 300;
+      color: var(--crema);
+      line-height: 1.1;
+      margin-bottom: 18px;
+    }
+    .vd-cta-title em { font-style: italic; }
+    .vd-cta-sub {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(245,242,237,0.62);
+      margin-bottom: 48px;
+      line-height: 1.7;
+    }
+    .vd-cta-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .vd-btn-light {
+      display: inline-block;
+      padding: 14px 32px;
+      border: 1px solid rgba(245,242,237,0.7);
+      color: var(--crema);
+      font-size: 11.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: background 0.2s, color 0.2s, transform 0.18s;
+      transform: translateY(0);
+    }
+    .vd-btn-light:hover { background: var(--crema); color: var(--carbon); transform: translateY(-1px); }
+    .vd-btn-light:active { transform: translateY(0); transition-duration: 0.06s; }
+    .vd-btn-outline-light {
+      display: inline-block;
+      padding: 14px 32px;
+      border: 1px solid rgba(245,242,237,0.3);
+      color: rgba(245,242,237,0.7);
+      font-size: 11.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+    .vd-btn-outline-light:hover { opacity: 0.6; }
+
+    /* ─── Formulario solicitud ─────────────────────────────────────────────── */
+    .vd-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      text-align: left;
+      margin-bottom: 18px;
+    }
+    .vd-form-row-full { grid-column: 1 / -1; }
+    .vd-form label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245,242,237,0.55);
+      margin-bottom: 6px;
+    }
+    .vd-form input,
+    .vd-form textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(245,242,237,0.06);
+      border: 1px solid rgba(245,242,237,0.2);
+      color: var(--crema);
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+    }
+    .vd-form input::placeholder,
+    .vd-form textarea::placeholder { color: rgba(245,242,237,0.32); }
+    .vd-form input:focus,
+    .vd-form textarea:focus {
+      border-color: rgba(245,242,237,0.7);
+      background: rgba(245,242,237,0.1);
+    }
+    .vd-form textarea {
+      resize: vertical;
+      min-height: 90px;
+      font-family: inherit;
+    }
+    .vd-form-submit {
+      grid-column: 1 / -1;
+      padding: 15px 32px;
+      background: var(--crema);
+      color: var(--carbon);
+      border: none;
+      font-size: 11.5px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.18s;
+      margin-top: 6px;
+    }
+    .vd-form-submit:hover { opacity: 0.85; transform: translateY(-1px); }
+    .vd-form-submit:active { transform: translateY(0); transition-duration: 0.06s; }
+    .vd-form-fallback {
+      font-size: 12px;
+      color: rgba(245,242,237,0.45);
+      letter-spacing: 0.02em;
+      margin-top: 22px;
+    }
+    .vd-form-fallback a {
+      color: rgba(245,242,237,0.75);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .vd-form-fallback a:hover { color: var(--crema); }
+    .vd-form-success {
+      padding: 28px 20px;
+      border: 1px solid rgba(245,242,237,0.3);
+      background: rgba(245,242,237,0.06);
+      text-align: center;
+    }
+    .vd-form-success-title {
+      font-family: var(--fd);
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--crema);
+      margin-bottom: 10px;
+    }
+    .vd-form-success-text {
+      font-size: 13px;
+      color: rgba(245,242,237,0.6);
+      line-height: 1.6;
+    }
+
+    /* ─── Footer ──────────────────────────────────────────────────────────────── */
+    .vd-footer {
+      background: var(--carbon);
+      padding: 36px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .vd-footer-copy {
+      font-size: 12px;
+      color: rgba(245,242,237,0.3);
+      letter-spacing: 0.04em;
+    }
+    .vd-footer-link {
+      font-size: 11.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(245,242,237,0.45);
+      transition: color 0.2s;
+    }
+    .vd-footer-link:hover { color: rgba(245,242,237,0.9); }
+
+    /* ─── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .vd-nav { padding: 0 32px; }
+      .vd-hero-content { padding: 64px 48px; }
+      .vd-counters { padding: 64px 32px; }
+      .vd-benefits, .vd-how, .vd-compare, .vd-faq { padding: 80px 32px; }
+      .vd-footer { padding: 32px; }
+    }
+
+    @media (max-width: 768px) {
+      .vd-nav { padding: 0 20px; }
+      .vd-hero { grid-template-columns: 1fr; min-height: auto; }
+      .vd-hero-img { height: 52vw; min-height: 220px; }
+      .vd-hero-content { padding: 52px 24px; }
+      .vd-hero-title { font-size: clamp(34px, 9vw, 52px); }
+      .vd-counters { grid-template-columns: 1fr; gap: 40px; padding: 56px 24px; }
+      .vd-counter-item + .vd-counter-item { border-left: none; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; }
+      .vd-benefits-grid { grid-template-columns: 1fr; gap: 40px; }
+      .vd-benefits, .vd-how, .vd-compare, .vd-faq { padding: 64px 24px; }
+      .vd-steps { grid-template-columns: 1fr 1fr; gap: 40px; }
+      .vd-steps::before { display: none; }
+      .vd-how-image { height: 240px; }
+      .vd-compare-grid { grid-template-columns: 1fr; }
+      .vd-footer { flex-direction: column; gap: 16px; align-items: flex-start; padding: 28px 24px; }
+      .vd-cta-buttons { flex-direction: column; }
+      .vd-form { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .vd-steps { grid-template-columns: 1fr; }
+      .vd-hero-ctas { flex-direction: column; align-items: flex-start; }
+    }
+
+    /* ─── Page Loader ──────────────────────────────────────────────────────── */
+    #page-loader {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--carbon);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    #page-loader.fade-out { opacity: 0; pointer-events: none; }
+    .loader-logo {
+      font-family: var(--fd);
+      font-size: 26px; font-weight: 300;
+      letter-spacing: 0.42em; text-transform: uppercase;
+      color: var(--crema);
+      animation: loader-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes loader-pulse {
+      0%, 100% { opacity: 0.22; }
+      50%       { opacity: 1; }
+    }
+
+    /* ─── Custom Cursor ────────────────────────────────────────────────────── */
+    .cursor-dot, .cursor-ring { display: none; }
+    @media (hover: hover) and (pointer: fine) {
+      body, * { cursor: none !important; }
+      .cursor-dot, .cursor-ring {
+        display: block; position: fixed; top: 0; left: 0;
+        border-radius: 50%; pointer-events: none; z-index: 9999;
+        will-change: transform;
+        transition: width 0.25s cubic-bezier(0.25, 0.1, 0.25, 1),
+                    height 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+      .cursor-dot  { width: 6px; height: 6px; background: white; mix-blend-mode: difference; }
+      .cursor-ring { width: 32px; height: 32px; border: 1.5px solid white; mix-blend-mode: difference; }
+      .cursor-ring.cursor-hover { width: 52px; height: 52px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Page Loader -->
+  <div id="page-loader"><span class="loader-logo">Laurean</span></div>
+
+  <!-- Custom cursor -->
+  <div class="cursor-dot" id="cursor-dot"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <!-- Navbar -->
+  <nav class="vd-nav">
+    <span class="vd-nav-logo">Laurean</span>
+    <a href="Laurean.html" class="vd-nav-back">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Ver tienda
+    </a>
+  </nav>
+
+  <!-- Banner para vendedores ya registrados -->
+  <div class="vd-seller-banner" id="vd-seller-banner">
+    Ya eres parte del equipo. <strong id="vd-banner-code"></strong>
+    <a href="Laurean.html">Ir a la tienda →</a>
+  </div>
+
+  <!-- Hero -->
+  <section class="vd-hero">
+    <div class="vd-hero-img">
+      <img src="images/laurean_editorial_familia.jpg" alt="Familia Laurean" />
+    </div>
+    <div class="vd-hero-content">
+      <p class="vd-eyebrow">Únete · Programa de vendedores</p>
+      <h1 class="vd-hero-title">Vende Laurean.<br><em>Sin stock,<br>sin preocupaciones.</em></h1>
+      <p class="vd-hero-sub">Comparte la marca, gana comisiones y accede a precios exclusivos. Nosotros nos encargamos del resto.</p>
+      <div class="vd-hero-ctas">
+        <a href="#cta" class="vd-btn-primary">Quiero ser vendedora →</a>
+        <a href="#como-funciona" class="vd-link-secondary">Ver cómo funciona</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contadores animados -->
+  <div class="vd-counters">
+    <div class="vd-counter-item">
+      <span class="vd-counter-num" data-counter data-target="5%">0%</span>
+      <span class="vd-counter-label">Comisión por venta referida</span>
+      <p class="vd-counter-desc">En cada compra que haga tu cliente con tu código.</p>
+    </div>
+    <div class="vd-counter-item">
+      <span class="vd-counter-num" data-counter data-target="15%">0%</span>
+      <span class="vd-counter-label">Descuento en tus compras</span>
+      <p class="vd-counter-desc">Precio especial de vendedor en todo el catálogo.</p>
+    </div>
+    <div class="vd-counter-item">
+      <span class="vd-counter-num" data-counter data-target="0" data-label="stock">0</span>
+      <span class="vd-counter-label">Stock que necesitas tener</span>
+      <p class="vd-counter-desc">Nosotros manejamos el inventario y los envíos por ti.</p>
+    </div>
+  </div>
+
+  <!-- Beneficios -->
+  <section class="vd-benefits">
+    <p class="vd-section-eyebrow">Por qué unirte</p>
+    <h2 class="vd-section-title">Todo a tu favor. <em>Nada que perder.</em></h2>
+    <div class="vd-benefits-grid">
+      <div class="vd-benefit-card">
+        <svg class="vd-benefit-icon" viewBox="0 0 24 24">
+          <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+          <line x1="3.27" y1="6.96" x2="12" y2="12.01"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+        <h3 class="vd-benefit-title">Sin inventario</h3>
+        <p class="vd-benefit-text">No necesitas comprar ni guardar producto. Nosotros manejamos el stock y coordinamos cada envío directamente al cliente final.</p>
+      </div>
+      <div class="vd-benefit-card">
+        <svg class="vd-benefit-icon" viewBox="0 0 24 24">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/>
+        </svg>
+        <h3 class="vd-benefit-title">Gana comisiones</h3>
+        <p class="vd-benefit-text">Cada vez que alguien usa tu código al comprar en la tienda, ganas un 5% del total de esa venta. Sin límites de cuánto puedes ganar.</p>
+      </div>
+      <div class="vd-benefit-card">
+        <svg class="vd-benefit-icon" viewBox="0 0 24 24">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        <h3 class="vd-benefit-title">Precio de vendedor</h3>
+        <p class="vd-benefit-text">Accede a un 15% de descuento en todo el catálogo para comprar tú mismo o para revender con tu propio margen. Y si vendes en mayor volumen, los precios mejoran.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cómo funciona -->
+  <section class="vd-how" id="como-funciona">
+    <p class="vd-section-eyebrow">El proceso</p>
+    <h2 class="vd-section-title">Cuatro pasos para <em>empezar a ganar.</em></h2>
+    <div class="vd-steps">
+      <div class="vd-step">
+        <div class="vd-step-num">1</div>
+        <h4 class="vd-step-title">Regístrate</h4>
+        <p class="vd-step-text">Contáctanos y te creamos un perfil de vendedor con tu código único LAU-XXXXX.</p>
+      </div>
+      <div class="vd-step">
+        <div class="vd-step-num">2</div>
+        <h4 class="vd-step-title">Comparte tu código</h4>
+        <p class="vd-step-text">Tus clientes lo ingresan al comprar en la tienda online y obtienen un descuento especial.</p>
+      </div>
+      <div class="vd-step">
+        <div class="vd-step-num">3</div>
+        <h4 class="vd-step-title">Ellos compran</h4>
+        <p class="vd-step-text">Nosotros procesamos el pedido, gestionamos el envío y registramos la comisión a tu nombre.</p>
+      </div>
+      <div class="vd-step">
+        <div class="vd-step-num">4</div>
+        <h4 class="vd-step-title">Tú cobras</h4>
+        <p class="vd-step-text">Coordinamos el pago de tus comisiones directamente contigo, sin complicaciones.</p>
+      </div>
+    </div>
+    <div class="vd-how-image">
+      <img src="images/laurean_sweaters_trio.jpg" alt="Colección Laurean" />
+    </div>
+  </section>
+
+  <!-- Comparativa -->
+  <section class="vd-compare">
+    <p class="vd-section-eyebrow">Tus opciones</p>
+    <h2 class="vd-section-title">Empieza como quieras, <em>crece a tu ritmo.</em></h2>
+    <div class="vd-compare-grid">
+      <div class="vd-compare-card">
+        <span class="vd-compare-badge">Opción 1</span>
+        <div class="vd-compare-name">Vendedor<br>Individual</div>
+        <p class="vd-compare-sub">Ideal para empezar. Comparte tu código y gana sin invertir nada.</p>
+        <div class="vd-compare-rows">
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Compra mínima</span>
+            <span class="vd-compare-row-val">Sin mínimo</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Descuento en compras</span>
+            <span class="vd-compare-row-val"><strong>15%</strong> off</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Comisión referidos</span>
+            <span class="vd-compare-row-val"><strong>5%</strong> por venta</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Stock propio</span>
+            <span class="vd-compare-row-val">No requerido</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Envíos</span>
+            <span class="vd-compare-row-val">A cargo de Laurean</span>
+          </div>
+        </div>
+        <a href="#cta" class="vd-compare-cta">Comenzar como individual</a>
+      </div>
+      <div class="vd-compare-card featured">
+        <span class="vd-compare-badge">Opción 2</span>
+        <div class="vd-compare-name">Vendedor<br>Mayoreo</div>
+        <p class="vd-compare-sub">Para quienes quieren revender volumen con mayor margen de ganancia.</p>
+        <div class="vd-compare-rows">
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Compra mínima</span>
+            <span class="vd-compare-row-val">Consultar</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Descuento en compras</span>
+            <span class="vd-compare-row-val"><strong>Mayor</strong> por volumen</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Comisión referidos</span>
+            <span class="vd-compare-row-val"><strong>5%</strong> por venta</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Stock propio</span>
+            <span class="vd-compare-row-val">Opcional</span>
+          </div>
+          <div class="vd-compare-row">
+            <span class="vd-compare-row-label">Soporte</span>
+            <span class="vd-compare-row-val">Ejecutivo dedicado</span>
+          </div>
+        </div>
+        <a href="#cta" class="vd-compare-cta">Consultar mayoreo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="vd-faq">
+    <p class="vd-section-eyebrow">Preguntas frecuentes</p>
+    <h2 class="vd-section-title" style="text-align:left;margin-left:0;max-width:480px">Todo lo que <em>necesitas saber.</em></h2>
+    <div class="vd-faq-list">
+      <div class="vd-faq-item">
+        <button class="vd-faq-q" onclick="toggleFaq(this)">
+          ¿Necesito tener inventario propio para vender?
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="vd-faq-a"><p>No. Nuestro modelo es 100% dropshipping. Tú compartes el catálogo y tu código, nosotros nos encargamos del inventario, el empaque y el envío al cliente final. Solo te preocupas por vender.</p></div>
+      </div>
+      <div class="vd-faq-item">
+        <button class="vd-faq-q" onclick="toggleFaq(this)">
+          ¿Cómo y cuándo recibo mis comisiones?
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="vd-faq-a"><p>Las comisiones se registran automáticamente en tu panel cuando un cliente usa tu código. Coordinamos el pago directamente contigo de forma periódica — ya sea transferencia o el método que prefieras.</p></div>
+      </div>
+      <div class="vd-faq-item">
+        <button class="vd-faq-q" onclick="toggleFaq(this)">
+          ¿Puedo vender tanto en línea como de forma presencial?
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="vd-faq-a"><p>Sí. Tu código funciona en la tienda online laurean.gt y también puedes compartir el link directo con tu código ya aplicado. Para ventas presenciales, el cliente simplemente lo ingresa al hacer su pedido en línea.</p></div>
+      </div>
+      <div class="vd-faq-item">
+        <button class="vd-faq-q" onclick="toggleFaq(this)">
+          ¿Hay un límite de ventas referidas que puedo hacer?
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="vd-faq-a"><p>No existe ningún límite. Mientras más clientes usen tu código, más comisiones acumulas. No hay techo en tus ganancias como vendedor Laurean.</p></div>
+      </div>
+      <div class="vd-faq-item">
+        <button class="vd-faq-q" onclick="toggleFaq(this)">
+          ¿Cómo accedo a los precios especiales de vendedor?
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="vd-faq-a"><p>Una vez registrada como vendedora, ingresas a la tienda con tu cuenta y automáticamente ves los precios con el 15% de descuento. Así puedes comprar para ti o para revender con tu propio margen.</p></div>
+      </div>
+      <div class="vd-faq-item">
+        <button class="vd-faq-q" onclick="toggleFaq(this)">
+          ¿Qué pasa si quiero pasar a vender en mayor volumen?
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="vd-faq-a"><p>Cuando quieras escalar, contáctanos para hablar sobre el plan de mayoreo. Los precios mejoran con el volumen y tendrás un ejecutivo dedicado para coordinar tus pedidos al por mayor.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Final -->
+  <section class="vd-cta" id="cta">
+    <div class="vd-cta-bg">
+      <img src="images/laurean_familia_square.jpg" alt="Familia Laurean" />
+    </div>
+    <div class="vd-cta-content">
+      <p class="vd-cta-eyebrow">Listo para empezar</p>
+      <h2 class="vd-cta-title">Únete al equipo <em>Laurean.</em></h2>
+      <p class="vd-cta-sub">Llena el formulario y nos pondremos en contacto en menos de 24 horas con tu cuenta y código de vendedor.</p>
+
+      <form id="vd-form" class="vd-form" novalidate>
+        <div>
+          <label for="vd-name">Nombre completo</label>
+          <input type="text" id="vd-name" name="name" placeholder="Tu nombre" required />
+        </div>
+        <div>
+          <label for="vd-email">Correo</label>
+          <input type="email" id="vd-email" name="email" placeholder="tucorreo@ejemplo.com" required />
+        </div>
+        <div>
+          <label for="vd-phone">Teléfono</label>
+          <input type="tel" id="vd-phone" name="phone" placeholder="+502 0000 0000" required />
+        </div>
+        <div>
+          <label for="vd-city">Ciudad</label>
+          <input type="text" id="vd-city" name="city" placeholder="Guatemala" required />
+        </div>
+        <div class="vd-form-row-full">
+          <label for="vd-message">Mensaje (opcional)</label>
+          <textarea id="vd-message" name="message" placeholder="Cuéntanos por qué quieres unirte"></textarea>
+        </div>
+        <button type="submit" class="vd-form-submit">Enviar solicitud</button>
+      </form>
+
+      <div id="vd-form-success" class="vd-form-success" hidden>
+        <p class="vd-form-success-title">¡Solicitud enviada!</p>
+        <p class="vd-form-success-text">Gracias por tu interés. Te contactaremos en menos de 24 horas con tu cuenta y código de vendedor.</p>
+      </div>
+
+      <p class="vd-form-fallback">
+        ¿Prefieres escribirnos?
+        <a href="https://wa.me/50200000000?text=Hola%2C%20quiero%20ser%20vendedora%20de%20Laurean" target="_blank" rel="noopener">WhatsApp</a>
+        ·
+        <a href="mailto:vendedoras@laurean.gt">vendedoras@laurean.gt</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="vd-footer">
+    <span class="vd-footer-copy">© Laurean 2026 · Guatemala</span>
+    <a href="Laurean.html" class="vd-footer-link">Ver tienda →</a>
+  </footer>
+
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Mostrar banner si ya es vendedor
+      const session = getSession();
+      if (session && session.role === 'vendedor') {
+        const banner = document.getElementById('vd-seller-banner');
+        const codeEl = document.getElementById('vd-banner-code');
+        if (banner && session.code) {
+          codeEl.textContent = 'Tu código: ' + session.code;
+          banner.style.display = 'block';
+          document.body.style.paddingTop = '36px';
+        }
+      }
+
+      // Formulario de solicitud de vendedora
+      const vdForm = document.getElementById('vd-form');
+      if (vdForm) {
+        vdForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(vdForm);
+          const data = {
+            name:    (fd.get('name')    || '').trim(),
+            email:   (fd.get('email')   || '').trim().toLowerCase(),
+            phone:   (fd.get('phone')   || '').trim(),
+            city:    (fd.get('city')    || '').trim(),
+            message: (fd.get('message') || '').trim(),
+          };
+          if (!data.name || !data.email || !data.phone || !data.city) {
+            vdForm.reportValidity();
+            return;
+          }
+          createVendorApplication(data);
+          vdForm.hidden = true;
+          document.getElementById('vd-form-success').hidden = false;
+        });
+      }
+
+      // Contadores animados con IntersectionObserver
+      function animateCounter(el, targetStr, duration) {
+        duration = duration || 1200;
+        const isPercent = targetStr.includes('%');
+        const isZero    = targetStr === '0' || targetStr === '0%';
+        if (isZero) { el.textContent = isPercent ? '0%' : 'Cero'; return; }
+        const target = parseFloat(targetStr);
+        const start  = performance.now();
+        function tick(now) {
+          var p   = Math.min((now - start) / duration, 1);
+          var val = Math.round(p * target * 10) / 10;
+          el.textContent = val + (isPercent ? '%' : '');
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = targetStr;
+        }
+        requestAnimationFrame(tick);
+      }
+
+      var counterObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting) {
+            animateCounter(e.target, e.target.dataset.target);
+            counterObs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      document.querySelectorAll('[data-counter]').forEach(function(el) {
+        counterObs.observe(el);
+      });
+    });
+
+    // FAQ accordion
+    function toggleFaq(btn) {
+      var item    = btn.closest('.vd-faq-item');
+      var wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.vd-faq-item.open').forEach(function(i) {
+        i.classList.remove('open');
+      });
+      if (!wasOpen) item.classList.add('open');
+    }
+
+    // ─── Loader ──────────────────────────────────────────────────────────────
+    (function () {
+      var loader  = document.getElementById('page-loader');
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!loader || reduced) { if (loader) loader.style.display = 'none'; return; }
+      setTimeout(function () {
+        loader.classList.add('fade-out');
+        setTimeout(function () { loader.style.display = 'none'; }, 640);
+      }, 520);
+    })();
+
+    // ─── Custom cursor ────────────────────────────────────────────────────────
+    (function () {
+      var dot  = document.getElementById('cursor-dot');
+      var ring = document.getElementById('cursor-ring');
+      if (!dot || !ring) return;
+      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+      var mx = -200, my = -200, rx = -200, ry = -200;
+      document.addEventListener('mousemove', function (e) {
+        mx = e.clientX; my = e.clientY;
+        dot.style.transform = 'translate(calc(' + mx + 'px - 50%), calc(' + my + 'px - 50%))';
+      }, { passive: true });
+      (function animateRing() {
+        rx += (mx - rx) * 0.11;
+        ry += (my - ry) * 0.11;
+        ring.style.transform = 'translate(calc(' + rx + 'px - 50%), calc(' + ry + 'px - 50%))';
+        requestAnimationFrame(animateRing);
+      })();
+      var sel = 'a, button, [role="button"]';
+      document.addEventListener('mouseover', function (e) {
+        if (e.target.closest(sel)) ring.classList.add('cursor-hover');
+      });
+      document.addEventListener('mouseout', function (e) {
+        if (e.target.closest(sel)) ring.classList.remove('cursor-hover');
+      });
+    })();
+  </script>
+
+</body>
+</html>

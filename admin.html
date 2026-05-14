@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel — LAUREAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --crema:    #F5F2ED;
+      --piedra:   #E8E3DC;
+      --carbon:   #1A1916;
+      --warm-mid: #9B8E7F;
+      --sidebar:  220px;
+      --fd: 'Cormorant Garamond', Georgia, serif;
+      --fb: 'DM Sans', -apple-system, sans-serif;
+    }
+    html, body { height: 100%; }
+    body { font-family: var(--fb); background: var(--crema); display: flex; min-height: 100vh; }
+
+    /* ─── Sidebar ─────────────────────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar);
+      background: var(--carbon);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 50;
+      overflow-y: auto;
+    }
+    .sb-logo {
+      padding: 32px 24px 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .sb-logo-name {
+      font-family: var(--fd);
+      font-size: 19px;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: white;
+    }
+    .sb-logo-sub {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-top: 4px;
+    }
+    .sb-nav { flex: 1; padding: 16px 0; }
+    .sb-section {
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+      padding: 16px 24px 6px;
+    }
+    .sb-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 24px;
+      font-size: 13.5px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+      border: none;
+      background: none;
+      font-family: var(--fb);
+      width: 100%;
+      text-align: left;
+    }
+    .sb-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; flex-shrink: 0; }
+    .sb-link:hover { color: rgba(255,255,255,0.82); background: rgba(255,255,255,0.05); }
+    .sb-link.active { color: white; background: rgba(255,255,255,0.1); }
+    .sb-user {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .sb-user-name { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); margin-bottom: 2px; }
+    .sb-user-role { font-size: 11px; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+    .sb-logout {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: rgba(255,255,255,0.4);
+      cursor: pointer; background: none; border: none;
+      font-family: var(--fb); padding: 0; transition: color 0.2s;
+    }
+    .sb-logout svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .sb-logout:hover { color: rgba(255,255,255,0.8); }
+
+    /* ─── Main ────────────────────────────────────────────────────────────── */
+    .main { margin-left: var(--sidebar); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .main-header {
+      height: 60px;
+      background: var(--crema);
+      border-bottom: 1px solid var(--piedra);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 36px;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .main-header-title { font-size: 15px; font-weight: 500; color: var(--carbon); }
+    .main-header-right { display: flex; align-items: center; gap: 12px; }
+    .header-badge {
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 10px; background: var(--piedra); color: var(--warm-mid);
+    }
+    .content { padding: 36px; flex: 1; }
+
+    /* ─── Vista ───────────────────────────────────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+    .view-title {
+      font-family: var(--fd);
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--carbon);
+      margin-bottom: 28px;
+    }
+    .view-title em { font-style: italic; }
+
+    /* ─── Tarjetas stat ───────────────────────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 36px; }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--piedra);
+      padding: 24px;
+    }
+    .stat-label { font-size: 10.5px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--warm-mid); margin-bottom: 10px; }
+    .stat-value { font-family: var(--fd); font-size: 36px; font-weight: 300; color: var(--carbon); line-height: 1; }
+    .stat-sub   { font-size: 12px; color: var(--warm-mid); margin-top: 4px; }
+
+    /* ─── Tablas ──────────────────────────────────────────────────────────── */
+    .table-wrap { background: white; border: 1px solid var(--piedra); overflow-x: auto; }
+    .table-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--piedra);
+    }
+    .table-head-title { font-size: 13.5px; font-weight: 500; color: var(--carbon); }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--piedra);
+      white-space: nowrap;
+    }
+    td { padding: 14px 24px; font-size: 13.5px; border-bottom: 1px solid rgba(232,227,220,0.5); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(245,242,237,0.6); }
+    .td-muted { color: var(--warm-mid); }
+
+    /* ─── Badges ──────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      border-radius: 20px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .badge-vendedor  { background: rgba(74,144,217,0.12); color: #2979B0; }
+    .badge-admin     { background: rgba(155,142,127,0.15); color: #6D5E50; }
+    .badge-superuser { background: rgba(26,25,22,0.1);  color: var(--carbon); }
+    .badge-active    { background: rgba(76,175,80,0.12);  color: #388E3C; }
+    .badge-inactive  { background: rgba(229,57,53,0.1);   color: #C62828; }
+
+    /* ─── Botones ─────────────────────────────────────────────────────────── */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--fb); cursor: pointer; border: none; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.8; }
+    .btn-dark  { background: var(--carbon); color: var(--crema); }
+    .btn-light { background: var(--piedra); color: var(--carbon); }
+    .btn-danger{ background: rgba(229,57,53,0.1); color: #C62828; border: 1px solid rgba(229,57,53,0.2); }
+    .btn svg   { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+    .btn-icon  { padding: 7px; background: none; border: 1px solid var(--piedra); color: var(--warm-mid); }
+    .btn-icon:hover { background: var(--piedra); color: var(--carbon); }
+
+    /* ─── Inputs ──────────────────────────────────────────────────────────── */
+    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-row.single { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--warm-mid);
+    }
+    .form-input, .form-select {
+      padding: 11px 14px;
+      background: transparent;
+      border: 1px solid var(--piedra);
+      font-family: var(--fb);
+      font-size: 14px;
+      color: var(--carbon);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--carbon); }
+    .form-input::placeholder { color: rgba(155,142,127,0.5); }
+    .form-hint-text { font-size: 11.5px; color: var(--warm-mid); margin-top: 2px; }
+
+    /* ─── Modal ───────────────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(26,25,22,0.5);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--crema);
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 36px;
+    }
+    .modal-title { font-family: var(--fd); font-size: 26px; font-weight: 300; margin-bottom: 28px; }
+    .modal-footer { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--piedra); }
+    .modal-error { background: rgba(229,57,53,0.08); border: 1px solid rgba(229,57,53,0.2); color: #c62828; font-size: 13px; padding: 10px 14px; margin-bottom: 16px; display: none; }
+    .modal-error.show { display: block; }
+
+    /* ─── Precio editable ────────────────────────────────────────────────── */
+    .price-input {
+      width: 90px;
+      padding: 6px 10px;
+      border: 1px solid var(--piedra);
+      font-family: var(--fb);
+      font-size: 13px;
+      color: var(--carbon);
+      background: transparent;
+      outline: none;
+    }
+    .price-input:focus { border-color: var(--carbon); }
+    .suggested { font-size: 11px; color: var(--warm-mid); margin-top: 3px; }
+
+    /* ─── Configuración ───────────────────────────────────────────────────── */
+    .config-section { background: white; border: 1px solid var(--piedra); padding: 28px; margin-bottom: 20px; }
+    .config-title   { font-size: 14px; font-weight: 500; margin-bottom: 20px; color: var(--carbon); }
+    .config-row     { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ─── Empty state ─────────────────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--warm-mid); }
+    .empty-state svg { width: 40px; height: 40px; stroke: currentColor; fill: none; stroke-width: 1; opacity: 0.4; margin: 0 auto 16px; display: block; }
+    .empty-state p { font-size: 15px; font-weight: 300; }
+
+    /* ─── Select de estado en tabla ──────────────────────────────────────── */
+    .status-select {
+      padding: 5px 8px; font-size: 12px; font-family: var(--fb);
+      border: 1px solid var(--piedra); background: transparent;
+      color: var(--carbon); cursor: pointer; outline: none;
+    }
+
+    /* ─── Código referido copy ────────────────────────────────────────────── */
+    .code-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--piedra); padding: 5px 12px;
+      font-size: 12.5px; letter-spacing: 0.1em; font-weight: 500;
+    }
+    .copy-btn { background: none; border: none; cursor: pointer; padding: 2px; }
+    .copy-btn svg { width: 14px; height: 14px; stroke: var(--warm-mid); fill: none; stroke-width: 1.6; }
+
+    /* ─── Loader ─────────────────────────────────────────────────────────── */
+    #page-loader {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--carbon);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.6s ease;
+    }
+    #page-loader.fade-out { opacity: 0; pointer-events: none; }
+    .loader-logo {
+      font-family: var(--fd); font-size: 22px; font-weight: 300;
+      letter-spacing: 0.42em; text-transform: uppercase; color: white;
+      animation: loader-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes loader-pulse { 0%,100%{opacity:0.2;} 50%{opacity:1;} }
+
+    /* ─── Cursor ──────────────────────────────────────────────────────────── */
+    .cursor-dot, .cursor-ring {
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999; border-radius: 50%;
+      transition: width 0.22s ease, height 0.22s ease;
+      will-change: transform;
+    }
+    .cursor-dot  { width: 6px; height: 6px; background: white; mix-blend-mode: difference; }
+    .cursor-ring { width: 32px; height: 32px; border: 1.5px solid white; mix-blend-mode: difference; }
+    .cursor-ring.cursor-hover { width: 52px; height: 52px; }
+    @media (hover: none) { .cursor-dot, .cursor-ring { display: none; } }
+    * { cursor: none; }
+
+    /* ─── Solicitudes badges ─────────────────────────────────────────────── */
+    .badge-pendiente  { background: rgba(212,160,23,0.12); color: #9A6F00; }
+    .badge-aprobado   { background: rgba(76,175,80,0.12);  color: #388E3C; }
+    .badge-rechazado  { background: rgba(229,57,53,0.1);   color: #C62828; }
+    .notify-dot {
+      display: inline-block; width: 7px; height: 7px;
+      background: #D4A017; border-radius: 50%; margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ─── Responsive ──────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      :root { --sidebar: 64px; }
+      .sb-link span, .sb-logo-sub, .sb-logo-name, .sb-user-name, .sb-user-role, .sb-section, .sb-logout span { display: none; }
+      .sb-link { justify-content: center; padding: 14px; }
+      .sb-logo { padding: 18px; text-align: center; }
+      .sb-user { padding: 14px; }
+      .sb-logout { justify-content: center; }
+      .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .content { padding: 20px; }
+      .main-header { padding: 0 20px; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .config-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="page-loader"><span class="loader-logo">Laurean</span></div>
+  <div class="cursor-dot" id="cursor-dot"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-name">Laurean</div>
+      <div class="sb-logo-sub">Panel de gestión</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Principal</div>
+      <button class="sb-link active" onclick="showView('dashboard')" data-view="dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="sb-link" onclick="showView('pedidos')" data-view="pedidos">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+        <span>Pedidos</span>
+      </button>
+      <button class="sb-link" onclick="showView('comisiones')" data-view="comisiones">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+        <span>Comisiones</span>
+      </button>
+      <button class="sb-link" onclick="showView('estadisticas')" data-view="estadisticas">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Estadísticas</span>
+      </button>
+
+      <div class="sb-section">Catálogo</div>
+      <button class="sb-link" onclick="showView('productos')" data-view="productos">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        <span>Productos</span>
+      </button>
+      <button class="sb-link" onclick="showView('categorias')" data-view="categorias">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17.5 14v7"/></svg>
+        <span>Categorías</span>
+      </button>
+
+      <div class="sb-section">Operaciones</div>
+      <button class="sb-link" onclick="showView('proveedores')" data-view="proveedores">
+        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span>Proveedores</span>
+      </button>
+      <button class="sb-link" onclick="showView('bodegas')" data-view="bodegas">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Bodegas</span>
+      </button>
+      <button class="sb-link" onclick="showView('cotizaciones')" data-view="cotizaciones">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>Cotizaciones</span>
+      </button>
+
+      <div class="sb-section">Accesos</div>
+      <button class="sb-link" onclick="showView('vendedores')" data-view="vendedores">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>Usuarios</span>
+      </button>
+      <button class="sb-link" onclick="showView('solicitudes')" data-view="solicitudes">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Solicitudes <span class="notify-dot" id="sb-notify-dot" style="display:none"></span></span>
+      </button>
+      <a href="vendedoras.html" target="_blank" class="sb-link">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        <span>Landing Vendedores</span>
+      </a>
+
+      <button class="sb-link" id="btn-config" onclick="showView('config')" data-view="config" style="display:none">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Configuración</span>
+      </button>
+    </nav>
+    <div class="sb-user">
+      <div class="sb-user-name" id="sb-user-name">—</div>
+      <div class="sb-user-role" id="sb-user-role">—</div>
+      <button class="sb-logout" onclick="handleLogout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="main-header">
+      <span class="main-header-title" id="header-title">Dashboard</span>
+      <div class="main-header-right">
+        <span class="header-badge" id="header-role">—</span>
+        <a href="Laurean.html" style="font-size:12px;color:var(--warm-mid);text-decoration:none;letter-spacing:.08em">
+          Ver tienda →
+        </a>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD ──────────────────────────────────────────────────────── -->
+      <div id="view-dashboard" class="view active">
+        <h1 class="view-title">Bienvenido, <em id="dash-name">—</em></h1>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <span class="table-head-title">Pedidos recientes</span>
+            <button class="btn btn-light" onclick="showView('pedidos')">Ver todos</button>
+          </div>
+          <table id="recent-orders-table">
+            <thead><tr>
+              <th>ID</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Referido</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="recent-orders-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PRODUCTOS ──────────────────────────────────────────────────────── -->
+      <div id="view-productos" class="view">
+        <h1 class="view-title">Catálogo y <em>Precios</em></h1>
+        <p style="font-size:13.5px;color:var(--warm-mid);margin-bottom:24px;line-height:1.6;">
+          Edita precios, agrega nuevos productos o crea categorías nuevas para la tienda.
+        </p>
+        <div class="table-wrap" style="margin-bottom:24px;">
+          <div class="table-head">
+            <span class="table-head-title">Categorías</span>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-dark" onclick="openCategoryModal(null)">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar categoría
+              </button>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Nombre</th><th>Imagen</th>
+              <th>Precio inicial Q</th><th>Precio inicial USD</th><th></th>
+            </tr></thead>
+            <tbody id="categories-tbody"></tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <span class="table-head-title">Productos</span>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-light" onclick="saveAllPrices()">
+                <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar precios
+              </button>
+              <button class="btn btn-dark" onclick="openProductModal(null)">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar producto
+              </button>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Producto</th><th>Categoría</th>
+              <th>Público Q</th><th>Público USD</th>
+              <th>Vendedor Q</th><th>Vendedor USD</th>
+              <th>Bodega Q</th><th>Bodega USD</th><th></th>
+            </tr></thead>
+            <tbody id="products-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SOLICITUDES ────────────────────────────────────────────────────── -->
+      <div id="view-solicitudes" class="view">
+        <h1 class="view-title">Solicitudes de <em>Vendedoras</em></h1>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Nombre</th><th>Correo</th><th>Teléfono</th>
+              <th>Ciudad</th><th>Mensaje</th><th>Estado</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="solicitudes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── VENDEDORES / USUARIOS ──────────────────────────────────────────── -->
+      <div id="view-vendedores" class="view">
+        <h1 class="view-title" id="users-view-title">Gestión de <em>Usuarios</em></h1>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn btn-dark" onclick="openUserModal(null)">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo usuario
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Nombre</th><th>Correo</th><th>Rol</th><th>Código</th><th>Estado</th><th>Creado</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PEDIDOS ────────────────────────────────────────────────────────── -->
+      <div id="view-pedidos" class="view">
+        <h1 class="view-title">Gestión de <em>Pedidos</em></h1>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>ID</th><th>Fecha</th><th>Cliente</th><th>Ítems</th>
+              <th>Subtotal</th><th>Descuento</th><th>Total</th><th>Referido</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── COMISIONES ─────────────────────────────────────────────────────── -->
+      <div id="view-comisiones" class="view">
+        <h1 class="view-title">Comisiones de <em>Vendedores</em></h1>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Vendedor</th><th>Código</th><th>Orden</th>
+              <th>Total venta</th><th>Comisión</th><th>Estado</th><th></th>
+            </tr></thead>
+            <tbody id="commissions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CONFIGURACIÓN ──────────────────────────────────────────────────── -->
+      <div id="view-config" class="view">
+        <h1 class="view-title">Configuración <em>General</em></h1>
+        <div class="config-section">
+          <div class="config-title">Descuentos y Comisiones</div>
+          <div class="config-row">
+            <div class="form-group">
+              <label class="form-label">Descuento vendedor (%)</label>
+              <input type="number" class="form-input" id="cfg-seller-discount" min="0" max="99" step="1" />
+              <span class="form-hint-text">Los vendedores pagan este % menos que el precio público.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Descuento bodega (%)</label>
+              <input type="number" class="form-input" id="cfg-bodega-discount" min="0" max="99" step="1" />
+              <span class="form-hint-text">Usuarios bodega pagan este % menos que el precio público.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Descuento referido (%)</label>
+              <input type="number" class="form-input" id="cfg-referral-discount" min="0" max="99" step="1" />
+              <span class="form-hint-text">Descuento que recibe el cliente con código de referido.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Comisión vendedor (%)</label>
+              <input type="number" class="form-input" id="cfg-commission-rate" min="0" max="99" step="1" />
+              <span class="form-hint-text">% del total de la venta que gana el vendedor referidor.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">PIN descuento especial</label>
+              <input type="text" class="form-input" id="cfg-discount-pin" maxlength="6" placeholder="1234" />
+              <span class="form-hint-text">PIN para aplicar descuentos manuales en checkout.</span>
+            </div>
+          </div>
+          <div style="margin-top:24px;display:flex;justify-content:flex-end;">
+            <button class="btn btn-dark" onclick="saveConfig()">Guardar configuración</button>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-title">Zona de Peligro</div>
+          <p style="font-size:13px;color:var(--warm-mid);margin-bottom:16px;">
+            Estas acciones son irreversibles. Úsalas solo para pruebas o mantenimiento.
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-danger" onclick="confirmReset('orders')">Borrar todos los pedidos</button>
+            <button class="btn btn-danger" onclick="confirmReset('commissions')">Borrar todas las comisiones</button>
+            <button class="btn btn-danger" onclick="confirmReset('prices')">Restaurar precios base</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VISTA: ESTADÍSTICAS ─────────────────────────────────────────────── -->
+      <div id="view-estadisticas" class="view">
+        <h1 class="view-title">Estadísticas <em>y Reportes</em></h1>
+        <div class="config-section">
+          <div class="config-title">Rango de Fechas</div>
+          <div class="config-row" style="align-items:flex-end;gap:16px;flex-wrap:wrap;">
+            <div class="form-group">
+              <label class="form-label">Desde</label>
+              <input type="date" class="form-input" id="stat-from" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hasta</label>
+              <input type="date" class="form-input" id="stat-to" />
+            </div>
+            <button class="btn btn-dark" onclick="renderEstadisticas()">Aplicar</button>
+            <button class="btn btn-light" onclick="exportStatsCSV()">Exportar CSV</button>
+          </div>
+        </div>
+        <div id="stats-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;margin:24px 0"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;">
+          <div class="config-section">
+            <div class="config-title">Top 5 Productos</div>
+            <table class="tbl" style="margin-top:12px"><thead><tr><th>Producto</th><th>Unidades</th><th>Total Q</th></tr></thead>
+            <tbody id="stats-top-products"></tbody></table>
+          </div>
+          <div class="config-section">
+            <div class="config-title">Top 3 Vendedores</div>
+            <table class="tbl" style="margin-top:12px"><thead><tr><th>Vendedor</th><th>Comisiones Q</th></tr></thead>
+            <tbody id="stats-top-sellers"></tbody></table>
+          </div>
+        </div>
+        <div class="config-section" style="margin-top:24px">
+          <div class="config-title">Pedidos por Estado</div>
+          <div id="stats-status-bars" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA: CATEGORÍAS ───────────────────────────────────────────────── -->
+      <div id="view-categorias" class="view">
+        <h1 class="view-title">Categorías <em>del Catálogo</em></h1>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn btn-dark" onclick="openCategoryModal()">+ Nueva categoría</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Nombre</th><th>Imagen</th><th>Precio desde Q</th><th>Precio desde USD</th><th>Acciones</th></tr></thead>
+          <tbody id="cat-view-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ── VISTA: PROVEEDORES ─────────────────────────────────────────────── -->
+      <div id="view-proveedores" class="view">
+        <h1 class="view-title">Proveedores</h1>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn btn-dark" onclick="openProvModal()">+ Agregar proveedor</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th>Ciudad</th><th>Notas</th><th>Acciones</th></tr></thead>
+          <tbody id="prov-tbody"></tbody>
+        </table>
+        <!-- Modal inline -->
+        <div class="modal-overlay" id="prov-modal" onclick="if(event.target===this)closeProv()" style="display:none">
+          <div class="modal">
+            <h2 class="modal-title" id="prov-modal-title">Nuevo Proveedor</h2>
+            <input type="hidden" id="prov-id" />
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="prov-name" /></div>
+              <div class="form-group"><label class="form-label">Contacto</label><input class="form-input" id="prov-contact" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="prov-phone" type="tel" /></div>
+              <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="prov-email" type="email" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Ciudad</label><input class="form-input" id="prov-city" /></div>
+              <div class="form-group"><label class="form-label">Notas</label><input class="form-input" id="prov-notes" /></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-light" onclick="closeProv()">Cancelar</button>
+              <button class="btn btn-dark" onclick="saveProv()">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VISTA: BODEGAS ─────────────────────────────────────────────────── -->
+      <div id="view-bodegas" class="view">
+        <h1 class="view-title">Bodegas</h1>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn btn-dark" onclick="openBodegaModal()">+ Agregar bodega</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Nombre</th><th>Dirección</th><th>Encargado</th><th>Capacidad</th><th>Notas</th><th>Acciones</th></tr></thead>
+          <tbody id="bodega-tbody"></tbody>
+        </table>
+        <div class="modal-overlay" id="bodega-modal" onclick="if(event.target===this)closeBodegaModal()" style="display:none">
+          <div class="modal">
+            <h2 class="modal-title" id="bodega-modal-title">Nueva Bodega</h2>
+            <input type="hidden" id="bodega-id" />
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="bodega-name" /></div>
+              <div class="form-group"><label class="form-label">Encargado</label><input class="form-input" id="bodega-encargado" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="bodega-direccion" /></div>
+              <div class="form-group"><label class="form-label">Capacidad</label><input class="form-input" id="bodega-capacidad" /></div>
+            </div>
+            <div class="form-group"><label class="form-label">Notas</label><input class="form-input" id="bodega-notes" /></div>
+            <div class="modal-footer">
+              <button class="btn btn-light" onclick="closeBodegaModal()">Cancelar</button>
+              <button class="btn btn-dark" onclick="saveBodegaForm()">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VISTA: COTIZACIONES ────────────────────────────────────────────── -->
+      <div id="view-cotizaciones" class="view">
+        <h1 class="view-title">Cotizaciones</h1>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn btn-dark" onclick="openCotizacionModal()">+ Nueva cotización</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>ID</th><th>Cliente</th><th>Total Q</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="cot-tbody"></tbody>
+        </table>
+        <div class="modal-overlay" id="cot-modal" onclick="if(event.target===this)closeCotModal()" style="display:none">
+          <div class="modal" style="max-width:680px">
+            <h2 class="modal-title">Nueva Cotización</h2>
+            <input type="hidden" id="cot-id" />
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Cliente</label><input class="form-input" id="cot-client" placeholder="Nombre del cliente" /></div>
+              <div class="form-group"><label class="form-label">Estado</label>
+                <select class="form-input" id="cot-status">
+                  <option value="borrador">Borrador</option>
+                  <option value="enviada">Enviada</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="rechazada">Rechazada</option>
+                </select>
+              </div>
+            </div>
+            <div class="config-title" style="margin:16px 0 8px">Productos</div>
+            <div id="cot-items-list"></div>
+            <button class="btn btn-light" style="margin-top:8px" onclick="addCotItem()">+ Agregar producto</button>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:12px;font-size:13px;">
+              <span>Total:</span><strong id="cot-total-display">Q0</strong>
+              <span style="color:var(--warm-mid);font-size:11px">(antes de descuento)</span>
+            </div>
+            <div class="form-row" style="margin-top:12px;align-items:flex-end">
+              <div class="form-group"><label class="form-label">Descuento %</label><input type="number" class="form-input" id="cot-disc-pct" min="0" max="100" value="0" oninput="recalcCot()" /></div>
+              <div style="padding-bottom:4px;font-size:14px;">Total con descuento: <strong id="cot-final-display">Q0</strong></div>
+            </div>
+            <div class="form-group"><label class="form-label">Notas</label><input class="form-input" id="cot-notes" /></div>
+            <div class="modal-footer">
+              <button class="btn btn-light" onclick="closeCotModal()">Cancelar</button>
+              <button class="btn btn-light" onclick="printCot()">Imprimir</button>
+              <button class="btn btn-dark" onclick="saveCot()">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <!-- ── MODAL USUARIO ──────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+    <div class="modal">
+      <h2 class="modal-title" id="modal-title">Nuevo usuario</h2>
+      <div class="modal-error" id="modal-error"></div>
+      <input type="hidden" id="modal-user-id" />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre completo</label>
+          <input type="text" class="form-input" id="m-name" placeholder="Juan López" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input type="email" class="form-input" id="m-email" placeholder="juan@email.com" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" class="form-input" id="m-password" placeholder="Mínimo 6 caracteres" />
+          <span class="form-hint-text" id="m-pwd-hint">Dejar en blanco para no cambiar (al editar).</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input type="text" class="form-input" id="m-phone" placeholder="5555-1234" />
+        </div>
+      </div>
+      <div class="form-row" id="role-row">
+        <div class="form-group">
+          <label class="form-label">Rol</label>
+          <select class="form-select" id="m-role" onchange="onRoleChange()">
+            <option value="vendedor">Vendedor</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group" id="code-group">
+          <label class="form-label">Código de referido</label>
+          <input type="text" class="form-input" id="m-code" placeholder="LAU-XXXX (auto)" />
+          <span class="form-hint-text">Se genera automáticamente al guardar.</span>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Notas internas</label>
+          <input type="text" class="form-input" id="m-notes" placeholder="Opcional" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-dark" onclick="saveUser()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL PRODUCTO ──────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-product-overlay" onclick="closeProductModalOutside(event)">
+    <div class="modal">
+      <h2 class="modal-title" id="modal-product-title">Nuevo producto</h2>
+      <div class="modal-error" id="modal-product-error"></div>
+      <input type="hidden" id="mp-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre del producto</label>
+          <input type="text" class="form-input" id="mp-name" placeholder="Ej: Vestido Floral" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <select class="form-select" id="mp-category">
+            <option value="el">Para Él</option>
+            <option value="ella">Para Ella</option>
+            <option value="ninos">Para Niños</option>
+            <option value="accesorios">Accesorios</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Precio público (Q)</label>
+          <input type="number" class="form-input" id="mp-price-gtq" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio público (USD)</label>
+          <input type="number" class="form-input" id="mp-price-usd" placeholder="0" min="0" />
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">URL de imagen</label>
+          <input type="text" class="form-input" id="mp-image" placeholder="images/mi-producto.jpg" />
+          <span class="form-hint-text">Ruta relativa al archivo de imagen del producto.</span>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Descripción (opcional)</label>
+          <input type="text" class="form-input" id="mp-desc" placeholder="Breve descripción del producto" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeProductModal()">Cancelar</button>
+        <button class="btn btn-dark" onclick="saveProduct()">Guardar producto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL CATEGORÍA ─────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-category-overlay" onclick="closeCategoryModalOutside(event)">
+    <div class="modal">
+      <h2 class="modal-title" id="modal-category-title">Nueva categoría</h2>
+      <div class="modal-error" id="modal-category-error"></div>
+      <input type="hidden" id="mc-id" />
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Nombre de la categoría</label>
+          <input type="text" class="form-input" id="mc-name" placeholder="Ej: Para Jóvenes" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Precio inicial (Q)</label>
+          <input type="number" class="form-input" id="mc-price-gtq" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio inicial (USD)</label>
+          <input type="number" class="form-input" id="mc-price-usd" placeholder="0" min="0" />
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">URL de imagen (banner de categoría)</label>
+          <input type="text" class="form-input" id="mc-image" placeholder="images/mi-categoria.jpg" />
+          <span class="form-hint-text">Imagen que aparece en el selector de categorías de la tienda.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeCategoryModal()">Cancelar</button>
+        <button class="btn btn-dark" onclick="saveCategory()">Guardar categoría</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="data/products.js"></script>
+  <script>
+    let SESSION = null;
+
+    // ─── Loader ────────────────────────────────────────────────────────────────
+    (function () {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.getElementById('page-loader').style.display = 'none';
+        return;
+      }
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+          var l = document.getElementById('page-loader');
+          l.classList.add('fade-out');
+          setTimeout(function () { l.style.display = 'none'; document.body.style.overflow = ''; }, 640);
+        }, 500);
+      });
+    })();
+
+    // ─── Cursor ────────────────────────────────────────────────────────────────
+    (function () {
+      var dot = document.getElementById('cursor-dot');
+      var ring = document.getElementById('cursor-ring');
+      var mx = 0, my = 0, rx = 0, ry = 0;
+      document.addEventListener('mousemove', function (e) {
+        mx = e.clientX; my = e.clientY;
+        dot.style.transform = 'translate(calc(' + mx + 'px - 50%), calc(' + my + 'px - 50%))';
+      }, { passive: true });
+      (function animateRing() {
+        rx += (mx - rx) * 0.11; ry += (my - ry) * 0.11;
+        ring.style.transform = 'translate(calc(' + rx + 'px - 50%), calc(' + ry + 'px - 50%))';
+        requestAnimationFrame(animateRing);
+      })();
+      document.addEventListener('mouseover', function (e) {
+        if (e.target.closest('a,button,input,select,textarea')) ring.classList.add('cursor-hover');
+        else ring.classList.remove('cursor-hover');
+      });
+    })();
+
+    // ─── Arranque ──────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      SESSION = requireAuth(['superuser', 'admin']);
+      if (!SESSION) return;
+
+      document.getElementById('sb-user-name').textContent  = SESSION.name;
+      document.getElementById('sb-user-role').textContent  = roleLabel(SESSION.role);
+      document.getElementById('header-role').textContent   = roleLabel(SESSION.role);
+      document.getElementById('dash-name').textContent     = SESSION.name.split(' ')[0];
+
+      if (SESSION.role === 'superuser') {
+        document.getElementById('btn-config').style.display = '';
+      }
+      if (SESSION.role === 'admin') {
+        document.getElementById('users-view-title').innerHTML = 'Gestión de <em>Vendedores</em>';
+        const select = document.getElementById('m-role');
+        Array.from(select.options).forEach(o => { if (o.value === 'admin') o.remove(); });
+      }
+
+      // Punto de notificación si hay solicitudes pendientes
+      const pendApps = getVendorApplications().filter(a => a.status === 'pendiente').length;
+      if (pendApps > 0) document.getElementById('sb-notify-dot').style.display = '';
+
+      renderDashboard();
+    });
+
+    function handleLogout() {
+      logout();
+      window.location.href = 'login.html';
+    }
+
+    // ─── Navegación ────────────────────────────────────────────────────────────
+    const VIEW_TITLES = {
+      dashboard:    'Dashboard',
+      productos:    'Catálogo y Precios',
+      categorias:   'Categorías',
+      vendedores:   'Usuarios',
+      pedidos:      'Pedidos',
+      comisiones:   'Comisiones',
+      estadisticas: 'Estadísticas',
+      proveedores:  'Proveedores',
+      bodegas:      'Bodegas',
+      cotizaciones: 'Cotizaciones',
+      config:       'Configuración',
+      solicitudes:  'Solicitudes de Vendedoras',
+    };
+
+    function showView(name) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+
+      const viewEl = document.getElementById('view-' + name);
+      if (!viewEl) { console.warn('No view element for:', name); return; }
+      viewEl.classList.add('active');
+      document.querySelector(`[data-view="${name}"]`)?.classList.add('active');
+      document.getElementById('header-title').textContent = VIEW_TITLES[name] || name;
+
+      if (name === 'dashboard')    renderDashboard();
+      if (name === 'productos')    { renderCategories(); renderProducts(); }
+      if (name === 'categorias')   renderCategoriesView();
+      if (name === 'vendedores')   renderUsers();
+      if (name === 'pedidos')      renderOrders();
+      if (name === 'comisiones')   renderCommissions();
+      if (name === 'estadisticas') renderEstadisticas();
+      if (name === 'proveedores')  renderProveedores();
+      if (name === 'bodegas')      renderBodegas();
+      if (name === 'cotizaciones') renderCotizaciones();
+      if (name === 'config')       loadConfig();
+      if (name === 'solicitudes')  renderSolicitudes();
+    }
+
+    // ─── Dashboard ─────────────────────────────────────────────────────────────
+    function renderDashboard() {
+      const orders      = getOrders();
+      const commissions = getCommissions();
+      const users       = getUsers();
+      const apps        = getVendorApplications();
+      const sellers     = users.filter(u => u.role === 'vendedor' && u.active);
+      const totalRev    = orders.filter(o => o.status !== 'cancelado').reduce((s, o) => s + (o.total_gtq || 0), 0);
+      const pendCom     = commissions.filter(c => c.status === 'pendiente').reduce((s, c) => s + c.commissionAmount, 0);
+      const pendApps    = apps.filter(a => a.status === 'pendiente').length;
+
+      document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Total pedidos</div>
+          <div class="stat-value">${orders.length}</div>
+          <div class="stat-sub">${orders.filter(o => o.status === 'pendiente').length} pendientes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Ingresos totales</div>
+          <div class="stat-value">${fmtQ(totalRev)}</div>
+          <div class="stat-sub">Pedidos confirmados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Vendedores activos</div>
+          <div class="stat-value">${sellers.length}</div>
+          <div class="stat-sub">${users.filter(u => u.role === 'vendedor').length} en total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Comisiones pendientes</div>
+          <div class="stat-value">${fmtQ(pendCom)}</div>
+          <div class="stat-sub">${commissions.filter(c => c.status === 'pendiente').length} por liquidar</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="showView('solicitudes')">
+          <div class="stat-label">Solicitudes nuevas</div>
+          <div class="stat-value" style="${pendApps > 0 ? 'color:#9A6F00' : ''}">${pendApps}</div>
+          <div class="stat-sub">${apps.length} en total · Ver solicitudes →</div>
+        </div>`;
+
+      const recent = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
+      const tbody  = document.getElementById('recent-orders-body');
+      if (!recent.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><p>Sin pedidos aún</p></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = recent.map(o => `
+        <tr>
+          <td class="td-muted" style="font-size:12px">${o.id.slice(-8)}</td>
+          <td class="td-muted">${fmtDate(o.createdAt)}</td>
+          <td>${o.userName || '—'}</td>
+          <td>${fmtQ(o.total_gtq)}</td>
+          <td>${o.referral_code ? `<span class="code-chip">${o.referral_code}</span>` : '<span class="td-muted">—</span>'}</td>
+          <td><span class="badge" style="background:${statusColor(o.status)}22;color:${statusColor(o.status)}">${statusLabel(o.status)}</span></td>
+        </tr>`).join('');
+    }
+
+    // ─── Productos / Precios ───────────────────────────────────────────────────
+    function getAllProducts() {
+      const all = [];
+      if (window.LAUREAN_DATA) {
+        // Catálogo principal (nueva estructura jerárquica)
+        const subcatName = id => {
+          const s = (LAUREAN_DATA.subcategories || []).find(s => s.id === id);
+          return s ? s.name : id;
+        };
+        (LAUREAN_DATA.products || []).forEach(p => all.push({
+          id: p.id, name: p.name,
+          category: subcatName(p.subcat) || p.parent || '—',
+          base_gtq: p.price_gtq, base_usd: p.price_usd, custom: false,
+        }));
+        // Sweaters legacy (array vacío en v2, por compatibilidad)
+        (LAUREAN_DATA.sweaters || []).forEach(p => all.push({
+          id: p.id, name: p.name,
+          category: { el:'Para Él', ella:'Para Ella', ninos:'Para Niños' }[p.category] || p.category,
+          base_gtq: p.price_gtq, base_usd: p.price_usd, custom: false,
+        }));
+        (LAUREAN_DATA.accessories || []).forEach(p => all.push({
+          id: p.id, name: p.name, category: 'Accesorios',
+          base_gtq: p.price_gtq, base_usd: p.price_usd, custom: false,
+        }));
+      }
+      getCustomProducts().forEach(p => all.push({
+        id: p.id, name: p.name,
+        category: p.category || '—',
+        base_gtq: p.price_gtq, base_usd: p.price_usd, custom: true,
+      }));
+      return all;
+    }
+
+    function renderCategories() {
+      const baseCats = window.LAUREAN_DATA ? (LAUREAN_DATA.categories || []) : [];
+      const customCats = getCustomCategories();
+      const tbody = document.getElementById('categories-tbody');
+
+      const baseRows = baseCats.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td class="td-muted" style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.image}</td>
+          <td>Q${c.starting_price_gtq.toLocaleString()}</td>
+          <td>$${c.starting_price_usd}</td>
+          <td><span class="td-muted" style="font-size:11px">Base (products.js)</span></td>
+        </tr>`).join('');
+
+      const customRows = customCats.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td class="td-muted" style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.image || '—'}</td>
+          <td>Q${(c.starting_price_gtq || 0).toLocaleString()}</td>
+          <td>$${c.starting_price_usd || 0}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-icon" onclick="openCategoryModal('${c.id}')" title="Editar">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn btn-icon btn-danger" onclick="deleteCategoryConfirm('${c.id}')" title="Eliminar">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      tbody.innerHTML = baseRows + customRows || `<tr><td colspan="5"><div class="empty-state"><p>Sin categorías personalizadas</p></div></td></tr>`;
+    }
+
+    function renderProducts() {
+      const products  = getAllProducts();
+      const overrides = getPriceOverrides();
+      const settings  = getSettings();
+      const disc      = settings.seller_discount;
+      const bdDisc    = settings.bodega_discount;
+
+      const tbody = document.getElementById('products-tbody');
+      if (!products.length) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><p>Sin productos</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = products.map(p => {
+        const ov     = overrides[p.id] || {};
+        const pubGtq = ov.public_gtq ?? p.base_gtq;
+        const pubUsd = ov.public_usd ?? p.base_usd;
+        const selGtq = ov.seller_gtq ?? Math.round(pubGtq * (1 - disc));
+        const selUsd = ov.seller_usd ?? Math.round(pubUsd * (1 - disc));
+        const bdgGtq = ov.bodega_gtq  ?? Math.round(pubGtq * (1 - bdDisc));
+        const bdgUsd = ov.bodega_usd  ?? Math.round(pubUsd * (1 - bdDisc));
+        return `
+          <tr data-id="${p.id}">
+            <td><strong>${p.name}</strong>${p.custom ? ' <span class="badge badge-vendedor" style="font-size:9px;padding:2px 7px">Custom</span>' : ''}</td>
+            <td class="td-muted">${p.category}</td>
+            <td><input class="price-input" type="number" data-field="public_gtq" value="${pubGtq}" onchange="updateSuggested(this,'${p.id}')" /></td>
+            <td><input class="price-input" type="number" data-field="public_usd" value="${pubUsd}" onchange="updateSuggested(this,'${p.id}')" /></td>
+            <td>
+              <input class="price-input" type="number" data-field="seller_gtq" value="${selGtq}" />
+              <div class="suggested" id="sug-sel-gtq-${p.id}">Sug: Q${Math.round(pubGtq*(1-disc))}</div>
+            </td>
+            <td>
+              <input class="price-input" type="number" data-field="seller_usd" value="${selUsd}" />
+              <div class="suggested" id="sug-sel-usd-${p.id}">Sug: $${Math.round(pubUsd*(1-disc))}</div>
+            </td>
+            <td>
+              <input class="price-input" type="number" data-field="bodega_gtq" value="${bdgGtq}" />
+              <div class="suggested" id="sug-bdg-gtq-${p.id}">Sug: Q${Math.round(pubGtq*(1-bdDisc))}</div>
+            </td>
+            <td>
+              <input class="price-input" type="number" data-field="bodega_usd" value="${bdgUsd}" />
+              <div class="suggested" id="sug-bdg-usd-${p.id}">Sug: $${Math.round(pubUsd*(1-bdDisc))}</div>
+            </td>
+            <td>${p.custom ? `
+              <button class="btn btn-icon btn-danger" onclick="deleteProductConfirm('${p.id}')" title="Eliminar">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+              </button>` : ''}
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function updateSuggested(input, pid) {
+      const row    = document.querySelector(`tr[data-id="${pid}"]`);
+      const s      = getSettings();
+      const pubGtq = parseFloat(row.querySelector('[data-field="public_gtq"]').value) || 0;
+      const pubUsd = parseFloat(row.querySelector('[data-field="public_usd"]').value) || 0;
+      const selG = document.getElementById('sug-sel-gtq-' + pid);
+      const selU = document.getElementById('sug-sel-usd-' + pid);
+      const bdgG = document.getElementById('sug-bdg-gtq-' + pid);
+      const bdgU = document.getElementById('sug-bdg-usd-' + pid);
+      if (selG) selG.textContent = `Sug: Q${Math.round(pubGtq * (1 - s.seller_discount))}`;
+      if (selU) selU.textContent = `Sug: $${Math.round(pubUsd * (1 - s.seller_discount))}`;
+      if (bdgG) bdgG.textContent = `Sug: Q${Math.round(pubGtq * (1 - s.bodega_discount))}`;
+      if (bdgU) bdgU.textContent = `Sug: $${Math.round(pubUsd * (1 - s.bodega_discount))}`;
+    }
+
+    function saveAllPrices() {
+      document.querySelectorAll('#products-tbody tr[data-id]').forEach(row => {
+        const id  = row.dataset.id;
+        const val = {};
+        row.querySelectorAll('.price-input[data-field]').forEach(inp => {
+          val[inp.dataset.field] = parseFloat(inp.value) || 0;
+        });
+        savePriceOverride(id, val);
+      });
+      alert('Precios guardados correctamente.');
+    }
+
+    // ─── Usuarios ──────────────────────────────────────────────────────────────
+    function renderUsers() {
+      const all   = getUsers();
+      const canSee = SESSION.role === 'superuser'
+        ? all.filter(u => u.id !== SESSION.userId)
+        : all.filter(u => u.role === 'vendedor');
+
+      const tbody = document.getElementById('users-tbody');
+      if (!canSee.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Sin usuarios</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = canSee.map(u => `
+        <tr>
+          <td><strong>${u.name}</strong></td>
+          <td class="td-muted">${u.email}</td>
+          <td><span class="badge badge-${u.role}">${roleLabel(u.role)}</span></td>
+          <td>${u.code
+            ? `<span class="code-chip">${u.code}<button class="copy-btn" onclick="copyText('${u.code}')" title="Copiar">
+                <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+               </button></span>`
+            : '<span class="td-muted">—</span>'}
+          </td>
+          <td><span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
+          <td class="td-muted">${fmtDate(u.createdAt)}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-icon" onclick="openUserModal('${u.id}')" title="Editar">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn btn-icon" onclick="toggleActive('${u.id}')" title="${u.active ? 'Desactivar' : 'Activar'}">
+                <svg viewBox="0 0 24 24">${u.active
+                  ? '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'
+                  : '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'}
+                </svg>
+              </button>
+              ${SESSION.role === 'superuser' ? `
+              <button class="btn btn-icon btn-danger" onclick="deleteUserConfirm('${u.id}')" title="Eliminar">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              </button>` : ''}
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    function toggleActive(id) {
+      toggleUserActive(id);
+      renderUsers();
+    }
+
+    function deleteUserConfirm(id) {
+      if (!confirm('¿Eliminar este usuario permanentemente?')) return;
+      deleteUser(id);
+      renderUsers();
+    }
+
+    // ─── Modal usuario ─────────────────────────────────────────────────────────
+    function openUserModal(id) {
+      const modal  = document.getElementById('modal-overlay');
+      const title  = document.getElementById('modal-title');
+      const errEl  = document.getElementById('modal-error');
+      errEl.classList.remove('show');
+
+      if (id) {
+        const u = getUserById(id);
+        if (!u) return;
+        title.textContent = 'Editar usuario';
+        document.getElementById('modal-user-id').value = u.id;
+        document.getElementById('m-name').value         = u.name;
+        document.getElementById('m-email').value        = u.email;
+        document.getElementById('m-password').value     = '';
+        document.getElementById('m-phone').value        = u.phone || '';
+        document.getElementById('m-role').value         = u.role;
+        document.getElementById('m-code').value         = u.code || '';
+        document.getElementById('m-notes').value        = u.notes || '';
+        document.getElementById('m-pwd-hint').textContent = 'Dejar en blanco para no cambiar.';
+        onRoleChange();
+      } else {
+        title.textContent = 'Nuevo usuario';
+        document.getElementById('modal-user-id').value = '';
+        ['m-name','m-email','m-password','m-phone','m-code','m-notes'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('m-role').value = 'vendedor';
+        document.getElementById('m-pwd-hint').textContent = 'Mínimo 6 caracteres.';
+        onRoleChange();
+      }
+      modal.classList.add('open');
+    }
+
+    function onRoleChange() {
+      const role  = document.getElementById('m-role').value;
+      document.getElementById('code-group').style.display = role === 'vendedor' ? '' : 'none';
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+    function closeModalOutside(e) {
+      if (e.target === document.getElementById('modal-overlay')) closeModal();
+    }
+
+    function saveUser() {
+      const errEl = document.getElementById('modal-error');
+      errEl.classList.remove('show');
+
+      const id       = document.getElementById('modal-user-id').value;
+      const name     = document.getElementById('m-name').value.trim();
+      const email    = document.getElementById('m-email').value.trim();
+      const password = document.getElementById('m-password').value;
+      const phone    = document.getElementById('m-phone').value.trim();
+      const role     = document.getElementById('m-role').value;
+      const code     = document.getElementById('m-code').value.trim() || null;
+      const notes    = document.getElementById('m-notes').value.trim();
+
+      if (!name || !email) { showModalError('Nombre y correo son obligatorios.'); return; }
+      if (!id && password.length < 6) { showModalError('La contraseña debe tener al menos 6 caracteres.'); return; }
+
+      if (id) {
+        const fields = { name, email, phone, notes };
+        if (role === 'vendedor') fields.code = code || genSellerCode(name);
+        if (password) fields.password = password;
+        const res = updateUser(id, fields);
+        if (!res.ok) { showModalError(res.error); return; }
+      } else {
+        const res = createUser({ name, email, password, role, phone, notes });
+        if (!res.ok) { showModalError(res.error); return; }
+        if (role === 'vendedor' && code) updateUser(res.user.id, { code });
+      }
+
+      closeModal();
+      renderUsers();
+    }
+
+    function showModalError(msg) {
+      const el = document.getElementById('modal-error');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+
+    // ─── Pedidos ───────────────────────────────────────────────────────────────
+    function renderOrders() {
+      const orders = [...getOrders()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const tbody  = document.getElementById('orders-tbody');
+      if (!orders.length) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><p>Sin pedidos aún</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td class="td-muted" style="font-size:11px">${o.id.slice(-10)}</td>
+          <td class="td-muted">${fmtDate(o.createdAt)}</td>
+          <td>
+            <strong>${o.userName || '—'}</strong>
+            <div style="font-size:11px;color:var(--warm-mid)">${o.userPhone || ''}</div>
+          </td>
+          <td class="td-muted">${(o.items || []).length} ítem(s)</td>
+          <td>${fmtQ(o.subtotal_gtq || 0)}</td>
+          <td style="color:#388E3C">${o.referral_discount_gtq ? '−' + fmtQ(o.referral_discount_gtq) : '—'}</td>
+          <td><strong>${fmtQ(o.total_gtq || 0)}</strong></td>
+          <td>${o.referral_code ? `<span class="code-chip">${o.referral_code}</span>` : '—'}</td>
+          <td>
+            <select class="status-select" onchange="changeOrderStatus('${o.id}', this.value)">
+              ${['pendiente','procesando','enviado','completado','cancelado'].map(s =>
+                `<option value="${s}" ${o.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`
+              ).join('')}
+            </select>
+          </td>
+        </tr>`).join('');
+    }
+
+    function changeOrderStatus(id, status) {
+      updateOrderStatus(id, status);
+      renderDashboard();
+    }
+
+    // ─── Comisiones ────────────────────────────────────────────────────────────
+    function renderCommissions() {
+      const list  = [...getCommissions()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const tbody = document.getElementById('commissions-tbody');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><p>Sin comisiones aún</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(c => `
+        <tr>
+          <td class="td-muted">${fmtDate(c.createdAt)}</td>
+          <td><strong>${c.vendorName}</strong></td>
+          <td><span class="code-chip">${c.vendorCode}</span></td>
+          <td class="td-muted" style="font-size:11px">${c.orderId.slice(-10)}</td>
+          <td>${fmtQ(c.orderTotal)}</td>
+          <td style="color:#388E3C"><strong>${fmtQ(c.commissionAmount)}</strong> <span class="td-muted">(${(c.commissionRate * 100).toFixed(0)}%)</span></td>
+          <td>
+            <span class="badge" style="background:${c.status === 'pagado' ? 'rgba(76,175,80,0.12)' : 'rgba(155,142,127,0.15)'};color:${c.status === 'pagado' ? '#388E3C' : '#9B8E7F'}">
+              ${c.status === 'pagado' ? 'Pagado' : 'Pendiente'}
+            </span>
+          </td>
+          <td>
+            ${c.status === 'pendiente'
+              ? `<button class="btn btn-light" style="padding:6px 12px;font-size:10.5px" onclick="payCommission('${c.id}')">Marcar pagado</button>`
+              : ''}
+          </td>
+        </tr>`).join('');
+    }
+
+    function payCommission(id) {
+      markCommissionPaid(id);
+      renderCommissions();
+      renderDashboard();
+    }
+
+    // ─── Configuración ─────────────────────────────────────────────────────────
+    function loadConfig() {
+      const s = getSettings();
+      document.getElementById('cfg-seller-discount').value   = Math.round(s.seller_discount   * 100);
+      document.getElementById('cfg-bodega-discount').value   = Math.round(s.bodega_discount   * 100);
+      document.getElementById('cfg-referral-discount').value = Math.round(s.referral_discount * 100);
+      document.getElementById('cfg-commission-rate').value   = Math.round(s.commission_rate   * 100);
+      document.getElementById('cfg-discount-pin').value      = s.discount_pin || '';
+    }
+
+    function saveConfig() {
+      saveSettings({
+        seller_discount:   parseFloat(document.getElementById('cfg-seller-discount').value)   / 100,
+        bodega_discount:   parseFloat(document.getElementById('cfg-bodega-discount').value)   / 100,
+        referral_discount: parseFloat(document.getElementById('cfg-referral-discount').value) / 100,
+        commission_rate:   parseFloat(document.getElementById('cfg-commission-rate').value)   / 100,
+        discount_pin:      document.getElementById('cfg-discount-pin').value.trim() || '1234',
+      });
+      alert('Configuración guardada.');
+    }
+
+    function confirmReset(type) {
+      const labels = { orders: 'pedidos', commissions: 'comisiones', prices: 'precios' };
+      if (!confirm(`¿Confirmas borrar todos los ${labels[type]}? Esta acción no se puede deshacer.`)) return;
+      if (type === 'orders')      { saveOrders([]); saveCommissions([]); }
+      if (type === 'commissions') saveCommissions([]);
+      if (type === 'prices')      localStorage.removeItem('laurean_prices');
+      alert('Hecho.');
+      renderDashboard();
+    }
+
+    // ─── Solicitudes ───────────────────────────────────────────────────────────
+    function renderSolicitudes() {
+      const apps  = [...getVendorApplications()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const tbody = document.getElementById('solicitudes-tbody');
+      if (!apps.length) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p>Sin solicitudes aún</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = apps.map(a => `
+        <tr>
+          <td class="td-muted" style="font-size:12px">${fmtDate(a.createdAt)}</td>
+          <td><strong>${a.name}</strong></td>
+          <td class="td-muted">${a.email}</td>
+          <td class="td-muted">${a.phone || '—'}</td>
+          <td class="td-muted">${a.city || '—'}</td>
+          <td style="max-width:200px;font-size:12.5px;color:var(--warm-mid)">${a.message ? a.message.slice(0, 80) + (a.message.length > 80 ? '…' : '') : '—'}</td>
+          <td><span class="badge badge-${a.status}">${{pendiente:'Pendiente',aprobado:'Aprobado',rechazado:'Rechazado'}[a.status] || a.status}</span></td>
+          <td>
+            ${a.status === 'pendiente' ? `
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-dark" style="padding:6px 12px;font-size:10px" onclick="approveApplication('${a.id}')">Aprobar</button>
+              <button class="btn btn-danger" style="padding:6px 12px;font-size:10px" onclick="rejectApplication('${a.id}')">Rechazar</button>
+            </div>` : '<span class="td-muted" style="font-size:12px">—</span>'}
+          </td>
+        </tr>`).join('');
+    }
+
+    function approveApplication(id) {
+      const app = getVendorApplications().find(a => a.id === id);
+      if (!app) return;
+      const pwd = `Laurean${Math.floor(1000 + Math.random() * 9000)}`;
+      const result = createUser({ name: app.name, email: app.email, password: pwd, role: 'vendedor', phone: app.phone || '', notes: `Aprobada desde solicitud ${id}` });
+      if (!result.ok) { alert('Error: ' + result.error); return; }
+      updateVendorApplication(id, { status: 'aprobado', approvedAt: new Date().toISOString() });
+      document.getElementById('sb-notify-dot').style.display =
+        getVendorApplications().filter(a => a.status === 'pendiente').length > 0 ? '' : 'none';
+      alert(`Vendedora aprobada.\n\nCorreo: ${app.email}\nContraseña temporal: ${pwd}\n\nComparte estas credenciales con la vendedora.`);
+      renderSolicitudes();
+      renderDashboard();
+    }
+
+    function rejectApplication(id) {
+      if (!confirm('¿Rechazar esta solicitud?')) return;
+      updateVendorApplication(id, { status: 'rechazado' });
+      document.getElementById('sb-notify-dot').style.display =
+        getVendorApplications().filter(a => a.status === 'pendiente').length > 0 ? '' : 'none';
+      renderSolicitudes();
+      renderDashboard();
+    }
+
+    // ─── Modal producto ────────────────────────────────────────────────────────
+    function openProductModal(id) {
+      const overlay = document.getElementById('modal-product-overlay');
+      document.getElementById('modal-product-error').classList.remove('show');
+      if (id) {
+        const p = getCustomProducts().find(p => p.id === id);
+        if (!p) return;
+        document.getElementById('modal-product-title').textContent = 'Editar producto';
+        document.getElementById('mp-id').value         = p.id;
+        document.getElementById('mp-name').value       = p.name;
+        document.getElementById('mp-category').value   = p.category;
+        document.getElementById('mp-price-gtq').value  = p.price_gtq;
+        document.getElementById('mp-price-usd').value  = p.price_usd;
+        document.getElementById('mp-image').value      = p.image || '';
+        document.getElementById('mp-desc').value       = p.description || '';
+      } else {
+        document.getElementById('modal-product-title').textContent = 'Nuevo producto';
+        document.getElementById('mp-id').value = '';
+        ['mp-name','mp-category','mp-price-gtq','mp-price-usd','mp-image','mp-desc'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '';
+        });
+      }
+      overlay.classList.add('open');
+    }
+
+    function closeProductModal() {
+      document.getElementById('modal-product-overlay').classList.remove('open');
+    }
+
+    function closeProductModalOutside(e) {
+      if (e.target === document.getElementById('modal-product-overlay')) closeProductModal();
+    }
+
+    function saveProduct() {
+      const errEl = document.getElementById('modal-product-error');
+      errEl.classList.remove('show');
+      const name     = document.getElementById('mp-name').value.trim();
+      const category = document.getElementById('mp-category').value;
+      const gtq      = parseFloat(document.getElementById('mp-price-gtq').value) || 0;
+      const usd      = parseFloat(document.getElementById('mp-price-usd').value) || 0;
+      const image    = document.getElementById('mp-image').value.trim();
+      const desc     = document.getElementById('mp-desc').value.trim();
+      const id       = document.getElementById('mp-id').value;
+      if (!name) { errEl.textContent = 'El nombre es obligatorio.'; errEl.classList.add('show'); return; }
+      saveCustomProduct({ id: id || undefined, name, category, price_gtq: gtq, price_usd: usd, image, description: desc });
+      closeProductModal();
+      renderProducts();
+    }
+
+    function deleteProductConfirm(id) {
+      if (!confirm('¿Eliminar este producto personalizado?')) return;
+      deleteCustomProduct(id);
+      renderProducts();
+    }
+
+    // ─── Modal categoría ──────────────────────────────────────────────────────
+    function openCategoryModal(id) {
+      const overlay = document.getElementById('modal-category-overlay');
+      document.getElementById('modal-category-error').classList.remove('show');
+      if (id) {
+        const c = getCustomCategories().find(c => c.id === id);
+        if (!c) return;
+        document.getElementById('modal-category-title').textContent = 'Editar categoría';
+        document.getElementById('mc-id').value            = c.id;
+        document.getElementById('mc-name').value          = c.name;
+        document.getElementById('mc-price-gtq').value     = c.starting_price_gtq || 0;
+        document.getElementById('mc-price-usd').value     = c.starting_price_usd || 0;
+        document.getElementById('mc-image').value         = c.image || '';
+      } else {
+        document.getElementById('modal-category-title').textContent = 'Nueva categoría';
+        document.getElementById('mc-id').value = '';
+        ['mc-name','mc-price-gtq','mc-price-usd','mc-image'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+      }
+      overlay.classList.add('open');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('modal-category-overlay').classList.remove('open');
+    }
+
+    function closeCategoryModalOutside(e) {
+      if (e.target === document.getElementById('modal-category-overlay')) closeCategoryModal();
+    }
+
+    function saveCategory() {
+      const errEl = document.getElementById('modal-category-error');
+      errEl.classList.remove('show');
+      const name  = document.getElementById('mc-name').value.trim();
+      const gtq   = parseFloat(document.getElementById('mc-price-gtq').value) || 0;
+      const usd   = parseFloat(document.getElementById('mc-price-usd').value) || 0;
+      const image = document.getElementById('mc-image').value.trim();
+      const id    = document.getElementById('mc-id').value;
+      if (!name) { errEl.textContent = 'El nombre es obligatorio.'; errEl.classList.add('show'); return; }
+      saveCustomCategory({ id: id || undefined, name, starting_price_gtq: gtq, starting_price_usd: usd, image });
+      closeCategoryModal();
+      renderCategories();
+    }
+
+    function deleteCategoryConfirm(id) {
+      if (!confirm('¿Eliminar esta categoría personalizada?')) return;
+      deleteCustomCategory(id);
+      renderCategories();
+    }
+
+    // ─── Utils ─────────────────────────────────────────────────────────────────
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`Código copiado: ${text}`);
+      });
+    }
+
+    // ─── Estadísticas ──────────────────────────────────────────────────────────
+    function renderEstadisticas() {
+      const fromInput = document.getElementById('stat-from');
+      const toInput   = document.getElementById('stat-to');
+      // Defaults: last 30 days
+      if (!fromInput.value) {
+        const d = new Date(); d.setDate(d.getDate() - 30);
+        fromInput.value = d.toISOString().slice(0, 10);
+      }
+      if (!toInput.value) toInput.value = new Date().toISOString().slice(0, 10);
+
+      const from = new Date(fromInput.value + 'T00:00:00');
+      const to   = new Date(toInput.value   + 'T23:59:59');
+
+      const allOrders = getOrders().filter(o => {
+        const d = new Date(o.createdAt);
+        return d >= from && d <= to;
+      });
+      const completed  = allOrders.filter(o => o.status !== 'cancelado');
+      const totalRev   = completed.reduce((s, o) => s + (o.total_gtq || 0), 0);
+      const avgTicket  = completed.length ? Math.round(totalRev / completed.length) : 0;
+      const cancelled  = allOrders.filter(o => o.status === 'cancelado').length;
+
+      // KPIs
+      document.getElementById('stats-kpis').innerHTML = [
+        { label: 'Ventas totales', value: fmtQ(totalRev), sub: `${completed.length} pedidos` },
+        { label: 'Ticket promedio', value: fmtQ(avgTicket), sub: 'Por pedido completado' },
+        { label: 'Total pedidos', value: allOrders.length, sub: `${cancelled} cancelados` },
+        { label: 'Comisiones', value: fmtQ(getCommissions().filter(c => {
+            const d = new Date(c.createdAt); return d >= from && d <= to;
+          }).reduce((s, c) => s + c.commissionAmount, 0)), sub: 'En el período' },
+      ].map(k => `
+        <div class="stat-card">
+          <div class="stat-label">${k.label}</div>
+          <div class="stat-value">${k.value}</div>
+          <div class="stat-sub">${k.sub}</div>
+        </div>`).join('');
+
+      // Top 5 productos
+      const prodMap = {};
+      completed.forEach(o => (o.items || []).forEach(it => {
+        if (!prodMap[it.name]) prodMap[it.name] = { units: 0, total: 0 };
+        prodMap[it.name].units += it.qty || 1;
+        prodMap[it.name].total += (it.price_gtq || 0) * (it.qty || 1);
+      }));
+      const topProds = Object.entries(prodMap).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+      document.getElementById('stats-top-products').innerHTML = topProds.length
+        ? topProds.map(([name, d]) => `<tr><td>${name}</td><td>${d.units}</td><td>${fmtQ(d.total)}</td></tr>`).join('')
+        : `<tr><td colspan="3" class="td-muted">Sin datos</td></tr>`;
+
+      // Top 3 vendedores
+      const comms = getCommissions().filter(c => { const d = new Date(c.createdAt); return d >= from && d <= to; });
+      const sellerMap = {};
+      comms.forEach(c => {
+        if (!sellerMap[c.vendorName]) sellerMap[c.vendorName] = 0;
+        sellerMap[c.vendorName] += c.commissionAmount;
+      });
+      const topSellers = Object.entries(sellerMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      document.getElementById('stats-top-sellers').innerHTML = topSellers.length
+        ? topSellers.map(([name, total]) => `<tr><td>${name}</td><td>${fmtQ(total)}</td></tr>`).join('')
+        : `<tr><td colspan="2" class="td-muted">Sin datos</td></tr>`;
+
+      // Barras por estado
+      const statusCounts = {};
+      allOrders.forEach(o => { statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
+      const maxCount = Math.max(...Object.values(statusCounts), 1);
+      document.getElementById('stats-status-bars').innerHTML = Object.entries(statusCounts).map(([s, n]) => `
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span>${statusLabel(s)}</span><span>${n}</span>
+          </div>
+          <div style="height:8px;background:var(--piedra);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${(n/maxCount*100).toFixed(0)}%;background:${statusColor(s)};border-radius:2px;transition:width .6s"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    function exportStatsCSV() {
+      const from = new Date(document.getElementById('stat-from').value + 'T00:00:00');
+      const to   = new Date(document.getElementById('stat-to').value   + 'T23:59:59');
+      const orders = getOrders().filter(o => { const d = new Date(o.createdAt); return d >= from && d <= to; });
+      const header = ['ID','Fecha','Cliente','Total Q','Descuento Q','Código Ref','Estado'];
+      const rows   = orders.map(o => [
+        o.id, fmtDate(o.createdAt), o.customerName || '—',
+        o.total_gtq, o.discount_gtq || 0, o.referral_code || '', o.status
+      ].map(v => `"${v}"`).join(','));
+      const csv  = [header.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a'); a.href = url; a.download = 'laurean-estadisticas.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ─── Vista de Categorías (view-categorias) ─────────────────────────────────
+    function renderCategoriesView() {
+      const data  = window.LAUREAN_DATA;
+      const cats  = [...(data?.parentCategories || data?.categories || []), ...getCustomCategories()];
+      const tbody = document.getElementById('cat-view-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = cats.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong>${c.id?.startsWith('cat_') ? ' <span class="badge badge-vendedor" style="font-size:9px;padding:2px 7px">Custom</span>' : ''}</td>
+          <td class="td-muted" style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.image || '—'}</td>
+          <td><input class="price-input" type="number" value="${c.starting_price_gtq || 0}" onchange="saveCatPrice('${c.id}',this,'gtq')" /></td>
+          <td><input class="price-input" type="number" value="${c.starting_price_usd || 0}" onchange="saveCatPrice('${c.id}',this,'usd')" /></td>
+          <td>${c.id?.startsWith('cat_') ? `<button class="btn btn-icon btn-danger" onclick="deleteCat('${c.id}')">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>` : ''}</td>
+        </tr>`).join('');
+    }
+
+    function saveCatPrice(id, inp, field) {
+      const cats = getCustomCategories();
+      const idx  = cats.findIndex(c => c.id === id);
+      if (idx === -1) return; // base categories not editable via localStorage
+      cats[idx][`starting_price_${field}`] = parseFloat(inp.value) || 0;
+      localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
+    }
+
+    function deleteCat(id) {
+      if (!confirm('¿Eliminar esta categoría?')) return;
+      deleteCustomCategory(id);
+      renderCategoriesView();
+    }
+
+    // ─── Proveedores ──────────────────────────────────────────────────────────
+    function renderProveedores() {
+      const list  = getProveedores();
+      const tbody = document.getElementById('prov-tbody');
+      tbody.innerHTML = list.length ? list.map(p => `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.contact || '—'}</td>
+          <td>${p.phone || '—'}</td>
+          <td>${p.email || '—'}</td>
+          <td>${p.city  || '—'}</td>
+          <td class="td-muted">${p.notes || '—'}</td>
+          <td><div style="display:flex;gap:6px">
+            <button class="btn btn-icon" onclick="openProvModal('${p.id}')">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-icon btn-danger" onclick="deleteProv('${p.id}')">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </div></td>
+        </tr>`).join('')
+        : `<tr><td colspan="7"><div class="empty-state"><p>Sin proveedores</p></div></td></tr>`;
+    }
+
+    function openProvModal(id) {
+      const modal = document.getElementById('prov-modal');
+      document.getElementById('prov-modal-title').textContent = id ? 'Editar Proveedor' : 'Nuevo Proveedor';
+      const p = id ? getProveedores().find(x => x.id === id) : {};
+      document.getElementById('prov-id').value      = p?.id    || '';
+      document.getElementById('prov-name').value    = p?.name  || '';
+      document.getElementById('prov-contact').value = p?.contact || '';
+      document.getElementById('prov-phone').value   = p?.phone  || '';
+      document.getElementById('prov-email').value   = p?.email  || '';
+      document.getElementById('prov-city').value    = p?.city   || '';
+      document.getElementById('prov-notes').value   = p?.notes  || '';
+      modal.style.display = 'flex';
+    }
+
+    function closeProv() { document.getElementById('prov-modal').style.display = 'none'; }
+
+    function saveProv() {
+      const data = {
+        id:      document.getElementById('prov-id').value || undefined,
+        name:    document.getElementById('prov-name').value.trim(),
+        contact: document.getElementById('prov-contact').value.trim(),
+        phone:   document.getElementById('prov-phone').value.trim(),
+        email:   document.getElementById('prov-email').value.trim(),
+        city:    document.getElementById('prov-city').value.trim(),
+        notes:   document.getElementById('prov-notes').value.trim(),
+      };
+      if (!data.name) { alert('El nombre es requerido.'); return; }
+      saveProveedor(data);
+      closeProv();
+      renderProveedores();
+    }
+
+    function deleteProv(id) {
+      if (!confirm('¿Eliminar este proveedor?')) return;
+      deleteProveedor(id);
+      renderProveedores();
+    }
+
+    // ─── Bodegas ──────────────────────────────────────────────────────────────
+    function renderBodegas() {
+      const list  = getBodegas();
+      const tbody = document.getElementById('bodega-tbody');
+      tbody.innerHTML = list.length ? list.map(b => `
+        <tr>
+          <td><strong>${b.name}</strong></td>
+          <td>${b.direccion  || '—'}</td>
+          <td>${b.encargado  || '—'}</td>
+          <td>${b.capacidad  || '—'}</td>
+          <td class="td-muted">${b.notes || '—'}</td>
+          <td><div style="display:flex;gap:6px">
+            <button class="btn btn-icon" onclick="openBodegaModal('${b.id}')">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-icon btn-danger" onclick="deleteBodegaItem('${b.id}')">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </div></td>
+        </tr>`).join('')
+        : `<tr><td colspan="6"><div class="empty-state"><p>Sin bodegas</p></div></td></tr>`;
+    }
+
+    function openBodegaModal(id) {
+      const modal = document.getElementById('bodega-modal');
+      document.getElementById('bodega-modal-title').textContent = id ? 'Editar Bodega' : 'Nueva Bodega';
+      const b = id ? getBodegas().find(x => x.id === id) : {};
+      document.getElementById('bodega-id').value         = b?.id         || '';
+      document.getElementById('bodega-name').value       = b?.name       || '';
+      document.getElementById('bodega-encargado').value  = b?.encargado  || '';
+      document.getElementById('bodega-direccion').value  = b?.direccion  || '';
+      document.getElementById('bodega-capacidad').value  = b?.capacidad  || '';
+      document.getElementById('bodega-notes').value      = b?.notes      || '';
+      modal.style.display = 'flex';
+    }
+
+    function closeBodegaModal() { document.getElementById('bodega-modal').style.display = 'none'; }
+
+    function saveBodegaForm() {
+      const data = {
+        id:        document.getElementById('bodega-id').value || undefined,
+        name:      document.getElementById('bodega-name').value.trim(),
+        encargado: document.getElementById('bodega-encargado').value.trim(),
+        direccion: document.getElementById('bodega-direccion').value.trim(),
+        capacidad: document.getElementById('bodega-capacidad').value.trim(),
+        notes:     document.getElementById('bodega-notes').value.trim(),
+      };
+      if (!data.name) { alert('El nombre es requerido.'); return; }
+      saveBodega(data);
+      closeBodegaModal();
+      renderBodegas();
+    }
+
+    function deleteBodegaItem(id) {
+      if (!confirm('¿Eliminar esta bodega?')) return;
+      deleteBodega(id);
+      renderBodegas();
+    }
+
+    // ─── Cotizaciones ─────────────────────────────────────────────────────────
+    let _cotItems = []; // items de la cotización activa en el modal
+
+    function renderCotizaciones() {
+      const list  = getCotizaciones();
+      const tbody = document.getElementById('cot-tbody');
+      const statusColors = { borrador:'#9B8E7F', enviada:'#4A90D9', aprobada:'#4CAF50', rechazada:'#E53935' };
+      tbody.innerHTML = list.length ? [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => `
+        <tr>
+          <td class="td-muted" style="font-size:12px">${c.id.slice(-8)}</td>
+          <td><strong>${c.client || '—'}</strong></td>
+          <td>${fmtQ(c.total_gtq || 0)}</td>
+          <td><span class="badge" style="background:${statusColors[c.status] || '#9B8E7F'}22;color:${statusColors[c.status] || '#9B8E7F'}">${c.status}</span></td>
+          <td class="td-muted">${fmtDate(c.createdAt)}</td>
+          <td><div style="display:flex;gap:6px">
+            <button class="btn btn-icon" onclick="openCotizacionModal('${c.id}')">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-icon btn-danger" onclick="deleteCot('${c.id}')">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+          </div></td>
+        </tr>`).join('')
+        : `<tr><td colspan="6"><div class="empty-state"><p>Sin cotizaciones</p></div></td></tr>`;
+    }
+
+    function openCotizacionModal(id) {
+      const cot = id ? getCotizaciones().find(c => c.id === id) : null;
+      document.getElementById('cot-id').value     = cot?.id      || '';
+      document.getElementById('cot-client').value = cot?.client  || '';
+      document.getElementById('cot-notes').value  = cot?.notes   || '';
+      document.getElementById('cot-disc-pct').value = cot?.disc_pct || 0;
+      document.getElementById('cot-status').value = cot?.status  || 'borrador';
+      _cotItems = cot?.items ? [...cot.items] : [];
+      renderCotItems();
+      document.getElementById('cot-modal').style.display = 'flex';
+    }
+
+    function closeCotModal() { document.getElementById('cot-modal').style.display = 'none'; }
+
+    function renderCotItems() {
+      const products = getAllProducts();
+      const pct      = parseFloat(document.getElementById('cot-disc-pct').value) || 0;
+      const subtotal = _cotItems.reduce((s, i) => s + i.price * i.qty, 0);
+      const total    = Math.round(subtotal * (1 - pct / 100));
+      document.getElementById('cot-total-display').textContent = fmtQ(subtotal);
+      document.getElementById('cot-final-display').textContent = fmtQ(total);
+      document.getElementById('cot-items-list').innerHTML = _cotItems.map((it, idx) => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <select class="form-input" style="flex:2" onchange="cotItemProd(${idx},this.value)">
+            <option value="">— Seleccionar —</option>
+            ${products.map(p => `<option value="${p.id}" ${p.id === it.productId ? 'selected' : ''}>${p.name} (Q${p.base_gtq})</option>`).join('')}
+          </select>
+          <input type="number" class="form-input" style="width:70px" min="1" value="${it.qty}"
+                 onchange="cotItemQty(${idx},this.value)" />
+          <span style="font-size:13px;white-space:nowrap;min-width:80px">${fmtQ(it.price * it.qty)}</span>
+          <button class="btn btn-icon btn-danger" onclick="removeCotItem(${idx})">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`).join('') || '<p style="font-size:13px;color:var(--warm-mid)">Sin productos agregados.</p>';
+    }
+
+    function addCotItem() { _cotItems.push({ productId: '', name: '', price: 0, qty: 1 }); renderCotItems(); }
+    function removeCotItem(idx) { _cotItems.splice(idx, 1); renderCotItems(); }
+    function cotItemProd(idx, pid) {
+      const p = getAllProducts().find(x => x.id === pid);
+      if (p) { _cotItems[idx].productId = pid; _cotItems[idx].name = p.name; _cotItems[idx].price = p.base_gtq; }
+      renderCotItems();
+    }
+    function cotItemQty(idx, val) { _cotItems[idx].qty = parseInt(val) || 1; renderCotItems(); }
+    function recalcCot() { renderCotItems(); }
+
+    function saveCot() {
+      const client = document.getElementById('cot-client').value.trim();
+      if (!client) { alert('El nombre del cliente es requerido.'); return; }
+      const pct      = parseFloat(document.getElementById('cot-disc-pct').value) || 0;
+      const subtotal = _cotItems.reduce((s, i) => s + i.price * i.qty, 0);
+      const data = {
+        id:       document.getElementById('cot-id').value || undefined,
+        client,
+        status:   document.getElementById('cot-status').value,
+        notes:    document.getElementById('cot-notes').value.trim(),
+        items:    _cotItems,
+        disc_pct: pct,
+        subtotal_gtq: subtotal,
+        total_gtq:    Math.round(subtotal * (1 - pct / 100)),
+      };
+      saveCotizacion(data);
+      closeCotModal();
+      renderCotizaciones();
+    }
+
+    function deleteCot(id) {
+      if (!confirm('¿Eliminar esta cotización?')) return;
+      deleteCotizacion(id);
+      renderCotizaciones();
+    }
+
+    function printCot() { window.print(); }
+
+    // ─── Utils ─────────────────────────────────────────────────────────────────
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`Código copiado: ${text}`);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Punto de Venta — LAUREAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --crema:    #F5F2ED;
+      --piedra:   #E8E3DC;
+      --carbon:   #1A1916;
+      --warm-mid: #9B8E7F;
+      --green:    #388E3C;
+      --red:      #c62828;
+      --amber:    #D4A017;
+      --blue:     #1565C0;
+      --fd: 'Cormorant Garamond', Georgia, serif;
+      --fb: 'DM Sans', -apple-system, sans-serif;
+      --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+      --topbar-h: 52px;
+      --sidebar-w: 280px;
+    }
+    html, body { height: 100%; font-family: var(--fb); background: var(--crema); color: var(--carbon); }
+
+    /* ─── LOGIN ───────────────────────────────────────────────── */
+    #pos-login {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--carbon);
+    }
+    .login-box {
+      width: 360px;
+      padding: 48px 40px;
+      background: var(--crema);
+    }
+    .login-brand {
+      font-family: var(--fd);
+      font-size: 22px;
+      letter-spacing: 0.36em;
+      text-transform: uppercase;
+      font-weight: 300;
+      margin-bottom: 6px;
+    }
+    .login-sub {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 36px;
+    }
+    .lf-label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 7px;
+    }
+    .lf-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--piedra);
+      background: white;
+      font-family: var(--fb);
+      font-size: 15px;
+      color: var(--carbon);
+      outline: none;
+      margin-bottom: 18px;
+      transition: border-color 0.2s;
+    }
+    .lf-input:focus { border-color: var(--carbon); }
+    .lf-error {
+      font-size: 13px;
+      color: var(--red);
+      margin-bottom: 12px;
+      min-height: 18px;
+    }
+    .lf-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--carbon);
+      color: var(--crema);
+      font-family: var(--fb);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: opacity 0.2s;
+    }
+    .lf-btn:hover { opacity: 0.82; }
+
+    /* ─── APP SHELL ───────────────────────────────────────────── */
+    #pos-app { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
+    #pos-app.visible { display: flex; }
+
+    /* Topbar */
+    .pos-topbar {
+      height: var(--topbar-h);
+      flex-shrink: 0;
+      background: var(--carbon);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      z-index: 50;
+    }
+    .pos-brand {
+      font-family: var(--fd);
+      font-size: 17px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--crema);
+      font-weight: 300;
+    }
+    .pos-brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-left: 4px;
+    }
+    .pos-topbar-tabs {
+      display: flex;
+      gap: 4px;
+      margin-left: 32px;
+    }
+    .pos-tab {
+      padding: 7px 18px;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: var(--fb);
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .pos-tab:hover  { color: rgba(255,255,255,0.8); }
+    .pos-tab.active { color: white; border-bottom-color: white; }
+    .pos-topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .pos-user-chip {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.06em;
+    }
+    .pos-user-chip strong { color: white; font-weight: 500; }
+    .pos-logout {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.55);
+      font-family: var(--fb);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pos-logout:hover { color: white; border-color: rgba(255,255,255,0.5); }
+
+    /* Content area */
+    .pos-content { display: flex; flex: 1; overflow: hidden; }
+
+    /* ─── SCREENS ─────────────────────────────────────────────── */
+    .pos-screen { display: none; flex: 1; overflow: hidden; }
+    .pos-screen.active { display: flex; }
+
+    /* ─── VENTA SCREEN ────────────────────────────────────────── */
+    #screen-venta { gap: 0; }
+
+    /* Catálogo */
+    .pos-catalog {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--piedra);
+    }
+    .pos-cat-filter {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--piedra);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: white;
+    }
+    .pos-filter-btn {
+      padding: 6px 14px;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: var(--piedra);
+      color: var(--warm-mid);
+      border: none;
+      cursor: pointer;
+      font-family: var(--fb);
+      transition: background 0.2s, color 0.2s;
+    }
+    .pos-filter-btn.active { background: var(--carbon); color: white; }
+    .pos-cat-search {
+      flex: 1;
+      padding: 7px 12px;
+      border: 1px solid var(--piedra);
+      background: var(--crema);
+      font-family: var(--fb);
+      font-size: 14px;
+      color: var(--carbon);
+      outline: none;
+      min-width: 180px;
+    }
+    .pos-cat-search:focus { border-color: var(--carbon); }
+    .pos-product-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      align-content: start;
+    }
+    .pos-prod-card {
+      background: white;
+      border: 1px solid var(--piedra);
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      user-select: none;
+    }
+    .pos-prod-card:hover {
+      border-color: var(--carbon);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .pos-prod-card:active { transform: scale(0.98); }
+    .pos-prod-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: var(--piedra);
+      margin-bottom: 10px;
+    }
+    .pos-prod-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--carbon);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .pos-prod-price {
+      font-size: 12px;
+      color: var(--warm-mid);
+    }
+    .pos-prod-badge-new {
+      display: inline-block;
+      background: #C8A96E;
+      color: white;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      margin-bottom: 6px;
+    }
+    .pos-empty {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 48px;
+      color: var(--warm-mid);
+      font-size: 14px;
+    }
+
+    /* Carrito */
+    .pos-cart {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+    .pos-cart-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--piedra);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pos-cart-clear {
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: var(--warm-mid);
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      font-family: var(--fb);
+      text-decoration: underline;
+    }
+    .pos-cart-items { flex: 1; overflow-y: auto; padding: 12px; }
+    .pos-cart-empty { text-align: center; padding: 40px 16px; color: var(--warm-mid); font-size: 13px; }
+    .pos-cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--piedra);
+      gap: 8px;
+    }
+    .pos-ci-name { font-size: 13px; flex: 1; line-height: 1.3; }
+    .pos-ci-price { font-size: 13px; color: var(--warm-mid); white-space: nowrap; }
+    .pos-ci-qty {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pos-ci-qty-btn {
+      width: 22px; height: 22px;
+      background: var(--piedra);
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: var(--fb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .pos-ci-qty-btn:hover { background: var(--carbon); color: white; }
+    .pos-ci-qty-num { font-size: 13px; width: 20px; text-align: center; }
+
+    /* Cart footer */
+    .pos-cart-footer {
+      padding: 14px;
+      border-top: 1px solid var(--piedra);
+    }
+    .pos-cart-subtotal {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--warm-mid);
+      margin-bottom: 6px;
+    }
+    .pos-cart-disc {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--green);
+      margin-bottom: 6px;
+    }
+    .pos-cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    /* Cliente y PIN */
+    .pos-field-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 5px;
+    }
+    .pos-field-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--piedra);
+      font-family: var(--fb);
+      font-size: 13px;
+      color: var(--carbon);
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .pos-field-input:focus { border-color: var(--carbon); }
+    .pos-pin-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .pos-pin-row .pos-field-input { margin-bottom: 0; flex: 1; letter-spacing: 0.2em; }
+    .pos-pin-check {
+      padding: 8px 12px;
+      background: var(--carbon);
+      color: white;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      font-family: var(--fb);
+    }
+    .pos-pin-unlocked {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .pos-pct-input {
+      width: 70px;
+      padding: 7px 8px;
+      border: 1px solid var(--piedra);
+      font-family: var(--fb);
+      font-size: 14px;
+      text-align: center;
+      outline: none;
+    }
+    .pos-pct-apply {
+      flex: 1;
+      padding: 7px;
+      background: var(--green);
+      color: white;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      font-family: var(--fb);
+    }
+    .pos-pin-msg { font-size: 11px; color: var(--red); margin-bottom: 6px; }
+    .pos-pay-methods {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .pos-pay-btn {
+      flex: 1;
+      padding: 7px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: var(--piedra);
+      color: var(--warm-mid);
+      border: none;
+      cursor: pointer;
+      font-family: var(--fb);
+      transition: background 0.15s, color 0.15s;
+    }
+    .pos-pay-btn.active { background: var(--carbon); color: white; }
+    .pos-cobrar-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--carbon);
+      color: white;
+      font-family: var(--fb);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .pos-cobrar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .pos-cobrar-btn:hover:not(:disabled) { opacity: 0.82; }
+
+    /* ─── HISTORIAL ───────────────────────────────────────────── */
+    #screen-historial {
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pos-hist-header {
+      padding: 20px 28px 16px;
+      border-bottom: 1px solid var(--piedra);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      background: white;
+    }
+    .pos-hist-title {
+      font-family: var(--fd);
+      font-size: 24px;
+      font-weight: 300;
+    }
+    .pos-hist-sub { font-size: 13px; color: var(--warm-mid); }
+    .pos-hist-body { flex: 1; overflow-y: auto; padding: 24px 28px; }
+    .pos-hist-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .pos-hist-table th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--piedra);
+    }
+    .pos-hist-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--piedra);
+    }
+    .pos-hist-table tr:hover td { background: var(--crema); }
+    .status-chip {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ─── CIERRE ──────────────────────────────────────────────── */
+    #screen-cierre {
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pos-cierre-body { flex: 1; overflow-y: auto; padding: 32px 40px; }
+    .pos-cierre-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .pos-kpi {
+      background: white;
+      border: 1px solid var(--piedra);
+      padding: 24px 20px;
+    }
+    .pos-kpi-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      margin-bottom: 10px;
+    }
+    .pos-kpi-value {
+      font-family: var(--fd);
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--carbon);
+    }
+    .pos-kpi-sub { font-size: 12px; color: var(--warm-mid); margin-top: 4px; }
+
+    /* Toast */
+    .pos-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--carbon);
+      color: white;
+      padding: 12px 24px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    .pos-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 100%; }
+      #screen-venta { flex-direction: column; }
+      .pos-catalog { flex: none; height: 55vh; border-right: none; border-bottom: 1px solid var(--piedra); }
+      .pos-cart { width: 100%; height: 45vh; }
+      .pos-topbar-tabs .pos-tab:nth-child(n+3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ LOGIN -->
+<div id="pos-login">
+  <div class="login-box">
+    <div class="login-brand">Laurean</div>
+    <div class="login-sub">Punto de Venta</div>
+    <label class="lf-label" for="lf-email">Correo electrónico</label>
+    <input class="lf-input" type="email" id="lf-email" placeholder="correo@ejemplo.com" autocomplete="email" />
+    <label class="lf-label" for="lf-pass">Contraseña</label>
+    <input class="lf-input" type="password" id="lf-pass" placeholder="••••••••" autocomplete="current-password" />
+    <div class="lf-error" id="lf-error"></div>
+    <button class="lf-btn" onclick="posLogin()">Ingresar al POS →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ APP -->
+<div id="pos-app">
+
+  <!-- Topbar -->
+  <div class="pos-topbar">
+    <div>
+      <span class="pos-brand">Laurean</span>
+      <span class="pos-brand-sub">POS</span>
+    </div>
+    <div class="pos-topbar-tabs">
+      <button class="pos-tab active" onclick="showScreen('venta')"    id="tab-venta">Venta</button>
+      <button class="pos-tab"        onclick="showScreen('historial')" id="tab-historial">Historial</button>
+      <button class="pos-tab"        onclick="showScreen('cierre')"    id="tab-cierre">Cierre</button>
+    </div>
+    <div class="pos-topbar-right">
+      <span class="pos-user-chip"><strong id="pos-user-name">—</strong> · <span id="pos-user-role">—</span></span>
+      <button class="pos-logout" onclick="posLogout()">Salir</button>
+    </div>
+  </div>
+
+  <!-- Screens -->
+  <div class="pos-content">
+
+    <!-- ─── VENTA ─────────────────────────────────────────────── -->
+    <div id="screen-venta" class="pos-screen active">
+
+      <!-- Catálogo -->
+      <div class="pos-catalog">
+        <div class="pos-cat-filter">
+          <button class="pos-filter-btn active" onclick="filterCat('all')" id="pf-all">Todo</button>
+          <div id="pos-cat-btns"></div>
+          <input class="pos-cat-search" id="pos-search" placeholder="Buscar producto…" oninput="renderPosProducts()" />
+        </div>
+        <div class="pos-product-grid" id="pos-product-grid"></div>
+      </div>
+
+      <!-- Carrito -->
+      <div class="pos-cart">
+        <div class="pos-cart-header">
+          Carrito
+          <button class="pos-cart-clear" onclick="posClearCart()">Vaciar</button>
+        </div>
+        <div class="pos-cart-items" id="pos-cart-items">
+          <div class="pos-cart-empty">Agrega productos al carrito</div>
+        </div>
+        <div class="pos-cart-footer">
+          <div class="pos-cart-subtotal"><span>Subtotal</span><span id="pos-subtotal">Q0</span></div>
+          <div class="pos-cart-disc" id="pos-disc-row" style="display:none"><span id="pos-disc-label">Descuento</span><span id="pos-disc-amt">Q0</span></div>
+          <div class="pos-cart-total"><span>Total</span><span id="pos-total">Q0</span></div>
+
+          <div class="pos-field-label">Cliente (opcional)</div>
+          <input class="pos-field-input" id="pos-client" placeholder="Nombre del cliente" />
+
+          <!-- PIN descuento -->
+          <div id="pos-pin-section">
+            <div class="pos-field-label">PIN descuento especial</div>
+            <div class="pos-pin-row">
+              <input class="pos-field-input" id="pos-pin" type="password" maxlength="6" placeholder="PIN" />
+              <button class="pos-pin-check" onclick="posCheckPin()">OK</button>
+            </div>
+            <div class="pos-pin-msg" id="pos-pin-msg"></div>
+            <div class="pos-pin-unlocked" id="pos-pct-row" style="display:none">
+              <input class="pos-pct-input" id="pos-pct" type="number" min="1" max="50" placeholder="%" />
+              <button class="pos-pct-apply" onclick="posApplyDiscount()">Aplicar %</button>
+            </div>
+          </div>
+
+          <!-- Método de pago -->
+          <div class="pos-field-label" style="margin-top:8px">Método de pago</div>
+          <div class="pos-pay-methods">
+            <button class="pos-pay-btn active" onclick="selectPayMethod('efectivo')" id="pay-efectivo">Efectivo</button>
+            <button class="pos-pay-btn" onclick="selectPayMethod('tarjeta')" id="pay-tarjeta">Tarjeta</button>
+            <button class="pos-pay-btn" onclick="selectPayMethod('qr')" id="pay-qr">QR</button>
+          </div>
+
+          <button class="pos-cobrar-btn" id="pos-cobrar-btn" onclick="posCobrar()" disabled>Cobrar Q0</button>
+        </div>
+      </div>
+
+    </div><!-- /screen-venta -->
+
+    <!-- ─── HISTORIAL ─────────────────────────────────────────── -->
+    <div id="screen-historial" class="pos-screen">
+      <div class="pos-hist-header">
+        <span class="pos-hist-title">Historial <em>de Ventas</em></span>
+        <span class="pos-hist-sub" id="hist-date-label"></span>
+      </div>
+      <div class="pos-hist-body">
+        <table class="pos-hist-table">
+          <thead><tr>
+            <th>Hora</th><th>ID</th><th>Cliente</th><th>Items</th>
+            <th>Total Q</th><th>Descuento</th><th>Método</th><th>Estado</th>
+          </tr></thead>
+          <tbody id="pos-hist-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── CIERRE ─────────────────────────────────────────────── -->
+    <div id="screen-cierre" class="pos-screen">
+      <div class="pos-cierre-body">
+        <h2 style="font-family:var(--fd);font-size:28px;font-weight:300;margin-bottom:28px">Cierre de <em>Caja</em></h2>
+        <div class="pos-cierre-kpis" id="pos-cierre-kpis"></div>
+        <div style="margin-top:8px">
+          <button class="lf-btn" style="width:auto;padding:12px 32px;display:inline-block" onclick="exportPosCSV()">Exportar CSV</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<div class="pos-toast" id="pos-toast"></div>
+
+<!-- Auth & Data -->
+<script src="js/auth.js"></script>
+<script src="data/products.js"></script>
+<script>
+  // ─── State ─────────────────────────────────────────────────────────────────
+  let POS_SESSION     = null;
+  let posCart         = [];
+  let posPayMethod    = 'efectivo';
+  let posManualDisc   = 0;    // %
+  let posActiveCat    = 'all';
+  let POS_PRODUCTS    = [];   // flat array of all products
+
+  // ─── Login ─────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const s = getSession();
+    if (s && ['vendedor','admin','superuser','bodega'].includes(s.role)) {
+      POS_SESSION = s;
+      initPosApp();
+    }
+    document.getElementById('lf-pass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') posLogin();
+    });
+  });
+
+  function posLogin() {
+    const email = document.getElementById('lf-email').value.trim();
+    const pass  = document.getElementById('lf-pass').value;
+    const errEl = document.getElementById('lf-error');
+    errEl.textContent = '';
+    if (!email || !pass) { errEl.textContent = 'Completa todos los campos.'; return; }
+    const result = login(email, pass);
+    if (!result.ok) { errEl.textContent = result.error; return; }
+    if (!['vendedor','admin','superuser','bodega'].includes(result.session.role)) {
+      logout();
+      errEl.textContent = 'Sin acceso al POS. Contacta al administrador.';
+      return;
+    }
+    POS_SESSION = result.session;
+    initPosApp();
+  }
+
+  function posLogout() {
+    logout();
+    POS_SESSION = null;
+    posCart = [];
+    document.getElementById('pos-app').classList.remove('visible');
+    document.getElementById('pos-login').style.display = 'flex';
+  }
+
+  // ─── Init App ──────────────────────────────────────────────────────────────
+  function initPosApp() {
+    document.getElementById('pos-login').style.display = 'none';
+    document.getElementById('pos-app').classList.add('visible');
+    document.getElementById('pos-user-name').textContent = POS_SESSION.name.split(' ')[0];
+    document.getElementById('pos-user-role').textContent = roleLabel(POS_SESSION.role);
+    document.getElementById('hist-date-label').textContent = 'Hoy — ' + new Date().toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' });
+    buildProductList();
+    buildCatFilters();
+    renderPosProducts();
+    renderPosCart();
+  }
+
+  // ─── Products ──────────────────────────────────────────────────────────────
+  function buildProductList() {
+    const data = window.LAUREAN_DATA;
+    if (!data) return;
+    const role = POS_SESSION.role;
+    POS_PRODUCTS = [
+      ...(data.products    || []),
+      ...(data.sweaters    || []),
+      ...(data.accessories || []),
+      ...getCustomProducts(),
+    ].map(p => ({
+      ...p,
+      displayPrice: getProductPrice(p.id, p.price_gtq || p.base_gtq || 0, p.price_usd || p.base_usd || 0, role).gtq,
+    }));
+  }
+
+  function buildCatFilters() {
+    const data = window.LAUREAN_DATA;
+    const cats = [...(data?.parentCategories || data?.categories || [])];
+    document.getElementById('pos-cat-btns').innerHTML = cats.map(c =>
+      `<button class="pos-filter-btn" onclick="filterCat('${c.id}')" id="pf-${c.id}">${c.name}</button>`
+    ).join('');
+  }
+
+  function filterCat(catId) {
+    posActiveCat = catId;
+    document.querySelectorAll('.pos-filter-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('pf-' + catId);
+    if (btn) btn.classList.add('active');
+    renderPosProducts();
+  }
+
+  function renderPosProducts() {
+    const search = (document.getElementById('pos-search')?.value || '').toLowerCase();
+    let list = POS_PRODUCTS;
+    if (posActiveCat !== 'all') {
+      list = list.filter(p => p.parent === posActiveCat || p.category === posActiveCat);
+    }
+    if (search) {
+      list = list.filter(p => p.name.toLowerCase().includes(search));
+    }
+    const grid = document.getElementById('pos-product-grid');
+    if (!list.length) {
+      grid.innerHTML = '<div class="pos-empty">Sin productos</div>'; return;
+    }
+    grid.innerHTML = list.map(p => `
+      <div class="pos-prod-card" onclick="posAddToCart('${p.id}')">
+        ${p.is_new_arrival ? '<div class="pos-prod-badge-new">New</div>' : ''}
+        <img class="pos-prod-img" src="${p.image || ''}" alt="${p.name}"
+             onerror="this.style.background='var(--piedra)';this.removeAttribute('src')" />
+        <div class="pos-prod-name">${p.name}</div>
+        <div class="pos-prod-price">Q${p.displayPrice.toLocaleString()}</div>
+      </div>`).join('');
+  }
+
+  // ─── Cart ──────────────────────────────────────────────────────────────────
+  function posAddToCart(id) {
+    const p = POS_PRODUCTS.find(x => x.id === id);
+    if (!p) return;
+    const existing = posCart.find(i => i.id === id);
+    if (existing) { existing.qty++; }
+    else          { posCart.push({ id: p.id, name: p.name, price: p.displayPrice, qty: 1 }); }
+    renderPosCart();
+    showToast(`${p.name} agregado`);
+  }
+
+  function posChangeQty(id, delta) {
+    const item = posCart.find(i => i.id === id);
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) posCart = posCart.filter(i => i.id !== id);
+    renderPosCart();
+  }
+
+  function posClearCart() {
+    posCart = [];
+    posManualDisc = 0;
+    document.getElementById('pos-pin').value = '';
+    document.getElementById('pos-pin-msg').textContent = '';
+    document.getElementById('pos-pct-row').style.display = 'none';
+    renderPosCart();
+  }
+
+  function renderPosCart() {
+    const itemsEl  = document.getElementById('pos-cart-items');
+    const subtotal = posCart.reduce((s, i) => s + i.price * i.qty, 0);
+    const discAmt  = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
+    const total    = subtotal - discAmt;
+
+    if (!posCart.length) {
+      itemsEl.innerHTML = '<div class="pos-cart-empty">Agrega productos al carrito</div>';
+    } else {
+      itemsEl.innerHTML = posCart.map(i => `
+        <div class="pos-cart-item">
+          <div class="pos-ci-name">${i.name}</div>
+          <div class="pos-ci-qty">
+            <button class="pos-ci-qty-btn" onclick="posChangeQty('${i.id}',-1)">−</button>
+            <span class="pos-ci-qty-num">${i.qty}</span>
+            <button class="pos-ci-qty-btn" onclick="posChangeQty('${i.id}',1)">+</button>
+          </div>
+          <div class="pos-ci-price">Q${(i.price * i.qty).toLocaleString()}</div>
+        </div>`).join('');
+    }
+
+    document.getElementById('pos-subtotal').textContent = 'Q' + subtotal.toLocaleString();
+    const discRow = document.getElementById('pos-disc-row');
+    if (discAmt > 0) {
+      discRow.style.display = '';
+      document.getElementById('pos-disc-label').textContent = `Descuento (${posManualDisc}%)`;
+      document.getElementById('pos-disc-amt').textContent   = '−Q' + discAmt.toLocaleString();
+    } else {
+      discRow.style.display = 'none';
+    }
+    document.getElementById('pos-total').textContent = 'Q' + total.toLocaleString();
+
+    const btn = document.getElementById('pos-cobrar-btn');
+    btn.textContent = posCart.length ? `Cobrar Q${total.toLocaleString()}` : 'Cobrar Q0';
+    btn.disabled    = posCart.length === 0;
+  }
+
+  // ─── PIN descuento ─────────────────────────────────────────────────────────
+  function posCheckPin() {
+    const pin    = document.getElementById('pos-pin').value;
+    const msgEl  = document.getElementById('pos-pin-msg');
+    const pctRow = document.getElementById('pos-pct-row');
+    if (verifyDiscountPin(pin)) {
+      msgEl.textContent  = '✓ PIN correcto';
+      msgEl.style.color  = 'var(--green)';
+      pctRow.style.display = 'flex';
+    } else {
+      msgEl.textContent  = 'PIN incorrecto';
+      msgEl.style.color  = 'var(--red)';
+      pctRow.style.display = 'none';
+    }
+  }
+
+  function posApplyDiscount() {
+    const pct = parseInt(document.getElementById('pos-pct').value, 10);
+    if (!pct || pct < 1 || pct > 50) { alert('Ingresa entre 1 y 50.'); return; }
+    posManualDisc = pct;
+    renderPosCart();
+    showToast(`Descuento del ${pct}% aplicado`);
+  }
+
+  // ─── Método de pago ────────────────────────────────────────────────────────
+  function selectPayMethod(method) {
+    posPayMethod = method;
+    ['efectivo','tarjeta','qr'].forEach(m => {
+      document.getElementById('pay-' + m).classList.toggle('active', m === method);
+    });
+  }
+
+  // ─── Cobrar ────────────────────────────────────────────────────────────────
+  function posCobrar() {
+    if (!posCart.length) return;
+    const subtotal = posCart.reduce((s, i) => s + i.price * i.qty, 0);
+    const discAmt  = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
+    const total    = subtotal - discAmt;
+    const client   = document.getElementById('pos-client').value.trim() || 'Cliente POS';
+
+    const orderData = {
+      userId:              POS_SESSION.userId,
+      customerName:        client,
+      customerPhone:       '',
+      address:             'Venta POS directa',
+      notes:               `Método: ${posPayMethod}`,
+      items:               posCart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price_gtq: i.price })),
+      subtotal_gtq:        subtotal,
+      discount_gtq:        0,
+      manual_discount_pct: posManualDisc,
+      manual_discount_gtq: discAmt,
+      total_gtq:           total,
+      referral_code:       null,
+      pay_method:          posPayMethod,
+      channel:             'pos',
+    };
+    createOrder(orderData);
+
+    showToast(`✓ Venta de Q${total.toLocaleString()} registrada`);
+    posClearCart();
+    document.getElementById('pos-client').value = '';
+    posManualDisc = 0;
+    document.getElementById('pos-pin').value = '';
+    document.getElementById('pos-pin-msg').textContent = '';
+    document.getElementById('pos-pct-row').style.display = 'none';
+    document.getElementById('pos-pct').value = '';
+  }
+
+  // ─── Historial ─────────────────────────────────────────────────────────────
+  function renderHistorial() {
+    const today = new Date().toDateString();
+    const orders = getOrders()
+      .filter(o => new Date(o.createdAt).toDateString() === today || o.channel === 'pos')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const tbody = document.getElementById('pos-hist-tbody');
+    if (!orders.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--warm-mid)">Sin ventas hoy</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = orders.map(o => {
+      const d    = new Date(o.createdAt);
+      const hora = d.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' });
+      const disc = (o.manual_discount_gtq || 0) + (o.discount_gtq || 0);
+      return `<tr>
+        <td>${hora}</td>
+        <td style="font-size:11px;color:var(--warm-mid)">${o.id.slice(-8)}</td>
+        <td>${o.customerName || '—'}</td>
+        <td style="font-size:12px;color:var(--warm-mid)">${(o.items || []).length} items</td>
+        <td><strong>Q${(o.total_gtq || 0).toLocaleString()}</strong></td>
+        <td style="color:var(--green)">${disc > 0 ? '−Q' + disc.toLocaleString() : '—'}</td>
+        <td style="font-size:12px">${o.pay_method || '—'}</td>
+        <td><span class="status-chip" style="background:${statusColor(o.status)}22;color:${statusColor(o.status)}">${statusLabel(o.status)}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ─── Cierre ────────────────────────────────────────────────────────────────
+  function renderCierre() {
+    const today  = new Date().toDateString();
+    const orders = getOrders().filter(o => new Date(o.createdAt).toDateString() === today);
+    const done   = orders.filter(o => o.status !== 'cancelado');
+    const total  = done.reduce((s, o) => s + (o.total_gtq || 0), 0);
+    const disc   = done.reduce((s, o) => s + (o.manual_discount_gtq || 0) + (o.discount_gtq || 0), 0);
+
+    document.getElementById('pos-cierre-kpis').innerHTML = [
+      { label: 'Ventas del día', value: 'Q' + total.toLocaleString(), sub: done.length + ' transacciones' },
+      { label: 'Descuentos otorgados', value: 'Q' + disc.toLocaleString(), sub: 'Total de descuentos' },
+      { label: 'Canceladas', value: orders.length - done.length, sub: 'de ' + orders.length + ' total' },
+      { label: 'Ticket promedio', value: done.length ? 'Q' + Math.round(total / done.length).toLocaleString() : '—', sub: 'Por transacción' },
+    ].map(k => `
+      <div class="pos-kpi">
+        <div class="pos-kpi-label">${k.label}</div>
+        <div class="pos-kpi-value">${k.value}</div>
+        <div class="pos-kpi-sub">${k.sub}</div>
+      </div>`).join('');
+  }
+
+  function exportPosCSV() {
+    const today  = new Date().toDateString();
+    const orders = getOrders().filter(o => new Date(o.createdAt).toDateString() === today);
+    const header = ['Hora','ID','Cliente','Total Q','Descuento Q','Método','Estado'];
+    const rows   = orders.map(o => {
+      const hora = new Date(o.createdAt).toLocaleTimeString('es-GT', { hour:'2-digit', minute:'2-digit' });
+      const disc = (o.manual_discount_gtq || 0) + (o.discount_gtq || 0);
+      return [hora, o.id.slice(-8), o.customerName || '—', o.total_gtq, disc, o.pay_method || '—', o.status]
+        .map(v => `"${v}"`).join(',');
+    });
+    const csv  = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href = url;
+    a.download = 'laurean-pos-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  // ─── Screen switching ──────────────────────────────────────────────────────
+  function showScreen(name) {
+    document.querySelectorAll('.pos-screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.pos-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'historial') renderHistorial();
+    if (name === 'cierre')    renderCierre();
+  }
+
+  // ─── Toast ─────────────────────────────────────────────────────────────────
+  let _toastTimer;
+  function showToast(msg) {
+    const el = document.getElementById('pos-toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
