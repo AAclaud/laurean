@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#192729" />
+  <title>Lookbook - LAUREAN</title>
+  <link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&amp;family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/brand.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <link rel="stylesheet" href="css/lookbook.css" />
+</head>
+<body class="lookbook-page">
+  <a class="skip-link" href="#lookbook-track">Saltar al lookbook</a>
+
+  <header class="lookbook-nav" data-logo="dark" aria-label="Navegacion del lookbook">
+    <a class="lookbook-return" href="Laurean.html" aria-label="Volver a la tienda">
+      <span class="lookbook-return-mark" aria-hidden="true">&lsaquo;</span>
+      <span class="lookbook-return-text">Volver a la tienda</span>
+    </a>
+
+    <a class="lookbook-logo" href="Laurean.html" aria-label="LAUREAN">
+      <img class="logo-on-dark" src="images/brand/logo-oscuro.svg" alt="" aria-hidden="true" />
+      <img class="logo-on-light" src="images/brand/logo-navbar.svg" alt="" aria-hidden="true" />
+    </a>
+
+    <div class="lookbook-count" id="lookbook-counter" aria-live="polite">01 / 13</div>
+  </header>
+
+  <main class="lookbook-track" id="lookbook-track" tabindex="0" aria-label="Lookbook horizontal LAUREAN">
+    <section class="lookbook-empty">
+      <h1>Lookbook</h1>
+      <p>Cargando experiencia editorial.</p>
+    </section>
+  </main>
+
+  <div class="lookbook-progress" aria-hidden="true">
+    <span class="lookbook-progress-bar" id="lookbook-progress-bar"></span>
+  </div>
+
+  <noscript>
+    <section class="lookbook-empty">
+      <h1>LAUREAN</h1>
+      <p>Activa JavaScript para ver el lookbook horizontal.</p>
+    </section>
+  </noscript>
+
+  <script defer src="js/config.js" onerror="window.LAUREAN_CONFIG_LOAD_FAILED=true"></script>
+  <script defer src="js/supabase-client.js"></script>
+  <script defer src="js/visit-tracker.js"></script>
+  <script defer src="js/brand-img.js"></script>
+  <script defer src="js/lookbook.js"></script>
+  <script defer src="js/cursor.js" onerror="window.LAUREAN_CURSOR_LOAD_FAILED=true"></script>
+</body>
+</html>

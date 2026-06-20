@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAUREAN — Colección</title>
+  <link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/brand.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <script defer src="js/brand-img.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --nav-h: 80px; --acento: var(--vino); }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--fb); font-size: 15px; line-height: 1.6; color: var(--carbon); background: var(--crema); overflow-x: hidden; }
+    img { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* ─── Temas por categoría ──────────────────────────────────────────────── */
+    /* Mujer: vino cálido (default de marca) */
+    [data-col="mujer"]  { --acento: #8E3833; --acento-dk: #531F23; --acento-tint: rgba(142,56,51,0.07); }
+    /* Hombre: carbón azulado frío */
+    [data-col="hombre"] { --acento: #3a4a5a; --acento-dk: #253140; --acento-tint: rgba(58,74,90,0.07); }
+    /* Kids: dorado cálido, más juguetón */
+    [data-col="kids"]   { --acento: #C48A1A; --acento-dk: #9B6D10; --acento-tint: rgba(196,138,26,0.08); }
+    /* Accesorios: vino oscuro */
+    [data-col="accesorios"] { --acento: #531F23; --acento-dk: #3a1519; --acento-tint: rgba(83,31,35,0.07); }
+    /* Ofertas: ámbar */
+    [data-col="ofertas"] { --acento: #B05A10; --acento-dk: #7a3e0b; --acento-tint: rgba(176,90,16,0.07); }
+
+    /* ─── Navbar ────────────────────────────────────────────────────────────── */
+    .nav { position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); z-index: 100;
+           display: flex; align-items: center; justify-content: space-between; padding: 0 52px;
+           background: rgba(241,236,232,0.92); backdrop-filter: blur(20px) saturate(1.2);
+           -webkit-backdrop-filter: blur(20px) saturate(1.2); border-bottom: 1px solid rgba(142,56,51,0.08); }
+    .nav-logo { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; z-index: 2; }
+    .nav-logo img { height: 48px; width: auto; }
+    .nav-links { display: flex; gap: 40px; list-style: none; }
+    .nav-links a { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--carbon); opacity: 0.65; transition: opacity 0.2s; }
+    .nav-links a:hover, .nav-links a.active { opacity: 1; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-btn { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s var(--ease); }
+    .nav-btn:hover { background: rgba(25,26,24,0.06); }
+    .nav-btn svg { width: 20px; height: 20px; stroke: var(--carbon); fill: none; stroke-width: 1.4; }
+    @media (max-width: 720px) { .nav { padding: 0 20px; } .nav-links { display: none; } }
+
+    /* ─── Hero de colección ─────────────────────────────────────────────────── */
+    .col-hero { padding: calc(var(--nav-h) + 64px) 52px 52px; max-width: 1280px; margin: 0 auto; }
+    .col-eyebrow { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+                   color: var(--acento); margin-bottom: 14px; }
+    .col-title { font-family: var(--fd); font-weight: 500; font-size: clamp(44px, 6.5vw, 72px);
+                 line-height: 1.0; letter-spacing: -0.01em; }
+    .col-title em { font-style: italic; }
+    .col-sub { margin-top: 18px; max-width: 540px; color: rgba(25,26,24,0.65); font-size: 15px; }
+    .col-divider { margin: 32px 0 0; height: 2px; background: var(--acento); width: 48px;
+                   border-radius: 2px; opacity: 0.6; }
+
+    /* Breadcrumb + enlace catálogo */
+    .col-breadcrumb { padding: 12px 52px 0; max-width: 1280px; margin: 0 auto;
+                      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .col-breadcrumb a { font-size: 12.5px; color: rgba(25,26,24,0.5); transition: color 0.2s var(--ease); }
+    .col-breadcrumb a:hover { color: var(--acento); }
+    .col-breadcrumb span { font-size: 12px; color: rgba(25,26,24,0.3); }
+    @media (max-width: 720px) { .col-hero { padding: calc(var(--nav-h) + 48px) 20px 36px; } .col-breadcrumb { padding-left: 20px; padding-right: 20px; } }
+
+    /* ─── Sección de productos ──────────────────────────────────────────────── */
+    .col-section { max-width: 1280px; margin: 0 auto; padding: 48px 52px 72px; }
+    .col-count { font-size: 13px; color: rgba(25,26,24,0.5); margin-bottom: 32px; }
+    @media (max-width: 720px) { .col-section { padding: 36px 20px 56px; } }
+
+    /* ─── Grid de tarjetas ──────────────────────────────────────────────────── */
+    .col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px; }
+    @media (max-width: 720px) { .col-grid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+
+    /* ─── Tarjeta de producto ───────────────────────────────────────────────── */
+    .prod { background: var(--white); border-radius: 14px; overflow: hidden; border: 1px solid rgba(25,26,24,0.06);
+            display: flex; flex-direction: column; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); cursor: pointer; }
+    .prod:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,0.09); }
+    .prod-img { aspect-ratio: 3/4; background: linear-gradient(135deg, var(--piedra), #ded7ce);
+                display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .prod-img img { width: 100%; height: 100%; object-fit: cover; }
+    .prod-img-placeholder { font-family: var(--fd); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(83,31,35,0.32); }
+    .prod-badge-new { position: absolute; top: 10px; left: 10px; background: var(--acento); color: var(--white);
+                      font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 9px; border-radius: 20px; }
+    .prod-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .prod-name { font-size: 13.5px; line-height: 1.35; color: var(--carbon); min-height: 36px; }
+    .prod-price { font-family: var(--fd); font-size: 22px; font-weight: 500; color: var(--acento); }
+    .prod-price small { font-family: var(--fb); font-size: 11px; color: rgba(25,26,24,0.5); font-weight: 400; }
+    .prod-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+                background: var(--acento); color: var(--white); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+                padding: 11px 14px; border-radius: 10px; transition: background 0.2s var(--ease); width: 100%; }
+    .prod-cta:hover { background: var(--acento-dk, var(--vino-dk)); }
+    .prod-cta:active { transform: scale(0.98); }
+    .prod-cta-contact { background: transparent; color: var(--acento); border: 1px solid var(--acento); }
+    .prod-cta-contact:hover { background: var(--acento); color: var(--white); }
+    .prod-cta-contact:active { transform: scale(0.98); }
+    .prod-btn-seller { margin-top: 6px; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+                       color: rgba(25,26,24,0.5); text-decoration: underline; padding: 4px 0; display: block;
+                       background: none; border: none; cursor: pointer; width: 100%; text-align: center;
+                       transition: color 0.2s var(--ease); }
+    .prod-btn-seller:hover { color: var(--acento); }
+
+    /* ─── Estados vacíos ────────────────────────────────────────────────────── */
+    .col-empty { text-align: center; padding: 72px 0; color: rgba(25,26,24,0.5); }
+    .col-empty-title { font-family: var(--fd); font-size: 28px; font-weight: 400; margin-bottom: 12px; color: var(--carbon); }
+    .col-empty-sub { font-size: 14px; margin-bottom: 28px; }
+    .col-empty-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; letter-spacing: 0.08em;
+                      text-transform: uppercase; color: var(--acento); border-bottom: 1px solid currentColor; padding-bottom: 2px;
+                      transition: opacity 0.2s var(--ease); }
+    .col-empty-link:hover { opacity: 0.7; }
+    .col-loading { text-align: center; padding: 80px 52px; color: rgba(25,26,24,0.45); font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    /* ─── Footer ────────────────────────────────────────────────────────────── */
+    footer { background: var(--carbon); color: rgba(255,255,255,0.7); padding: 72px 52px 36px; }
+    .footer-top { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 56px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .footer-logo img { height: 30px; width: auto; display: block; }
+    .footer-logo a { display: inline-block; transition: opacity .2s var(--ease); }
+    .footer-logo a:hover { opacity: 0.7; }
+    .footer-tagline { margin-top: 16px; font-size: 13.5px; max-width: 260px; line-height: 1.6; }
+    .footer-col-title { color: var(--white); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 16px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 13.5px; color: rgba(255,255,255,0.7); transition: color 0.2s var(--ease); }
+    .footer-links a:hover { color: rgba(255,255,255,0.95); }
+    .footer-bottom { max-width: 1280px; margin: 28px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.5); }
+    .footer-copy a { color: inherit; text-decoration: underline; opacity: 0.7; }
+    .pay-badges { display: flex; align-items: center; gap: 10px; }
+    .pay-badge { font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.2); padding: 4px 9px; border-radius: 5px; }
+    @media (max-width: 720px) { footer { padding: 52px 20px 28px; } .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="nav">
+    <a href="Laurean.html#inicio" class="nav-logo" aria-label="Laurean — Inicio">
+      <img src="images/brand/logo-navbar.svg" alt="Laurean" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="Laurean.html#inicio">Inicio</a></li>
+      <li><a href="catalogo.html">Tienda</a></li>
+      <li><a href="Laurean.html#las-colecciones" class="active">Colecciones</a></li>
+      <li><a href="nosotros.html">Nosotros</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="login.html" class="nav-btn" aria-label="Iniciar sesión">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <div class="col-breadcrumb" id="col-breadcrumb" style="padding-top: calc(var(--nav-h) + 20px);">
+    <a href="Laurean.html#inicio">Inicio</a>
+    <span>›</span>
+    <a href="catalogo.html">Catálogo</a>
+    <span>›</span>
+    <a id="bc-cat" href="#">—</a>
+  </div>
+
+  <!-- Hero de colección -->
+  <header class="col-hero" id="col-hero">
+    <p class="col-eyebrow" id="col-eyebrow">Colección</p>
+    <h1 class="col-title" id="col-title"><em>Cargando</em></h1>
+    <p class="col-sub" id="col-sub">Explorando la colección…</p>
+    <div class="col-divider"></div>
+  </header>
+
+  <!-- Contenido dinámico -->
+  <section class="col-section">
+    <div class="col-loading" id="col-loading">Cargando productos…</div>
+    <div id="col-count" class="col-count" style="display:none;"></div>
+    <div class="col-grid" id="col-grid"></div>
+    <div id="col-empty" style="display:none;"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts (mismo orden que catalogo.html) -->
+  <script src="js/config.js" onerror="console.info('[laurean] sin js/config.js — modo offline')"></script>
+  <script src="js/auth.js"></script>
+  <script src="data/products.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script defer src="js/visit-tracker.js"></script>
+  <script src="js/catalog-loader.js"></script>
+
+  <script>
+    // ─── Utilidades ────────────────────────────────────────────────────────────
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    // ─── Parámetro de categoría ────────────────────────────────────────────────
+    var catId = (new URLSearchParams(window.location.search)).get('cat') || '';
+
+    // ─── Subtítulos por categoría ──────────────────────────────────────────────
+    var COL_COPY = {
+      mujer:       { eyebrow: 'Colección Mujer', sub: 'Piezas femeninas con carácter. Diseñadas para durar y brillar.' },
+      hombre:      { eyebrow: 'Colección Hombre', sub: 'Estilos cómodos y con carácter para el hombre Laurean.' },
+      kids:        { eyebrow: 'Laurean Kids', sub: 'Ropa bonita y cómoda para los más pequeños de la familia.' },
+      accesorios:  { eyebrow: 'Accesorios', sub: 'El detalle que lo cambia todo. Complementos de marca Laurean.' },
+      ofertas:     { eyebrow: 'Ofertas especiales', sub: 'Precios limitados en piezas seleccionadas. Hasta agotar existencias.' },
+    };
+
+    // ─── Precio visible según sesión ──────────────────────────────────────────
+    function getPriceDisplay(p) {
+      if (!p.show_price || !(p.price_gtq > 0)) return null;
+      var session = (typeof getSession === 'function') ? getSession() : null;
+      var role    = session ? session.role : null;
+      if (typeof getProductPrice === 'function' && role) {
+        var pr = getProductPrice(p.id, p.price_gtq, p.price_usd, role);
+        return pr ? pr.gtq : p.price_gtq;
+      }
+      return p.price_gtq;
+    }
+
+    // ─── Tarjeta de producto ──────────────────────────────────────────────────
+    function buildCard(p) {
+      var priceGtq  = getPriceDisplay(p);
+      var hasPrice  = priceGtq != null;
+      var imgTag    = p.image
+        ? '<img class="brand-img-photo" src="' + esc(p.image) + '" alt="' + esc(p.name) + '" loading="lazy" />'
+        : '';
+      var badgeNew  = p.is_new_arrival ? '<span class="prod-badge-new">Nuevo</span>' : '';
+      var priceHtml = hasPrice
+        ? '<div class="prod-price">Q' + esc(String(priceGtq)) + ' <small>GTQ</small></div>'
+        : '';
+      var ctaLabel  = hasPrice ? 'Ver producto' : 'Contactar a Laurean';
+      var ctaClass  = hasPrice ? 'prod-cta' : 'prod-cta prod-cta-contact';
+      var ctaHref   = 'producto.html?id=' + encodeURIComponent(p.id);
+
+      var sellerBtn = '';
+      if (!hasPrice) {
+        sellerBtn = '<button class="prod-btn-seller" onclick="handleVerPrecioVendedor(event, \'' + esc(p.id) + '\', ' + Number(p.price_gtq || 0) + ', ' + Number(p.price_usd || 0) + ')">Ver precio vendedor</button>';
+      }
+
+      return '<article class="prod" onclick="location.href=\'' + ctaHref + '\'">'
+        + '<div class="prod-img brand-img">' + imgTag + badgeNew + '</div>'
+        + '<div class="prod-body">'
+        + '<div class="prod-name">' + esc(p.name) + '</div>'
+        + priceHtml
+        + '<a class="' + ctaClass + '" href="' + ctaHref + '" onclick="event.stopPropagation()">' + ctaLabel + '</a>'
+        + sellerBtn
+        + '</div></article>';
+    }
+
+    // ─── Ver precio vendedor ──────────────────────────────────────────────────
+    function handleVerPrecioVendedor(event, id, baseGtq, baseUsd) {
+      event.stopPropagation();
+      var session = (typeof getSession === 'function') ? getSession() : null;
+      if (!session) {
+        window.location.href = 'vendedoras.html';
+        return;
+      }
+      var pr = (typeof getProductPrice === 'function')
+        ? getProductPrice(id, baseGtq, baseUsd, session.role)
+        : { gtq: baseGtq, usd: baseUsd };
+      alert('Precio vendedor: Q' + (pr ? pr.gtq : baseGtq) + ' GTQ');
+    }
+
+    // ─── Render de la colección ───────────────────────────────────────────────
+    function renderColeccion() {
+      var data = window.LAUREAN_DATA;
+      if (!data || !data.products) return;
+
+      var loading = document.getElementById('col-loading');
+      var grid    = document.getElementById('col-grid');
+      var empty   = document.getElementById('col-empty');
+      var count   = document.getElementById('col-count');
+
+      loading.style.display = 'none';
+
+      // Buscar la categoría en parentCategories
+      var cats = data.parentCategories || [];
+      var cat  = cats.find(function(c) { return c.id === catId; });
+
+      // Categoría no encontrada
+      if (!cat) {
+        document.getElementById('col-eyebrow').textContent = 'Colección';
+        document.getElementById('col-title').innerHTML = 'Colección <em>no encontrada</em>';
+        document.getElementById('col-sub').textContent = 'El enlace que seguiste no corresponde a ninguna colección.';
+        document.getElementById('bc-cat').textContent  = 'No encontrada';
+        empty.innerHTML = '<div class="col-empty">'
+          + '<div class="col-empty-title">Colección no encontrada</div>'
+          + '<p class="col-empty-sub">Es posible que el enlace esté desactualizado o haya un error en la URL.</p>'
+          + '<a class="col-empty-link" href="catalogo.html">Ver todo el catálogo →</a>'
+          + '</div>';
+        empty.style.display = 'block';
+        return;
+      }
+
+      // Aplicar tema en body
+      document.body.setAttribute('data-col', esc(catId));
+
+      // Copias del encabezado
+      var copy = COL_COPY[catId] || { eyebrow: 'Colección ' + cat.name, sub: 'Explora todas las piezas de esta colección.' };
+      document.getElementById('col-eyebrow').textContent = copy.eyebrow;
+      document.getElementById('col-title').innerHTML     = cat.name.indexOf(' ') !== -1
+        ? esc(cat.name).replace(/(\S+)\s(.*)/, '$1 <em>$2</em>')
+        : '<em>' + esc(cat.name) + '</em>';
+      document.getElementById('col-sub').textContent     = copy.sub;
+      document.getElementById('bc-cat').textContent      = cat.name;
+      document.title = 'LAUREAN — ' + cat.name;
+
+      // Filtrar productos de esta categoría (incluye productos creados en el dashboard)
+      var allProds = (data.products || []).slice();
+      if (typeof getCustomProducts === 'function') {
+        var _byId = {}; allProds.forEach(function(p){ _byId[p.id] = p; });
+        getCustomProducts().forEach(function(cp){ _byId[cp.id] = Object.assign({}, cp, { parent: cp.parent || cp.category }); });
+        allProds = Object.keys(_byId).map(function(k){ return _byId[k]; });
+      }
+      var products = allProds.filter(function(p) { return p.parent === catId; });
+
+      if (!products.length) {
+        count.style.display = 'none';
+        empty.innerHTML = '<div class="col-empty">'
+          + '<div class="col-empty-title">Pronto más piezas</div>'
+          + '<p class="col-empty-sub">Estamos preparando esta colección. Mientras tanto, explora todo el catálogo.</p>'
+          + '<a class="col-empty-link" href="catalogo.html">Ver todo el catálogo →</a>'
+          + '</div>';
+        empty.style.display = 'block';
+        return;
+      }
+
+      // Mostrar contador y grid
+      count.textContent = products.length + ' producto' + (products.length === 1 ? '' : 's');
+      count.style.display = 'block';
+      grid.innerHTML = products.map(buildCard).join('');
+      if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+    }
+
+    // ─── Escuchar catalog-ready ────────────────────────────────────────────────
+    document.addEventListener('laurean:catalog-ready', function() {
+      renderColeccion();
+    });
+  </script>
+  <script src="js/site-footer.js"></script>
+  <script defer src="js/cursor.js"></script>
+</body>
+</html>

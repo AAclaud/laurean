@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Revisión de Contenido · Laurean Shop</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --vino: #8F3833;
+  --vino-dk: #531F23;
+  --carbon: #191A18;
+  --crema: #F1ECE8;
+  --piedra: #DED7CE;
+  --dorado: #D4A853;
+  --white: #fff;
+  --ok: #2E7D32;
+  --ok-bg: #E8F5E9;
+  --change: #C62828;
+  --change-bg: #FFEBEE;
+  --pending: #795548;
+  --pending-bg: #FFF8E1;
+  --fd: 'Cormorant Garamond', Georgia, serif;
+  --fb: 'DM Sans', -apple-system, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--fb); font-size: 14px; color: var(--carbon); background: #f5f0eb; }
+img { display: block; max-width: 100%; }
+a { color: var(--vino); text-decoration: none; }
+
+/* ── Sticky header ── */
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+  background: var(--carbon); color: var(--crema);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 52px; gap: 20px;
+}
+.top-bar-title { font-family: var(--fd); font-style: italic; font-size: 18px; white-space: nowrap; }
+.top-bar-progress { display: flex; align-items: center; gap: 16px; font-size: 12px; opacity: 0.8; flex-wrap: wrap; }
+.prog-chip { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.prog-chip.ok { background: var(--ok); color: #fff; }
+.prog-chip.change { background: var(--change); color: #fff; }
+.prog-chip.pending { background: rgba(255,255,255,0.15); }
+.top-bar-actions { display: flex; gap: 10px; }
+.btn-export {
+  padding: 7px 16px; background: var(--vino); color: #fff; border: none; cursor: pointer;
+  font-family: var(--fb); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  border-radius: 4px; transition: background 0.2s;
+}
+.btn-export:hover { background: var(--vino-dk); }
+.btn-print {
+  padding: 7px 14px; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+  font-family: var(--fb); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  border-radius: 4px; transition: background 0.2s;
+}
+.btn-print:hover { background: rgba(255,255,255,0.22); }
+
+/* ── Page nav ── */
+.page-nav {
+  position: fixed; top: 52px; left: 0; right: 0; z-index: 998;
+  background: var(--crema); border-bottom: 1px solid var(--piedra);
+  display: flex; overflow-x: auto; padding: 0 24px; gap: 4px;
+}
+.page-nav::-webkit-scrollbar { display: none; }
+.nav-pill {
+  padding: 8px 16px; font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(25,26,24,0.5); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.nav-pill:hover { color: var(--carbon); }
+.nav-pill.active { color: var(--vino); border-color: var(--vino); font-weight: 500; }
+
+/* ── Main wrapper ── */
+.main { padding: 116px 24px 80px; max-width: 960px; margin: 0 auto; }
+
+/* ── Page group ── */
+.page-group { margin-bottom: 64px; scroll-margin-top: 110px; }
+.page-group-header {
+  background: var(--carbon); color: var(--crema);
+  padding: 20px 28px; border-radius: 10px 10px 0 0;
+  display: flex; align-items: center; gap: 14px;
+}
+.page-group-icon { font-size: 22px; }
+.page-group-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.5; }
+.page-group-title { font-family: var(--fd); font-size: 22px; font-weight: 300; }
+.page-group-url { font-size: 11px; color: rgba(255,255,255,0.35); margin-left: auto; font-family: monospace; }
+
+/* ── Section card ── */
+.section-card {
+  background: var(--white); border: 1px solid var(--piedra);
+  border-top: none; padding: 28px;
+}
+.section-card:last-child { border-radius: 0 0 10px 10px; }
+.section-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--vino); margin-bottom: 20px; font-weight: 500;
+}
+.section-label::before { content: ''; display: block; width: 20px; height: 1px; background: var(--vino); }
+
+/* ── Item row ── */
+.item-row {
+  display: flex; gap: 16px; align-items: flex-start;
+  padding: 16px; border-radius: 8px; background: var(--crema);
+  margin-bottom: 12px; transition: background 0.2s;
+}
+.item-row.status-ok { background: var(--ok-bg); border-left: 3px solid var(--ok); }
+.item-row.status-change { background: var(--change-bg); border-left: 3px solid var(--change); }
+.item-row.status-pending { border-left: 3px solid var(--piedra); }
+
+/* ── Chip ── */
+.chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; height: 24px; padding: 0 8px; border-radius: 4px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
+  flex-shrink: 0; margin-top: 2px;
+}
+.chip-t { background: #FFF9C4; color: #827717; border: 1px solid #F9A825; }
+.chip-i { background: #E3F2FD; color: #1565C0; border: 1px solid #42A5F5; }
+
+/* ── Item content ── */
+.item-content { flex: 1; }
+.item-role { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(25,26,24,0.4); margin-bottom: 5px; }
+.item-value {
+  font-size: 14.5px; line-height: 1.55; color: var(--carbon);
+  background: rgba(25,26,24,0.04); border-radius: 4px;
+  padding: 10px 14px; border-left: 3px solid var(--piedra);
+  font-style: normal;
+}
+.item-value em { font-style: italic; color: var(--vino); }
+.item-note { margin-top: 8px; }
+.item-note input, .item-note textarea {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--piedra);
+  border-radius: 6px; font-family: var(--fb); font-size: 13px; color: var(--carbon);
+  background: white; resize: vertical;
+}
+.item-note input:focus, .item-note textarea:focus { outline: none; border-color: var(--vino); }
+.item-note label { font-size: 11px; color: rgba(25,26,24,0.45); margin-bottom: 4px; display: block; }
+
+/* ── Image slot ── */
+.img-slot {
+  background: var(--crema); border: 1px solid var(--piedra); border-radius: 8px;
+  overflow: hidden; margin-bottom: 12px;
+}
+.img-slot-preview { position: relative; }
+.img-slot-preview img { width: 100%; height: 240px; object-fit: cover; display: block; }
+.img-slot-empty {
+  height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(135deg, #ede8e2, #ddd6ce);
+}
+.img-slot-empty-icon { font-size: 32px; opacity: 0.4; }
+.img-slot-empty-text { font-size: 12px; color: rgba(25,26,24,0.4); letter-spacing: 0.08em; text-transform: uppercase; }
+.img-slot-meta {
+  padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.img-slot-info { }
+.img-slot-name { font-size: 12.5px; font-weight: 500; color: var(--carbon); }
+.img-slot-dim { font-size: 11px; color: rgba(25,26,24,0.45); margin-top: 2px; }
+.img-slot-badge { font-size: 10px; letter-spacing: 0.1em; background: var(--piedra); color: var(--carbon); padding: 3px 9px; border-radius: 20px; }
+.img-slot-actions { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+.img-note input { width: 100%; padding: 7px 10px; border: 1px solid var(--piedra); border-radius: 6px; font-family: var(--fb); font-size: 12.5px; }
+.img-note input:focus { outline: none; border-color: var(--vino); }
+.img-note label { font-size: 11px; color: rgba(25,26,24,0.45); margin-bottom: 3px; display: block; }
+
+/* ── Status controls ── */
+.status-controls { display: flex; gap: 6px; flex-shrink: 0; flex-direction: column; align-items: flex-end; }
+.status-btn {
+  padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer;
+  border: 1.5px solid; transition: background 0.15s, color 0.15s; white-space: nowrap;
+}
+.status-btn.ok-btn { border-color: var(--ok); color: var(--ok); background: transparent; }
+.status-btn.ok-btn.active { background: var(--ok); color: white; }
+.status-btn.change-btn { border-color: var(--change); color: var(--change); background: transparent; }
+.status-btn.change-btn.active { background: var(--change); color: white; }
+
+.img-status-controls { display: flex; gap: 8px; }
+.img-status-btn {
+  flex: 1; padding: 8px; border-radius: 6px; font-size: 11.5px; font-weight: 500; cursor: pointer;
+  border: 1.5px solid; text-align: center; transition: background 0.15s, color 0.15s;
+}
+.img-status-btn.ok-btn { border-color: var(--ok); color: var(--ok); background: transparent; }
+.img-status-btn.ok-btn.active { background: var(--ok); color: white; }
+.img-status-btn.change-btn { border-color: var(--change); color: var(--change); background: transparent; }
+.img-status-btn.change-btn.active { background: var(--change); color: white; }
+
+/* ── Info box ── */
+.info-box {
+  background: #FFF8E1; border: 1px solid #FFE082; border-radius: 6px;
+  padding: 12px 16px; font-size: 13px; color: #5D4037; margin-bottom: 16px;
+}
+.info-box strong { color: #4E342E; }
+
+/* ── Dynamic note ── */
+.dynamic-section {
+  background: #F3E5F5; border: 1px solid #CE93D8; border-radius: 8px;
+  padding: 16px 20px; margin-bottom: 12px;
+}
+.dynamic-section-title { font-size: 12px; font-weight: 600; color: #6A1B9A; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.dynamic-section-body { font-size: 13px; color: #6A1B9A; line-height: 1.55; }
+
+/* ── Cover ── */
+.cover {
+  background: var(--carbon); color: var(--crema);
+  border-radius: 14px; padding: 56px 48px; margin-bottom: 40px;
+  position: relative; overflow: hidden;
+}
+.cover::before {
+  content: ''; position: absolute; top: -60%; right: -10%;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(212,168,83,0.18), transparent 70%);
+}
+.cover-eyebrow { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dorado); margin-bottom: 16px; }
+.cover-title { font-family: var(--fd); font-size: 44px; font-weight: 300; line-height: 1.05; margin-bottom: 20px; }
+.cover-title em { font-style: italic; color: var(--dorado); }
+.cover-body { font-size: 14.5px; line-height: 1.75; color: rgba(241,236,232,0.72); max-width: 580px; margin-bottom: 28px; }
+.cover-instructions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.cover-inst-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px 18px; }
+.cover-inst-num { font-family: var(--fd); font-style: italic; font-size: 24px; color: var(--dorado); margin-bottom: 6px; }
+.cover-inst-title { font-size: 12.5px; font-weight: 500; margin-bottom: 6px; }
+.cover-inst-body { font-size: 12px; color: rgba(241,236,232,0.55); line-height: 1.55; }
+
+/* ── Legend ── */
+.legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 14px 20px; background: var(--white); border-radius: 8px; margin-bottom: 32px; border: 1px solid var(--piedra); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--carbon); }
+
+/* ── Summary modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; }
+.modal-head { padding: 20px 24px; border-bottom: 1px solid var(--piedra); display: flex; justify-content: space-between; align-items: center; }
+.modal-head h2 { font-family: var(--fd); font-weight: 400; font-size: 22px; }
+.modal-close { width: 32px; height: 32px; cursor: pointer; border: none; background: none; font-size: 20px; color: rgba(25,26,24,0.4); }
+.modal-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.modal-body pre { white-space: pre-wrap; font-family: var(--fb); font-size: 13px; line-height: 1.7; color: var(--carbon); }
+.modal-foot { padding: 16px 24px; border-top: 1px solid var(--piedra); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ── Upload de imagen ── */
+.img-upload-area {
+  margin-top: 10px;
+  border: 2px dashed var(--piedra); border-radius: 8px; padding: 16px;
+  text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.img-upload-area:hover { border-color: var(--vino); background: rgba(143,56,51,0.03); }
+.img-upload-area.has-file { border-color: var(--ok); background: var(--ok-bg); border-style: solid; }
+.img-upload-area input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.img-upload-label { font-size: 12.5px; color: rgba(25,26,24,0.5); pointer-events: none; }
+.img-upload-label strong { color: var(--vino); }
+.img-upload-preview {
+  width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px;
+  margin-bottom: 8px; display: none;
+}
+.img-upload-filename { font-size: 12px; color: var(--ok); font-weight: 500; margin-top: 6px; }
+.img-upload-reset {
+  font-size: 11px; color: var(--change); text-decoration: underline; cursor: pointer;
+  background: none; border: none; font-family: var(--fb); margin-top: 4px; display: none;
+}
+
+/* ── Separador de página ── */
+.page-sep { text-align: center; padding: 12px 0; margin: 8px 0; }
+.page-sep-line { border: none; border-top: 1px dashed var(--piedra); margin: 0; }
+
+/* ── Print ── */
+@media print {
+  .top-bar, .page-nav, .btn-export, .btn-print, .cover-instructions { break-inside: avoid; }
+  .top-bar { position: relative; }
+  .page-nav { display: none; }
+  .main { padding-top: 20px; }
+  .status-controls, .img-status-controls { display: none; }
+  .item-row.status-ok::after { content: '✓ APROBADO'; color: var(--ok); font-size: 11px; font-weight: 700; }
+  .item-row.status-change::after { content: '✗ CAMBIAR'; color: var(--change); font-size: 11px; font-weight: 700; }
+  .page-group { break-before: auto; }
+  .section-card { break-inside: avoid; }
+}
+
+@media (max-width: 600px) {
+  .cover-instructions { grid-template-columns: 1fr; }
+  .top-bar { padding: 0 14px; gap: 10px; }
+  .top-bar-title { font-size: 15px; }
+  .top-bar-progress { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="top-bar">
+  <div class="top-bar-title">Laurean · Revisión</div>
+  <div class="top-bar-progress">
+    <span class="prog-chip pending" id="count-pending">0 pendientes</span>
+    <span class="prog-chip ok" id="count-ok">0 aprobados</span>
+    <span class="prog-chip change" id="count-change">0 a cambiar</span>
+  </div>
+  <div class="top-bar-actions">
+    <button class="btn-print" onclick="window.print()">Imprimir PDF</button>
+    <button class="btn-export" onclick="openExport()">Exportar feedback</button>
+  </div>
+</div>
+
+<!-- Page nav -->
+<nav class="page-nav" id="page-nav">
+  <div class="nav-pill active" onclick="navScrollTo('inicio')">Inicio</div>
+  <div class="nav-pill" onclick="navScrollTo('nosotros')">Nosotros</div>
+  <div class="nav-pill" onclick="navScrollTo('women')">Women</div>
+  <div class="nav-pill" onclick="navScrollTo('men')">Men</div>
+  <div class="nav-pill" onclick="navScrollTo('kids')">Kids</div>
+  <div class="nav-pill" onclick="navScrollTo('catalogo')">Catálogo</div>
+  <div class="nav-pill" onclick="navScrollTo('footer')">Footer</div>
+</nav>
+
+<div class="main">
+
+  <!-- Cover -->
+  <div class="cover">
+    <p class="cover-eyebrow">Documento de revisión · 2026</p>
+    <h1 class="cover-title">Revisión de contenido<br><em>Laurean Shop</em></h1>
+    <p class="cover-body">Este documento muestra el contenido completo del sitio web de Laurean antes del lanzamiento: todos los textos e imágenes que aparecerán en cada página. Tu tarea es revisar cada elemento y indicar si lo apruebas o si deseas realizar cambios.</p>
+    <div class="cover-instructions">
+      <div class="cover-inst-card">
+        <div class="cover-inst-num">01</div>
+        <div class="cover-inst-title">Revisa cada sección</div>
+        <div class="cover-inst-body">Desplázate por el documento. Cada página del sitio está organizada en secciones con sus textos e imágenes.</div>
+      </div>
+      <div class="cover-inst-card">
+        <div class="cover-inst-num">02</div>
+        <div class="cover-inst-title">Aprueba o marca cambios</div>
+        <div class="cover-inst-body">Usa los botones "Aprobar" o "Cambiar" en cada elemento. Si cambias algo, escribe en la nota qué quieres que diga o qué imagen prefieres.</div>
+      </div>
+      <div class="cover-inst-card">
+        <div class="cover-inst-num">03</div>
+        <div class="cover-inst-title">Exporta el feedback</div>
+        <div class="cover-inst-body">Cuando termines, haz clic en "Exportar feedback" (arriba a la derecha). Copia el texto y envíalo al equipo de desarrollo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span style="font-size:12px;font-weight:500;color:var(--carbon);margin-right:4px;">Leyenda:</span>
+    <div class="legend-item"><span class="chip chip-t">T</span> Texto editable</div>
+    <div class="legend-item"><span class="chip chip-i">I</span> Imagen / slot de imagen</div>
+    <div class="legend-item" style="color:var(--ok)">● Aprobado</div>
+    <div class="legend-item" style="color:var(--change)">● A cambiar</div>
+    <div class="legend-item" style="color:var(--pending)">● Sin revisar</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       INICIO
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="inicio">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Página principal</div>
+        <div class="page-group-title">Inicio — Laurean.html</div>
+      </div>
+      <div class="page-group-url">laurean.com</div>
+    </div>
+
+    <!-- HERO -->
+    <div class="section-card">
+      <div class="section-label">Sección Hero · pantalla completa al entrar</div>
+
+      <!-- Imagen hero -->
+      <div class="img-slot" id="slot-I01">
+        <div class="img-slot-preview">
+          <img src="images/laurean_hero_familia.jpg" alt="Hero imagen" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-01 · Imagen principal (Hero)</div>
+            <div class="img-slot-dim">Ocupa la mitad izquierda de la pantalla de inicio · recomendado 1200 × 1600px</div>
+          </div>
+          <span class="img-slot-badge">Hero</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I01', 'ok', this)">✓ Aprobar esta imagen</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I01', 'change', this)">✗ Quiero cambiar la imagen</button>
+          </div>
+          <div class="img-note" id="note-I01" style="display:none;">
+            <label>¿Qué imagen quieres usar? Descríbela o pega el nombre del archivo:</label>
+            <input type="text" placeholder="Ej: foto de pareja con suéter blanco, archivo: nueva_hero.jpg" data-id="I01" data-role="Imagen Hero" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Textos hero -->
+      <div class="item-row status-pending" id="row-T01">
+        <span class="chip chip-t">T-01</span>
+        <div class="item-content">
+          <div class="item-role">Etiqueta pequeña (eyebrow) — aparece encima del título</div>
+          <div class="item-value">Desde 2019 · Guatemala</div>
+          <div class="item-note">
+            <label>¿Cambiar? Escribe el texto nuevo:</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T01" data-role="Eyebrow Hero" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T01', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T01', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+
+      <div class="item-row status-pending" id="row-T02">
+        <span class="chip chip-t">T-02</span>
+        <div class="item-content">
+          <div class="item-role">Título principal (H1) — la frase más grande de la página</div>
+          <div class="item-value">El arte de<br>vestir <em>bien</em>.</div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T02" data-role="Título H1 Hero" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T02', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T02', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+
+      <div class="item-row status-pending" id="row-T03">
+        <span class="chip chip-t">T-03</span>
+        <div class="item-content">
+          <div class="item-role">Subtítulo — descripción breve debajo del título</div>
+          <div class="item-value">Elegancia y practicidad que conviven de forma natural. Para vestirte bien sin complicaciones ni riesgos.</div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <textarea rows="2" placeholder="Texto alternativo..." data-id="T03" data-role="Subtítulo Hero"></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T03', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T03', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+
+      <div class="item-row status-pending" id="row-T04">
+        <span class="chip chip-t">T-04</span>
+        <div class="item-content">
+          <div class="item-role">Botón CTA principal + precio referencia</div>
+          <div class="item-value">Botón: "Explorar colección →" · Precio: "Desde Q149"</div>
+          <div class="item-note">
+            <label>¿Cambiar el texto del botón o el precio?</label>
+            <input type="text" placeholder="Ej: Botón: 'Ver colección' · Precio: 'Desde Q179'" data-id="T04" data-role="CTA + Precio Hero" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T04', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T04', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARQUEE -->
+    <div class="section-card">
+      <div class="section-label">Banda de texto animado (Marquee) · debajo del hero</div>
+      <div class="info-box">Esta banda de fondo oscuro corre de forma continua con textos pequeños. El contenido lo define el administrador desde el panel.</div>
+      <div class="item-row status-pending" id="row-T05">
+        <span class="chip chip-t">T-05</span>
+        <div class="item-content">
+          <div class="item-role">Textos del marquee (se repiten en bucle)</div>
+          <div class="item-value">Pagos seguros · Visa · Mastercard · Pago QR · Precios en Q</div>
+          <div class="item-note">
+            <label>¿Cambiar o agregar textos?</label>
+            <input type="text" placeholder="Ej: Envío gratis · Nuevas colecciones · Atención personalizada" data-id="T05" data-role="Textos Marquee" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T05', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T05', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLECCIONES -->
+    <div class="section-card">
+      <div class="section-label">Sección "Las Colecciones" · 3 tarjetas grandes con imagen</div>
+      <div class="item-row status-pending" id="row-T06">
+        <span class="chip chip-t">T-06</span>
+        <div class="item-content">
+          <div class="item-role">Título de la sección</div>
+          <div class="item-value">Eyebrow: "Las colecciones" · Título: "Una marca para <em>cada quien</em>"</div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T06" data-role="Título Sección Colecciones" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T06', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T06', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;">
+        <!-- Women -->
+        <div class="img-slot" id="slot-I02">
+          <div class="img-slot-preview">
+            <img src="images/categorias/women-1.jpg" alt="Women" style="height:180px" />
+          </div>
+          <div class="img-slot-meta">
+            <div class="img-slot-info">
+              <div class="img-slot-name">I-02 · Tarjeta Women</div>
+              <div class="img-slot-dim">Texto: "Laurean Women"</div>
+            </div>
+          </div>
+          <div class="img-slot-actions">
+            <div class="img-status-controls">
+              <button class="img-status-btn ok-btn" onclick="setImgStatus('I02','ok',this)">✓ Aprobar</button>
+              <button class="img-status-btn change-btn" onclick="setImgStatus('I02','change',this)">✗ Cambiar</button>
+            </div>
+            <div class="img-note" id="note-I02" style="display:none;">
+              <input type="text" placeholder="Nueva imagen para Women..." data-id="I02" data-role="Imagen Tarjeta Women" />
+            </div>
+          </div>
+        </div>
+        <!-- Men -->
+        <div class="img-slot" id="slot-I03">
+          <div class="img-slot-preview">
+            <img src="images/categorias/men-2.jpg" alt="Men" style="height:180px" />
+          </div>
+          <div class="img-slot-meta">
+            <div class="img-slot-info">
+              <div class="img-slot-name">I-03 · Tarjeta Men</div>
+              <div class="img-slot-dim">Texto: "Laurean Men"</div>
+            </div>
+          </div>
+          <div class="img-slot-actions">
+            <div class="img-status-controls">
+              <button class="img-status-btn ok-btn" onclick="setImgStatus('I03','ok',this)">✓ Aprobar</button>
+              <button class="img-status-btn change-btn" onclick="setImgStatus('I03','change',this)">✗ Cambiar</button>
+            </div>
+            <div class="img-note" id="note-I03" style="display:none;">
+              <input type="text" placeholder="Nueva imagen para Men..." data-id="I03" data-role="Imagen Tarjeta Men" />
+            </div>
+          </div>
+        </div>
+        <!-- Kids -->
+        <div class="img-slot" id="slot-I04">
+          <div class="img-slot-preview">
+            <img src="images/categorias/kids-2.jpg" alt="Kids" style="height:180px" />
+          </div>
+          <div class="img-slot-meta">
+            <div class="img-slot-info">
+              <div class="img-slot-name">I-04 · Tarjeta Kids</div>
+              <div class="img-slot-dim">Texto: "Laurean Kids"</div>
+            </div>
+          </div>
+          <div class="img-slot-actions">
+            <div class="img-status-controls">
+              <button class="img-status-btn ok-btn" onclick="setImgStatus('I04','ok',this)">✓ Aprobar</button>
+              <button class="img-status-btn change-btn" onclick="setImgStatus('I04','change',this)">✗ Cambiar</button>
+            </div>
+            <div class="img-note" id="note-I04" style="display:none;">
+              <input type="text" placeholder="Nueva imagen para Kids..." data-id="I04" data-role="Imagen Tarjeta Kids" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDITORIAL -->
+    <div class="section-card">
+      <div class="section-label">Banda editorial · imagen grande + bloque de texto oscuro</div>
+      <div class="img-slot" id="slot-I05">
+        <div class="img-slot-preview">
+          <img src="images/laurean_editorial_familia.jpg" alt="Editorial" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-05 · Imagen editorial</div>
+            <div class="img-slot-dim">Ocupa la mitad de la banda · recomendado 900 × 620px</div>
+          </div>
+          <span class="img-slot-badge">Editorial</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I05','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I05','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I05" style="display:none;">
+            <input type="text" placeholder="Nombre o descripción de la nueva imagen..." data-id="I05" data-role="Imagen Editorial Inicio" />
+          </div>
+        </div>
+      </div>
+
+      <div class="item-row status-pending" id="row-T07">
+        <span class="chip chip-t">T-07</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Cuerpo de la banda editorial</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Nuestra historia"<br>
+            <strong>Título:</strong> "La elegancia está en lo <em>simple</em>."<br>
+            <strong>Texto:</strong> "Laurean nace del gusto por la moda elegante y simple. Desde 2019 creamos prendas donde la comodidad, la estética y la practicidad conviven en equilibrio, para quienes buscan verse bien sin perder autenticidad."
+          </div>
+          <div class="item-note">
+            <label>¿Algún cambio en estos textos?</label>
+            <textarea rows="3" placeholder="Indica qué parte cambiar y cómo quedará..." data-id="T07" data-role="Textos Banda Editorial Inicio"></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T07', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T07', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOOKBOOK -->
+    <div class="section-card">
+      <div class="section-label">Lookbook / Campaña · 3 imágenes de marca + texto</div>
+      <div class="item-row status-pending" id="row-T08">
+        <span class="chip chip-t">T-08</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Descripción del lookbook</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "El arte de vestir bien"<br>
+            <strong>Título:</strong> "Detrás de cada <em>prenda</em>, una promesa."<br>
+            <strong>Texto:</strong> "La verdadera elegancia nace de la simplicidad, la confianza y el criterio — no del exceso. Cada detalle acompaña una experiencia cercana, práctica y sin riesgos."
+          </div>
+          <div class="item-note">
+            <label>¿Algún cambio?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T08" data-role="Textos Lookbook Inicio"></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T08', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T08', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div class="img-slot" id="slot-I06">
+          <div class="img-slot-preview"><img src="images/laurean_mockup_tag.jpg" alt="Tag" style="height:160px" /></div>
+          <div class="img-slot-meta"><div class="img-slot-info"><div class="img-slot-name">I-06 · Etiquetado</div></div></div>
+          <div class="img-slot-actions">
+            <div class="img-status-controls">
+              <button class="img-status-btn ok-btn" onclick="setImgStatus('I06','ok',this)">✓</button>
+              <button class="img-status-btn change-btn" onclick="setImgStatus('I06','change',this)">✗ Cambiar</button>
+            </div>
+            <div class="img-note" id="note-I06" style="display:none;"><input type="text" placeholder="Nueva imagen..." data-id="I06" data-role="Lookbook Etiquetado" /></div>
+          </div>
+        </div>
+        <div class="img-slot" id="slot-I07">
+          <div class="img-slot-preview"><img src="images/laurean_mockup_bag.jpg" alt="Bag" style="height:160px" /></div>
+          <div class="img-slot-meta"><div class="img-slot-info"><div class="img-slot-name">I-07 · Packaging</div></div></div>
+          <div class="img-slot-actions">
+            <div class="img-status-controls">
+              <button class="img-status-btn ok-btn" onclick="setImgStatus('I07','ok',this)">✓</button>
+              <button class="img-status-btn change-btn" onclick="setImgStatus('I07','change',this)">✗ Cambiar</button>
+            </div>
+            <div class="img-note" id="note-I07" style="display:none;"><input type="text" placeholder="Nueva imagen..." data-id="I07" data-role="Lookbook Packaging" /></div>
+          </div>
+        </div>
+        <div class="img-slot" id="slot-I08">
+          <div class="img-slot-preview"><img src="images/laurean_mockup_billboard.jpg" alt="Billboard" style="height:160px" /></div>
+          <div class="img-slot-meta"><div class="img-slot-info"><div class="img-slot-name">I-08 · Campaña exterior</div></div></div>
+          <div class="img-slot-actions">
+            <div class="img-status-controls">
+              <button class="img-status-btn ok-btn" onclick="setImgStatus('I08','ok',this)">✓</button>
+              <button class="img-status-btn change-btn" onclick="setImgStatus('I08','change',this)">✗ Cambiar</button>
+            </div>
+            <div class="img-note" id="note-I08" style="display:none;"><input type="text" placeholder="Nueva imagen..." data-id="I08" data-role="Lookbook Campaña" /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SWEATERS / PRODUCTOS -->
+    <div class="section-card">
+      <div class="section-label">Sección de productos · dinámica desde el sistema</div>
+      <div class="item-row status-pending" id="row-T09">
+        <span class="chip chip-t">T-09</span>
+        <div class="item-content">
+          <div class="item-role">Títulos de secciones de producto</div>
+          <div class="item-value">
+            "Punto fino para <em>toda la familia</em>" · "Combos <em>especiales</em>" · "Completa el look — <em>Accesorios y Calzado</em>"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar alguno de estos títulos?</label>
+            <input type="text" placeholder="Indica cuál y cómo..." data-id="T09" data-role="Títulos Secciones Productos" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T09', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T09', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+      <div class="dynamic-section">
+        <div class="dynamic-section-title">Contenido dinámico</div>
+        <div class="dynamic-section-body">Los productos (sweaters, combos, accesorios) se renderizan automáticamente desde la base de datos. Las imágenes, precios y nombres de cada producto los gestiona el administrador desde el panel. No se muestran aquí porque son datos en vivo.</div>
+      </div>
+    </div>
+
+    <!-- VITRINA / CATÁLOGO -->
+    <div class="section-card">
+      <div class="section-label">Vitrina catálogo · productos disponibles en tiempo real</div>
+      <div class="item-row status-pending" id="row-T10">
+        <span class="chip chip-t">T-10</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título de la vitrina</div>
+          <div class="item-value"><strong>Eyebrow:</strong> "Catálogo · 2026" · <strong>Título:</strong> "Lo disponible, <em>actualizado para ti.</em>"</div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T10" data-role="Títulos Vitrina Catálogo" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T10', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T10', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FULL BLEED -->
+    <div class="section-card">
+      <div class="section-label">Banda full-bleed · imagen de fondo + texto centrado</div>
+      <div class="img-slot" id="slot-I09">
+        <div class="img-slot-preview">
+          <img src="images/laurean_familia_square.jpg" alt="Familia" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-09 · Imagen de fondo full-bleed</div>
+            <div class="img-slot-dim">Imagen ancho completo con texto superpuesto · recomendado 1920 × 900px</div>
+          </div>
+          <span class="img-slot-badge">Full Bleed</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I09','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I09','change',this)">✗ Cambiar imagen</button>
+          </div>
+          <div class="img-note" id="note-I09" style="display:none;">
+            <input type="text" placeholder="Nombre o descripción de la nueva imagen..." data-id="I09" data-role="Imagen Full Bleed Inicio" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T11">
+        <span class="chip chip-t">T-11</span>
+        <div class="item-content">
+          <div class="item-role">Título sobre la imagen + botón CTA</div>
+          <div class="item-value">Título: "Llevamos la elegancia a lo cotidiano" · Botón: "Comprar ahora →"</div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T11" data-role="Título y CTA Full Bleed" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T11', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T11', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRUST BAR -->
+    <div class="section-card">
+      <div class="section-label">Barra de confianza · 4 íconos con texto</div>
+      <div class="item-row status-pending" id="row-T12">
+        <span class="chip chip-t">T-12</span>
+        <div class="item-content">
+          <div class="item-role">Los 4 puntos de confianza (ícono + etiqueta + descripción)</div>
+          <div class="item-value">
+            🔒 <strong>Pago Seguro</strong> — "Visa · Mastercard · QR"<br>
+            📦 <strong>Envío de dos tallas</strong> — "Elige la que mejor te quede"<br>
+            🔄 <strong>Garantía en productos</strong> — "Compra con confianza"<br>
+            💬 <strong>Asesoría cercana</strong> — "WhatsApp · Lun–Vie"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar algún texto de los puntos de confianza?</label>
+            <textarea rows="2" placeholder="Indica cuál punto y qué cambio..." data-id="T12" data-role="Barra de Confianza" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T12', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T12', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENDEDORAS -->
+    <div class="section-card">
+      <div class="section-label">Banda de programa de vendedores</div>
+      <div class="item-row status-pending" id="row-T13">
+        <span class="chip chip-t">T-13</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Titular + Descripción + Botón</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Programa de vendedores"<br>
+            <strong>Título:</strong> "Vende Laurean. <em>Sin inversión, sin stock.</em>"<br>
+            <strong>Descripción:</strong> "Gana comisiones con el respaldo de la marca, envío de dos tallas y acompañamiento cercano en cada venta."<br>
+            <strong>Botón:</strong> "Quiero ser parte →"
+          </div>
+          <div class="item-note">
+            <label>¿Algún cambio en esta sección?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T13" data-role="Banda Vendedoras Inicio" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T13', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T13', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /inicio -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       NOSOTROS
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="nosotros">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Página</div>
+        <div class="page-group-title">Nosotros — nosotros.html</div>
+      </div>
+      <div class="page-group-url">laurean.com/nosotros</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Hero · imagen de fondo con texto</div>
+      <div class="img-slot" id="slot-I10">
+        <div class="img-slot-preview">
+          <img src="images/categorias/women-6.jpg" alt="Nosotros hero" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-10 · Imagen hero Nosotros</div>
+            <div class="img-slot-dim">Cubre ~78% de la pantalla · recomendado 1920 × 1200px</div>
+          </div>
+          <span class="img-slot-badge">Nosotros</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I10','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I10','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I10" style="display:none;">
+            <input type="text" placeholder="Nueva imagen para Nosotros..." data-id="I10" data-role="Imagen Hero Nosotros" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T14">
+        <span class="chip chip-t">T-14</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Subtítulo del hero</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Desde 2019 · Guatemala"<br>
+            <strong>Título:</strong> "El arte de vestir <em>bien</em>."<br>
+            <strong>Subtítulo:</strong> "La elegancia está en lo simple. Creemos que vestirse bien no debería ser complicado ni exclusivo de unos pocos."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T14" data-role="Hero Nosotros" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T14', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T14', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Historia · imagen + texto en dos columnas</div>
+      <div class="img-slot" id="slot-I11">
+        <div class="img-slot-preview">
+          <img src="images/categorias/men-1.jpg" alt="Historia" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-11 · Imagen sección Historia</div>
+            <div class="img-slot-dim">Formato vertical 4:5 · recomendado 700 × 880px</div>
+          </div>
+          <span class="img-slot-badge">Historia</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I11','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I11','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I11" style="display:none;">
+            <input type="text" placeholder="Nueva imagen para Historia..." data-id="I11" data-role="Imagen Historia Nosotros" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T15">
+        <span class="chip chip-t">T-15</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Cuerpo de la historia</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Nuestra historia"<br>
+            <strong>Título:</strong> "Elegancia simple, <em>cercana y real</em>."<br>
+            <strong>Párrafo 1:</strong> "Laurean nace del gusto por la moda elegante y simple. Desde 2019 desarrollamos prendas donde la comodidad, la estética y la practicidad conviven en equilibrio, pensadas para quienes buscan verse bien sin perder autenticidad."<br>
+            <strong>Párrafo 2:</strong> "Hemos construido una identidad basada en la honestidad, la cercanía y la confianza. A través de una experiencia de compra acompañada y una estética cálida y coherente, convertimos la elegancia en algo cotidiano y accesible para todos."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar algún texto?</label>
+            <textarea rows="3" placeholder="Indica qué cambiar..." data-id="T15" data-role="Textos Historia Nosotros" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T15', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T15', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Lo que creemos · 3 tarjetas de marca</div>
+      <div class="item-row status-pending" id="row-T16">
+        <span class="chip chip-t">T-16</span>
+        <div class="item-content">
+          <div class="item-role">Título de sección + contenido de las 3 tarjetas</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Lo que creemos" · <strong>Título:</strong> "Vestir bien, <em>sin riesgo</em>."<br><br>
+            <strong>01 · El insight:</strong> "Muchos quieren verse elegantes y sentirse seguros con lo que usan, pero perciben la moda elegante como algo complicado, costoso o lejano. Laurean la vuelve simple, accesible y natural."<br><br>
+            <strong>02 · Propuesta de valor:</strong> "Elegancia y practicidad que conviven de forma natural. Más allá de vender prendas, acompañamos cada compra con asesoría cercana, envío de dos tallas y garantía en productos."<br><br>
+            <strong>03 · Nuestra promesa:</strong> "La verdadera elegancia nace de la simplicidad, la confianza y el criterio, no del exceso. Por eso vestirse bien con Laurean es una experiencia cercana, práctica y sin riesgos."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar alguna tarjeta?</label>
+            <textarea rows="3" placeholder="Indica cuál tarjeta y qué cambiar..." data-id="T16" data-role="Tarjetas Lo que Creemos" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T16', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T16', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Valores · chips de texto</div>
+      <div class="item-row status-pending" id="row-T17">
+        <span class="chip chip-t">T-17</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Lista de valores</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Lo que nos guía" · <strong>Título:</strong> "Nuestros <em>valores</em>"<br>
+            <strong>Valores:</strong> Honestidad · Transparencia · Calidad · Cercanía · Responsabilidad · Coherencia
+          </div>
+          <div class="item-note">
+            <label>¿Agregar, quitar o cambiar algún valor?</label>
+            <input type="text" placeholder="Ej: agregar 'Sostenibilidad', cambiar 'Cercanía' por 'Calidez'..." data-id="T17" data-role="Valores Nosotros" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T17', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T17', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Visión &amp; Misión · banda oscura</div>
+      <div class="item-row status-pending" id="row-T18">
+        <span class="chip chip-t">T-18</span>
+        <div class="item-content">
+          <div class="item-role">Visión y Misión de la empresa</div>
+          <div class="item-value">
+            <strong>Visión:</strong> "Ser referente de moda en Centroamérica" — "Reconocidos por el equilibrio entre elegancia y practicidad, y por escalar como proveedor de grandes tiendas sin perder nuestra esencia: cercanía, calidad y confianza en cada prenda."<br><br>
+            <strong>Misión:</strong> "Que vestirse bien sea simple y seguro" — "Brindar prendas elegantes, accesibles y funcionales que se adapten a la vida real, acompañando cada compra con una experiencia confiable, cercana y sin complicaciones."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar visión o misión?</label>
+            <textarea rows="3" placeholder="Indica cuál y cómo quedaría..." data-id="T18" data-role="Visión y Misión" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T18', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T18', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Cierre · CTA + firma de marca</div>
+      <div class="item-row status-pending" id="row-T19">
+        <span class="chip chip-t">T-19</span>
+        <div class="item-content">
+          <div class="item-role">Título de cierre + firma</div>
+          <div class="item-value">
+            <strong>Título:</strong> "La elegancia, <em>hecha cotidiana</em>."<br>
+            <strong>Botón:</strong> "Descubre la colección →"<br>
+            <strong>Firma:</strong> "Laurean · by Seong Woo"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T19" data-role="CTA y Firma Nosotros" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T19', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T19', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /nosotros -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       WOMEN
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="women">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Página de colección</div>
+        <div class="page-group-title">Laurean Women — laurean-women.html</div>
+      </div>
+      <div class="page-group-url">laurean.com/women</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Hero · imagen de fondo con título</div>
+      <div class="img-slot" id="slot-I12">
+        <div class="img-slot-preview">
+          <img src="images/categorias/women-1.jpg" alt="Women hero" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-12 · Imagen hero Women</div>
+            <div class="img-slot-dim">Ocupa ~92% de la pantalla · recomendado 1920 × 1200px</div>
+          </div>
+          <span class="img-slot-badge">Women</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I12','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I12','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I12" style="display:none;">
+            <input type="text" placeholder="Nueva imagen para Women hero..." data-id="I12" data-role="Imagen Hero Women" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T20">
+        <span class="chip chip-t">T-20</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Concepto del hero Women</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Laurean"<br>
+            <strong>Título:</strong> "<em>Women</em>"<br>
+            <strong>Concepto:</strong> "Feminidad contemporánea: segura, refinada y auténtica. La elegancia como extensión natural de tu estilo."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T20" data-role="Hero Women" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T20', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T20', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Banda de identidad · logo de colección + tagline</div>
+      <div class="img-slot" id="slot-I13">
+        <div class="img-slot-preview">
+          <img src="images/categorias/logo-women.jpg" alt="Logo Women" style="height:120px;object-fit:contain;background:#531F23" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-13 · Logo de colección Women</div>
+            <div class="img-slot-dim">Aparece centrado sobre fondo de color · recomendado 400 × 200px con transparencia</div>
+          </div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I13','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I13','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I13" style="display:none;">
+            <input type="text" placeholder="Nueva imagen para logo Women..." data-id="I13" data-role="Logo Colección Women" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T21">
+        <span class="chip chip-t">T-21</span>
+        <div class="item-content">
+          <div class="item-role">Tagline de la banda de identidad</div>
+          <div class="item-value">"El arte de vestir bien, en femenino."</div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Tagline alternativo..." data-id="T21" data-role="Tagline Banda Women" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T21', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T21', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Editorial intermedia + sección de colección</div>
+      <div class="img-slot" id="slot-I14">
+        <div class="img-slot-preview">
+          <img src="images/categorias/women-6.jpg" alt="Editorial Women" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-14 · Imagen editorial intermedia Women</div>
+            <div class="img-slot-dim">Ancho completo entre las dos grillas de productos</div>
+          </div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I14','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I14','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I14" style="display:none;">
+            <input type="text" placeholder="Nueva imagen editorial Women..." data-id="I14" data-role="Editorial Intermedia Women" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T22">
+        <span class="chip chip-t">T-22</span>
+        <div class="item-content">
+          <div class="item-role">Título sobre la imagen editorial + títulos de secciones</div>
+          <div class="item-value">
+            <strong>Sobre imagen:</strong> "Momentos cotidianos, <em>vestidos con criterio.</em>"<br>
+            <strong>Sección 1:</strong> Eyebrow "Selección" · "Lo nuevo en <em>Women</em>"<br>
+            <strong>Sección 2:</strong> Eyebrow "Colección" · "La colección <em>Women</em>"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T22" data-role="Títulos Secciones Women" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T22', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T22', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+      <div class="dynamic-section">
+        <div class="dynamic-section-title">Productos dinámicos</div>
+        <div class="dynamic-section-body">Los productos de la colección Women se muestran automáticamente desde el inventario. Las imágenes de cada prenda se gestionan desde el panel de administración.</div>
+      </div>
+    </div>
+
+  </div><!-- /women -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       MEN
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="men">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Página de colección</div>
+        <div class="page-group-title">Laurean Men — laurean-men.html</div>
+      </div>
+      <div class="page-group-url">laurean.com/men</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Hero · imagen de fondo con título</div>
+      <div class="img-slot" id="slot-I15">
+        <div class="img-slot-preview">
+          <img src="images/categorias/men-2.jpg" alt="Men hero" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-15 · Imagen hero Men</div>
+            <div class="img-slot-dim">Ocupa ~92% de la pantalla · recomendado 1920 × 1200px</div>
+          </div>
+          <span class="img-slot-badge">Men</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I15','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I15','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I15" style="display:none;">
+            <input type="text" placeholder="Nueva imagen para Men hero..." data-id="I15" data-role="Imagen Hero Men" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T23">
+        <span class="chip chip-t">T-23</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Concepto del hero Men</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Laurean"<br>
+            <strong>Título:</strong> "<em>Men</em>"<br>
+            <strong>Concepto:</strong> "Masculinidad elegante, sólida y segura. Vestir bien desde la naturalidad y el criterio personal."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T23" data-role="Hero Men" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T23', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T23', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Banda de identidad + editorial + colección</div>
+      <div class="img-slot" id="slot-I16">
+        <div class="img-slot-preview">
+          <img src="images/categorias/logo-men.jpg" alt="Logo Men" style="height:120px;object-fit:contain;background:#191A18" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info"><div class="img-slot-name">I-16 · Logo colección Men</div></div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I16','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I16','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I16" style="display:none;"><input type="text" placeholder="Nueva imagen..." data-id="I16" data-role="Logo Colección Men" /></div>
+        </div>
+      </div>
+      <div class="img-slot" id="slot-I17" style="margin-top:10px">
+        <div class="img-slot-preview">
+          <img src="images/categorias/men-7.jpg" alt="Editorial Men" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info"><div class="img-slot-name">I-17 · Imagen editorial intermedia Men</div></div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I17','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I17','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I17" style="display:none;"><input type="text" placeholder="Nueva imagen editorial Men..." data-id="I17" data-role="Editorial Intermedia Men" /></div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T24">
+        <span class="chip chip-t">T-24</span>
+        <div class="item-content">
+          <div class="item-role">Tagline + texto editorial + títulos de sección</div>
+          <div class="item-value">
+            <strong>Tagline:</strong> "El arte de vestir bien, con carácter."<br>
+            <strong>Sobre imagen:</strong> "Presencia y carácter, <em>sin esfuerzo.</em>"<br>
+            <strong>Sección 1:</strong> "Lo nuevo en <em>Men</em>" · <strong>Sección 2:</strong> "La colección <em>Men</em>"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T24" data-role="Textos Secciones Men" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T24', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T24', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /men -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       KIDS
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="kids">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Página de colección</div>
+        <div class="page-group-title">Laurean Kids — laurean-kids.html</div>
+      </div>
+      <div class="page-group-url">laurean.com/kids</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Hero · imagen de fondo con título</div>
+      <div class="img-slot" id="slot-I18">
+        <div class="img-slot-preview">
+          <img src="images/categorias/kids-2.jpg" alt="Kids hero" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-18 · Imagen hero Kids</div>
+            <div class="img-slot-dim">Ocupa ~92% de la pantalla · recomendado 1920 × 1200px</div>
+          </div>
+          <span class="img-slot-badge">Kids</span>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I18','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I18','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I18" style="display:none;">
+            <input type="text" placeholder="Nueva imagen para Kids hero..." data-id="I18" data-role="Imagen Hero Kids" />
+          </div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T25">
+        <span class="chip chip-t">T-25</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Concepto</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Laurean"<br>
+            <strong>Título:</strong> "<em>Kids</em>"<br>
+            <strong>Concepto:</strong> "Dinámica, espontánea y creativa. Diversión y autenticidad en cada prenda, para los más pequeños."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T25" data-role="Hero Kids" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T25', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T25', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Banda de identidad + editorial + colección</div>
+      <div class="img-slot" id="slot-I19">
+        <div class="img-slot-preview">
+          <img src="images/categorias/logo-kids.jpg" alt="Logo Kids" style="height:120px;object-fit:contain;background:#191A18" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info"><div class="img-slot-name">I-19 · Logo colección Kids</div></div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I19','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I19','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I19" style="display:none;"><input type="text" placeholder="Nueva imagen..." data-id="I19" data-role="Logo Colección Kids" /></div>
+        </div>
+      </div>
+      <div class="img-slot" id="slot-I20" style="margin-top:10px">
+        <div class="img-slot-preview">
+          <img src="images/categorias/kids-5.jpg" alt="Editorial Kids" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info"><div class="img-slot-name">I-20 · Imagen editorial intermedia Kids</div></div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I20','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I20','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I20" style="display:none;"><input type="text" placeholder="Nueva imagen editorial Kids..." data-id="I20" data-role="Editorial Intermedia Kids" /></div>
+        </div>
+      </div>
+      <div class="item-row status-pending" id="row-T26">
+        <span class="chip chip-t">T-26</span>
+        <div class="item-content">
+          <div class="item-role">Tagline + texto editorial + títulos de sección</div>
+          <div class="item-value">
+            <strong>Tagline:</strong> "El arte de vestir bien, desde pequeños."<br>
+            <strong>Sobre imagen:</strong> "Crecer con estilo, <em>jugando.</em>"<br>
+            <strong>Sección 1:</strong> "Lo nuevo en <em>Kids</em>" · <strong>Sección 2:</strong> "La colección <em>Kids</em>"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T26" data-role="Textos Secciones Kids" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T26', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T26', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /kids -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       CATÁLOGO
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="catalogo">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Página</div>
+        <div class="page-group-title">Catálogo — catalogo.html</div>
+      </div>
+      <div class="page-group-url">laurean.com/catalogo</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Encabezado de la página de catálogo</div>
+      <div class="item-row status-pending" id="row-T27">
+        <span class="chip chip-t">T-27</span>
+        <div class="item-content">
+          <div class="item-role">Eyebrow + Título + Descripción de la página de catálogo</div>
+          <div class="item-value">
+            <strong>Eyebrow:</strong> "Catálogo · Disponibilidad en bodega"<br>
+            <strong>Título:</strong> "Todo lo que tenemos, <em>disponible</em> para ti."<br>
+            <strong>Descripción:</strong> "Explora el inventario disponible. Haz clic en cualquier producto para ver detalles y confirmar tu compra."
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <textarea rows="2" placeholder="Indica qué cambiar..." data-id="T27" data-role="Encabezado Catálogo" ></textarea>
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T27', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T27', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+      <div class="dynamic-section">
+        <div class="dynamic-section-title">Contenido dinámico — productos del inventario</div>
+        <div class="dynamic-section-body">Los productos del catálogo se cargan en tiempo real desde la base de datos. Están agrupados por: Novedades → por categoría (Women, Men, Kids) → Disponibles. Las imágenes, precios y nombres de cada producto los gestiona el administrador.</div>
+      </div>
+    </div>
+
+  </div><!-- /catalogo -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER (compartido)
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page-group" id="footer">
+    <div class="page-group-header">
+      <div>
+        <div class="page-group-label">Elemento global · aparece en todas las páginas</div>
+        <div class="page-group-title">Footer</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Logo, tagline y redes sociales</div>
+      <div class="img-slot" id="slot-I21" style="max-width:300px">
+        <div class="img-slot-preview">
+          <img src="images/brand/logo-oscuro.svg" alt="Logo footer" style="height:80px;object-fit:contain;background:#191A18;padding:16px" />
+        </div>
+        <div class="img-slot-meta">
+          <div class="img-slot-info">
+            <div class="img-slot-name">I-21 · Logo footer (fondo oscuro)</div>
+            <div class="img-slot-dim">Aparece en el footer de todas las páginas</div>
+          </div>
+        </div>
+        <div class="img-slot-actions">
+          <div class="img-status-controls">
+            <button class="img-status-btn ok-btn" onclick="setImgStatus('I21','ok',this)">✓ Aprobar</button>
+            <button class="img-status-btn change-btn" onclick="setImgStatus('I21','change',this)">✗ Cambiar</button>
+          </div>
+          <div class="img-note" id="note-I21" style="display:none;"><input type="text" placeholder="Descripción del nuevo logo..." data-id="I21" data-role="Logo Footer" /></div>
+        </div>
+      </div>
+
+      <div class="item-row status-pending" id="row-T28" style="margin-top:12px">
+        <span class="chip chip-t">T-28</span>
+        <div class="item-content">
+          <div class="item-role">Tagline + firma en el footer</div>
+          <div class="item-value">
+            <strong>Tagline:</strong> "El arte de vestir bien. Elegancia simple y práctica, hecha en Guatemala desde 2019."<br>
+            <strong>Firma:</strong> "Laurean · by Seong Woo"
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar?</label>
+            <input type="text" placeholder="Texto alternativo..." data-id="T28" data-role="Tagline y Firma Footer" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T28', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T28', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-label">Columnas de navegación del footer</div>
+      <div class="item-row status-pending" id="row-T29">
+        <span class="chip chip-t">T-29</span>
+        <div class="item-content">
+          <div class="item-role">Links de navegación organizados en 3 columnas</div>
+          <div class="item-value">
+            <strong>Tienda:</strong> Inicio · Catálogo · Colecciones · Producto<br>
+            <strong>Ayuda:</strong> Envíos · Devoluciones · Tallas · Contacto<br>
+            <strong>Empresa:</strong> Nosotros · Vendedoras · Instagram · WhatsApp
+          </div>
+          <div class="item-note">
+            <label>¿Cambiar o agregar links?</label>
+            <input type="text" placeholder="Ej: agregar 'Blog' en Empresa, cambiar 'Devoluciones' por 'Cambios'..." data-id="T29" data-role="Links Footer" />
+          </div>
+        </div>
+        <div class="status-controls">
+          <button class="status-btn ok-btn" onclick="setStatus('T29', 'ok', this)">✓ Aprobar</button>
+          <button class="status-btn change-btn" onclick="setStatus('T29', 'change', this)">✗ Cambiar</button>
+        </div>
+      </div>
+
+    
+
+  </div><!-- /footer -->
+
+</div><!-- /main -->
+
+<!-- Export modal -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Feedback exportado</h2>
+      <button class="modal-close" onclick="closeExport()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:rgba(25,26,24,0.6);margin-bottom:16px;">Copia este texto y envíalo al equipo de desarrollo:</p>
+      <pre id="export-text"></pre>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-export" onclick="copyExport()">Copiar texto</button>
+      <button class="btn-export" id="btn-download-imgs" onclick="downloadUploadedImages()" style="display:none;background:#1565C0">Descargar imágenes subidas</button>
+      <button class="btn-print" style="background:var(--piedra);color:var(--carbon);border:none" onclick="closeExport()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+var state = {};
+var uploadedFiles = {}; // id → { name, dataUrl }
+
+function setStatus(id, status, btn) {
+  var row = document.getElementById('row-' + id);
+  row.className = 'item-row status-' + status;
+  // Toggle active on buttons
+  var controls = row.querySelector('.status-controls');
+  controls.querySelectorAll('.status-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  // Show/hide note
+  var noteEl = row.querySelector('.item-note');
+  if (noteEl) noteEl.style.display = (status === 'change') ? 'block' : 'none';
+  // Store
+  var noteInput = row.querySelector('input, textarea');
+  state[id] = { status: status, note: noteInput ? noteInput.value : '', role: noteInput ? (noteInput.dataset.role || id) : id };
+  updateCounts();
+  saveLocal();
+}
+
+function setImgStatus(id, status, btn) {
+  var slot = document.getElementById('slot-' + id);
+  // Toggle active
+  var controls = slot.querySelector('.img-status-controls');
+  controls.querySelectorAll('.img-status-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  // Show/hide note + upload area
+  var noteEl = document.getElementById('note-' + id);
+  if (noteEl) {
+    noteEl.style.display = (status === 'change') ? 'block' : 'none';
+    // Inject upload area if not already present
+    if (status === 'change' && !noteEl.querySelector('.img-upload-area')) {
+      var uploadHtml = '<div class="img-upload-area" id="upload-area-' + id + '">'
+        + '<input type="file" accept="image/*" onchange="handleImageUpload(\'' + id + '\', this)" />'
+        + '<img class="img-upload-preview" id="upload-preview-' + id + '" alt="Preview" />'
+        + '<div class="img-upload-label">Subir imagen nueva<br><strong>Clic para seleccionar</strong> · JPG, PNG, WEBP</div>'
+        + '<div class="img-upload-filename" id="upload-name-' + id + '"></div>'
+        + '<button class="img-upload-reset" id="upload-reset-' + id + '" onclick="resetImageUpload(\'' + id + '\')">Quitar imagen subida</button>'
+        + '</div>';
+      noteEl.insertAdjacentHTML('beforeend', uploadHtml);
+    }
+  }
+  // Border
+  slot.style.border = status === 'ok' ? '2px solid #2E7D32' : status === 'change' ? '2px solid #C62828' : '1px solid #DED7CE';
+  // Store
+  var noteInput = noteEl ? noteEl.querySelector('input[type="text"]') : null;
+  state[id] = { status: status, note: noteInput ? noteInput.value : '', role: noteInput ? (noteInput.dataset.role || id) : id };
+  updateCounts();
+  saveLocal();
+}
+
+function handleImageUpload(id, input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    // Update upload area UI
+    var area = document.getElementById('upload-area-' + id);
+    var preview = document.getElementById('upload-preview-' + id);
+    var nameEl = document.getElementById('upload-name-' + id);
+    var resetBtn = document.getElementById('upload-reset-' + id);
+    var label = area ? area.querySelector('.img-upload-label') : null;
+    if (preview) { preview.src = dataUrl; preview.style.display = 'block'; }
+    if (nameEl) nameEl.textContent = '✓ ' + file.name;
+    if (resetBtn) resetBtn.style.display = 'inline';
+    if (label) label.style.display = 'none';
+    if (area) area.classList.add('has-file');
+    // Also replace the main slot preview image
+    var slotPreview = document.querySelector('#slot-' + id + ' .img-slot-preview img');
+    if (slotPreview) { slotPreview.src = dataUrl; }
+    // Store
+    uploadedFiles[id] = { name: file.name, dataUrl: dataUrl };
+    if (state[id]) state[id].uploadedFile = file.name;
+    saveLocal();
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetImageUpload(id) {
+  var area = document.getElementById('upload-area-' + id);
+  var preview = document.getElementById('upload-preview-' + id);
+  var nameEl = document.getElementById('upload-name-' + id);
+  var resetBtn = document.getElementById('upload-reset-' + id);
+  var label = area ? area.querySelector('.img-upload-label') : null;
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  if (nameEl) nameEl.textContent = '';
+  if (resetBtn) resetBtn.style.display = 'none';
+  if (label) label.style.display = 'block';
+  if (area) { area.classList.remove('has-file'); var fi = area.querySelector('input[type="file"]'); if (fi) fi.value = ''; }
+  delete uploadedFiles[id];
+  if (state[id]) delete state[id].uploadedFile;
+  saveLocal();
+}
+
+function updateCounts() {
+  var ok = 0, change = 0, pending = 0;
+  var total = document.querySelectorAll('[id^="row-T"], [id^="slot-I"]').length;
+  Object.keys(state).forEach(function(k) {
+    if (state[k].status === 'ok') ok++;
+    else if (state[k].status === 'change') change++;
+  });
+  pending = total - ok - change;
+  document.getElementById('count-ok').textContent = ok + ' aprobados';
+  document.getElementById('count-change').textContent = change + ' a cambiar';
+  document.getElementById('count-pending').textContent = pending + ' pendientes';
+}
+
+// ── Local storage persistence ──────────────────────────────────────────
+function saveLocal() {
+  try {
+    // Also save note values
+    document.querySelectorAll('[data-id]').forEach(function(el) {
+      var id = el.dataset.id;
+      if (state[id]) state[id].note = el.value;
+    });
+    localStorage.setItem('laurean-review', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    var saved = localStorage.getItem('laurean-review');
+    if (!saved) return;
+    var data = JSON.parse(saved);
+    Object.keys(data).forEach(function(id) {
+      var s = data[id];
+      if (!s.status) return;
+      // Find the button and simulate click
+      if (id.startsWith('T')) {
+        var row = document.getElementById('row-' + id);
+        if (!row) return;
+        var btn = row.querySelector('.status-btn.' + s.status + '-btn');
+        if (btn) setStatus(id, s.status, btn);
+        if (s.note) {
+          var noteInput = row.querySelector('input, textarea');
+          if (noteInput) noteInput.value = s.note;
+        }
+      } else if (id.startsWith('I')) {
+        var slot = document.getElementById('slot-' + id);
+        if (!slot) return;
+        var btn = slot.querySelector('.img-status-btn.' + s.status + '-btn');
+        if (btn) setImgStatus(id, s.status, btn);
+        var noteEl = document.getElementById('note-' + id);
+        if (noteEl && s.note) {
+          var noteInput = noteEl.querySelector('input');
+          if (noteInput) noteInput.value = s.note;
+        }
+      }
+    });
+  } catch(e) {}
+}
+
+// ── Export ──────────────────────────────────────────────────────────────
+function openExport() {
+  // Collect all notes
+  document.querySelectorAll('[data-id]').forEach(function(el) {
+    var id = el.dataset.id;
+    if (state[id]) state[id].note = el.value;
+    else if (el.value) state[id] = { status: 'pending', note: el.value, role: el.dataset.role || id };
+  });
+
+  var lines = [];
+  var date = new Date().toLocaleDateString('es-GT', { day: '2-digit', month: 'long', year: 'numeric' });
+  lines.push('REVISIÓN DE CONTENIDO · LAUREAN SHOP');
+  lines.push('Fecha: ' + date);
+  lines.push('═'.repeat(50));
+  lines.push('');
+
+  var ok = [], change = [], pending = [];
+
+  // Go through all items in order
+  var allItems = document.querySelectorAll('[data-id]');
+  var processed = {};
+  allItems.forEach(function(el) {
+    var id = el.dataset.id;
+    if (processed[id]) return;
+    processed[id] = true;
+    var s = state[id];
+    var role = el.dataset.role || id;
+    var note = el.value || (s ? s.note : '');
+    var status = s ? s.status : 'pending';
+
+    var uploadInfo = (s && s.uploadedFile) ? '\n       📎 Imagen subida: ' + s.uploadedFile : '';
+    if (status === 'ok') ok.push('  ✓ ' + id + ' · ' + role);
+    else if (status === 'change') change.push('  ✗ ' + id + ' · ' + role + (note ? '\n       → ' + note : '') + uploadInfo);
+    else pending.push('  – ' + id + ' · ' + role);
+  });
+
+  var hasUploads = Object.keys(uploadedFiles).length > 0;
+  if (hasUploads) {
+    lines.push('⚠ IMÁGENES SUBIDAS POR EL CLIENTE');
+    lines.push('─'.repeat(30));
+    lines.push('Las siguientes imágenes fueron cargadas y deben enviarse por separado');
+    lines.push('(por WhatsApp, email o carpeta compartida):');
+    Object.keys(uploadedFiles).forEach(function(id) {
+      lines.push('  📎 ' + id + ' · ' + uploadedFiles[id].name);
+    });
+    lines.push('');
+  }
+
+  if (ok.length) { lines.push('APROBADOS (' + ok.length + ')'); lines.push('─'.repeat(30)); ok.forEach(function(l){ lines.push(l); }); lines.push(''); }
+  if (change.length) { lines.push('REQUIEREN CAMBIO (' + change.length + ')'); lines.push('─'.repeat(30)); change.forEach(function(l){ lines.push(l); }); lines.push(''); }
+  if (pending.length) { lines.push('SIN REVISAR (' + pending.length + ')'); lines.push('─'.repeat(30)); pending.forEach(function(l){ lines.push(l); }); lines.push(''); }
+
+  document.getElementById('export-text').textContent = lines.join('\n');
+  var dlBtn = document.getElementById('btn-download-imgs');
+  if (dlBtn) dlBtn.style.display = Object.keys(uploadedFiles).length > 0 ? 'inline-flex' : 'none';
+  document.getElementById('export-modal').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('export-modal').classList.remove('open');
+}
+
+function downloadUploadedImages() {
+  var ids = Object.keys(uploadedFiles);
+  if (!ids.length) return;
+  ids.forEach(function(id) {
+    var f = uploadedFiles[id];
+    var a = document.createElement('a');
+    a.href = f.dataUrl;
+    a.download = id + '_' + f.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+}
+
+function copyExport() {
+  var text = document.getElementById('export-text').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = document.querySelector('.modal-foot .btn-export');
+      btn.textContent = '¡Copiado!';
+      setTimeout(function() { btn.textContent = 'Copiar texto'; }, 2000);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    var btn = document.querySelector('.modal-foot .btn-export');
+    btn.textContent = '¡Copiado!';
+    setTimeout(function() { btn.textContent = 'Copiar texto'; }, 2000);
+  }
+}
+
+// ── Nav pills ────────────────────────────────────────────────────────────
+function navScrollTo(id) {
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-pill').forEach(function(p) { p.classList.remove('active'); });
+  event.target.classList.add('active');
+}
+
+// Update nav pill on scroll
+var sections = ['inicio','nosotros','women','men','kids','catalogo','footer'];
+window.addEventListener('scroll', function() {
+  var scrollY = window.scrollY + 130;
+  var active = sections[0];
+  sections.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollY) active = id;
+  });
+  document.querySelectorAll('.nav-pill').forEach(function(p, i) {
+    p.classList.toggle('active', sections[i] === active);
+  });
+}, { passive: true });
+
+// Save notes on input
+document.addEventListener('input', function(e) {
+  if (e.target.dataset && e.target.dataset.id) saveLocal();
+});
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+  updateCounts();
+  loadLocal();
+});
+</script>
+</body>
+</html>

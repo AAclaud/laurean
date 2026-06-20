@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="page-title">LAUREAN — Producto</title>
+  <link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/brand.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <script defer src="js/brand-img.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --nav-h: 80px; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--fb); font-size: 15px; line-height: 1.6; color: var(--carbon); background: var(--crema); overflow-x: hidden; }
+    img { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* ─── Navbar ─── */
+    .nav { position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); z-index: 100;
+           display: flex; align-items: center; justify-content: space-between; padding: 0 52px;
+           background: rgba(241,236,232,0.92); backdrop-filter: blur(20px) saturate(1.2);
+           -webkit-backdrop-filter: blur(20px) saturate(1.2); border-bottom: 1px solid rgba(142,56,51,0.08); }
+    .nav-logo { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; z-index: 2; }
+    .nav-logo img { height: 48px; width: auto; }
+    .nav-links { display: flex; gap: 40px; list-style: none; }
+    .nav-links a { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--carbon); opacity: 0.65; transition: opacity 0.2s; }
+    .nav-links a:hover, .nav-links a.active { opacity: 1; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-btn { position: relative; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s; }
+    .nav-btn:hover { background: rgba(25,26,24,0.06); }
+    .nav-btn svg { width: 20px; height: 20px; stroke: var(--carbon); fill: none; stroke-width: 1.4; }
+    .fav-badge {
+      position: absolute;
+      top: 5px; right: 5px;
+      min-width: 16px; height: 16px;
+      padding: 0 3px;
+      background: var(--carbon);
+      color: var(--crema);
+      font-size: 9.5px;
+      font-weight: 500;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.2s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fav-badge.show { opacity: 1; transform: scale(1); }
+    @media (max-width: 768px) { .nav { padding: 0 20px; } .nav-links { display: none; } }
+
+    /* ─── Layout principal (2 columnas estilo Dior) ─── */
+    .prod-layout {
+      display: grid;
+      grid-template-columns: 1fr 480px;
+      gap: 0;
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+      max-width: 1380px;
+      margin: 0 auto;
+    }
+
+    /* Columna izquierda: galería scrolleable */
+    .prod-gallery {
+      padding: 56px 40px 80px 52px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .prod-gallery-img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: var(--piedra);
+      overflow: hidden;
+      border-radius: 4px;
+    }
+    .prod-gallery-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .prod-gallery-placeholder {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: linear-gradient(135deg, var(--piedra), #e0d9d0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+    .prod-gallery-placeholder span {
+      font-family: var(--fd);
+      font-size: 14px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(83,31,35,0.3);
+    }
+
+    /* Columna derecha: panel sticky */
+    .prod-panel {
+      padding: 56px 52px 80px 40px;
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      border-left: 1px solid rgba(25,26,24,0.08);
+    }
+    /* scrollbar discreta en el panel */
+    .prod-panel::-webkit-scrollbar { width: 4px; }
+    .prod-panel::-webkit-scrollbar-track { background: transparent; }
+    .prod-panel::-webkit-scrollbar-thumb { background: rgba(142,56,51,0.2); border-radius: 2px; }
+
+    /* ─── Panel: header ─── */
+    .prod-eyebrow { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--vino); }
+    .prod-name { font-family: var(--fd); font-size: clamp(28px, 4vw, 42px); font-weight: 500; line-height: 1.08; letter-spacing: -0.01em; }
+    .prod-meta { font-size: 12px; color: rgba(25,26,24,0.45); letter-spacing: 0.06em; text-transform: uppercase; }
+    .prod-divider { border: none; border-top: 1px solid rgba(25,26,24,0.1); }
+
+    /* ─── Panel: precio ─── */
+    .prod-price { font-family: var(--fd); font-size: 30px; font-weight: 500; color: var(--vino); }
+    .prod-price small { font-family: var(--fb); font-size: 12px; color: rgba(25,26,24,0.5); font-weight: 400; margin-left: 4px; }
+
+    /* ─── Panel: descripción ─── */
+    .prod-desc { font-size: 14.5px; line-height: 1.7; color: rgba(25,26,24,0.72); }
+
+    /* ─── Panel: swatches de variantes ─── */
+    .prod-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+    .prod-swatch {
+      width: 34px; height: 34px; border-radius: 50%; cursor: pointer; padding: 0;
+      border: 1px solid rgba(25,26,24,0.18); position: relative;
+      box-shadow: inset 0 0 0 2px #fff; transition: transform 0.16s, box-shadow 0.16s;
+    }
+    .prod-swatch:hover { transform: scale(1.08); }
+    .prod-swatch[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px var(--carbon); }
+
+    /* ─── Panel: tallas ─── */
+    .prod-section-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--carbon); margin-bottom: 12px; }
+    .size-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .size-pill {
+      width: 48px; height: 48px; border: 1px solid rgba(25,26,24,0.22);
+      border-radius: 4px; display: flex; align-items: center; justify-content: center;
+      font-size: 12.5px; letter-spacing: 0.04em; transition: border-color 0.18s, background 0.18s, color 0.18s;
+      cursor: pointer;
+    }
+    .size-pill:hover { border-color: var(--vino); }
+    .size-pill.selected { background: var(--carbon); color: var(--white); border-color: var(--carbon); }
+
+    /* ─── Panel: guía de tallas ─── */
+    .size-guide-toggle { display: flex; align-items: center; gap: 6px; margin-top: 4px; cursor: pointer; border: none; background: none; font-family: inherit; padding: 0; }
+    .size-guide-toggle span { font-size: 12px; color: rgba(25,26,24,0.5); text-decoration: underline; text-underline-offset: 3px; transition: color 0.18s; }
+    .size-guide-toggle:hover span { color: var(--carbon); }
+    .size-guide-toggle svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.5; transition: transform 0.2s; }
+    .size-guide-toggle.open svg { transform: rotate(180deg); }
+
+    .size-guide-drawer {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.35s var(--ease);
+    }
+    .size-guide-drawer.open { max-height: 400px; }
+    .size-guide-inner { padding-top: 16px; }
+
+    .size-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .size-table th { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(25,26,24,0.5); font-weight: 400; padding: 8px 10px; border-bottom: 1px solid rgba(25,26,24,0.12); text-align: left; }
+    .size-table td { padding: 9px 10px; border-bottom: 1px solid rgba(25,26,24,0.07); color: var(--carbon); }
+    .size-table tr:last-child td { border-bottom: none; }
+    .size-note { font-size: 11px; color: rgba(25,26,24,0.45); margin-top: 10px; }
+
+    /* ─── Panel: CTAs ─── */
+    .cta-stack { display: flex; flex-direction: column; gap: 10px; }
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: var(--carbon); color: var(--white);
+      padding: 16px 24px; border-radius: 6px;
+      font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase;
+      transition: background 0.22s; border: none; cursor: pointer; font-family: inherit; width: 100%;
+    }
+    .btn-primary:hover { background: var(--vino-dk); }
+    .btn-primary.contact { background: var(--vino); }
+    .btn-primary.contact:hover { background: var(--vino-dk); }
+    .btn-secondary {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: transparent; color: var(--carbon);
+      padding: 14px 24px; border-radius: 6px; border: 1px solid rgba(25,26,24,0.22);
+      font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase;
+      transition: border-color 0.22s, background 0.22s; cursor: pointer; font-family: inherit; width: 100%;
+    }
+    .btn-secondary:hover { border-color: var(--carbon); background: rgba(25,26,24,0.04); }
+    .btn-secondary.active { border-color: var(--vino); color: var(--vino); background: rgba(142,56,51,0.05); }
+    .seller-hook {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--vino);
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      padding: 4px 10px 0;
+    }
+
+    /* ─── Panel: precio vendedor inline ─── */
+    .seller-price-row {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(231,189,105,0.1);
+      border: 1px solid rgba(231,189,105,0.35);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+    .seller-price-row.visible { display: flex; }
+    .seller-price-label { color: rgba(25,26,24,0.6); }
+    .seller-price-val { font-family: var(--fd); font-size: 20px; font-weight: 500; color: var(--vino-dk); }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--carbon); color: var(--white);
+      padding: 12px 24px; border-radius: 8px;
+      font-size: 13.5px; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 9999; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── Drawer favoritos ─── */
+    .fav-overlay {
+      position: fixed; inset: 0;
+      background: rgba(26,25,22,0);
+      z-index: 200;
+      pointer-events: none;
+      transition: background 0.32s;
+    }
+    .fav-overlay.open { background: rgba(26,25,22,0.48); pointer-events: auto; }
+    .fav-drawer {
+      position: fixed;
+      top: 0; right: -430px;
+      width: 400px; max-width: 100%;
+      height: 100vh;
+      background: var(--crema);
+      z-index: 201;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.36s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -6px 0 48px rgba(26,25,22,0.1);
+    }
+    .fav-drawer.open { right: 0; }
+    .fav-head {
+      height: 64px; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--piedra);
+      flex-shrink: 0;
+    }
+    .fav-head-title { font-family: var(--fd); font-size: 22px; font-weight: 300; letter-spacing: 0.06em; }
+    .fav-close { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .fav-close:hover { background: var(--piedra); }
+    .fav-close svg { width: 18px; height: 18px; stroke: var(--carbon); fill: none; stroke-width: 1.6; }
+    .fav-body { flex: 1; overflow-y: auto; padding: 18px 24px; }
+    .fav-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: rgba(25,26,24,0.5); text-align: center; }
+    .fav-empty svg { width: 52px; height: 52px; stroke: currentColor; fill: none; stroke-width: 1; opacity: 0.45; }
+    .fav-item { display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--piedra); align-items: start; }
+    .fav-item-img { width: 76px; height: 92px; object-fit: cover; background: var(--piedra); }
+    .fav-item-name { font-size: 14.5px; margin-bottom: 4px; }
+    .fav-item-meta { font-size: 12px; color: rgba(25,26,24,0.5); margin-bottom: 8px; }
+    .fav-item-action { display: block; font-size: 11px; color: var(--warm-mid); text-decoration: underline; margin-top: 8px; padding: 0; }
+    .fav-item-price { font-size: 14px; white-space: nowrap; }
+
+    /* ─── Estado vacío ─── */
+    .not-found {
+      padding: calc(var(--nav-h) + 80px) 52px 80px;
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 20px;
+    }
+    .not-found-title { font-family: var(--fd); font-size: 42px; font-weight: 400; }
+    .not-found-sub { color: rgba(25,26,24,0.55); max-width: 360px; }
+    .not-found-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid rgba(25,26,24,0.3); padding-bottom: 2px; transition: border-color 0.2s; }
+    .not-found-link:hover { border-color: var(--vino); color: var(--vino); }
+
+    /* ─── Loading ─── */
+    .prod-loading { padding: calc(var(--nav-h) + 80px) 52px; text-align: center; color: rgba(25,26,24,0.4); font-size: 14px; min-height: 60vh; display: flex; align-items: center; justify-content: center; }
+
+    /* ─── Footer ─── */
+    footer { background: var(--carbon); color: rgba(255,255,255,0.7); padding: 72px 52px 36px; }
+    .footer-top { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 56px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .footer-logo img { height: 30px; width: auto; display:block; }
+    .footer-logo a { display:inline-block; transition: opacity .2s var(--ease); }
+    .footer-logo a:hover { opacity: 0.7; }
+    .footer-tagline { margin-top: 16px; font-size: 13.5px; max-width: 260px; line-height: 1.6; }
+    .footer-col-title { color: var(--white); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 16px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 13.5px; color: rgba(255,255,255,0.7); transition: color 0.2s; }
+    .footer-links a:hover { color: rgba(255,255,255,0.95); }
+    .footer-bottom { max-width: 1280px; margin: 28px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.5); }
+    .footer-copy a { color: inherit; text-decoration: underline; opacity: 0.7; }
+    .pay-badges { display: flex; align-items: center; gap: 10px; }
+    .pay-badge { font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.2); padding: 4px 9px; border-radius: 5px; }
+
+    /* ─── Responsive: móvil ─── */
+    @media (max-width: 768px) {
+      .prod-layout {
+        grid-template-columns: 1fr;
+        padding-top: var(--nav-h);
+      }
+      .prod-gallery { padding: 24px 20px 0; }
+      .prod-panel {
+        position: static;
+        height: auto;
+        overflow-y: visible;
+        padding: 28px 20px 56px;
+        border-left: none;
+        border-top: 1px solid rgba(25,26,24,0.08);
+      }
+      footer { padding: 52px 20px 28px; }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+      .not-found { padding-left: 20px; padding-right: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="nav">
+    <a href="Laurean.html#inicio" class="nav-logo" aria-label="Laurean — Inicio">
+      <img src="images/brand/logo-navbar.svg" alt="Laurean" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="Laurean.html#inicio">Inicio</a></li>
+      <li><a href="catalogo.html" class="active">Tienda</a></li>
+      <li><a href="Laurean.html#las-colecciones">Colecciones</a></li>
+      <li><a href="nosotros.html">Nosotros</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="nav-btn" aria-label="Mis favoritos" onclick="openFavorites()">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
+        <span class="fav-badge" id="fav-badge">0</span>
+      </button>
+      <a href="login.html" class="nav-btn" aria-label="Iniciar sesión">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <div class="fav-overlay" id="fav-overlay" onclick="closeFavorites()"></div>
+  <aside class="fav-drawer" id="fav-drawer">
+    <div class="fav-head">
+      <span class="fav-head-title">Mis favoritos</span>
+      <button class="fav-close" onclick="closeFavorites()" aria-label="Cerrar favoritos">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="fav-body" id="fav-body">
+      <div class="fav-empty">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
+        <p>Aún no tienes favoritos</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Estado: cargando -->
+  <div class="prod-loading" id="prod-loading">Cargando producto…</div>
+
+  <!-- Estado: no encontrado (oculto por defecto) -->
+  <div class="not-found" id="prod-not-found" style="display:none">
+    <p class="prod-eyebrow">Laurean — Tienda</p>
+    <h1 class="not-found-title">Producto no encontrado</h1>
+    <p class="not-found-sub">El producto que buscas no está disponible o el enlace es incorrecto.</p>
+    <a href="catalogo.html" class="not-found-link">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.6"><polyline points="15 18 9 12 15 6"/></svg>
+      Ver catálogo
+    </a>
+  </div>
+
+  <!-- Layout principal (oculto hasta que carga el producto) -->
+  <div id="prod-main" style="display:none">
+    <div class="prod-layout">
+
+      <!-- Columna izquierda: galería scrolleable -->
+      <section class="prod-gallery" id="prod-gallery" aria-label="Galería de imágenes"></section>
+
+      <!-- Columna derecha: panel sticky -->
+      <aside class="prod-panel" id="prod-panel">
+
+        <div>
+          <p class="prod-eyebrow" id="panel-eyebrow">Colección</p>
+          <h1 class="prod-name" id="panel-name">—</h1>
+          <p class="prod-meta" id="panel-meta"></p>
+        </div>
+
+        <hr class="prod-divider" />
+
+        <!-- Precio o indicador de contacto -->
+        <div id="panel-price-block"></div>
+
+        <!-- Descripción -->
+        <p class="prod-desc" id="panel-desc"></p>
+
+        <!-- Variantes de color/diseño -->
+        <div id="panel-variants" style="display:none;margin-top:22px">
+          <p class="prod-section-label">Color <span id="variant-current" style="font-weight:400;color:rgba(25,26,24,0.5)"></span></p>
+          <div class="prod-swatches" id="prod-swatches" role="group" aria-label="Seleccionar color"></div>
+        </div>
+
+        <hr class="prod-divider" />
+
+        <!-- Selector de tallas -->
+        <div>
+          <p class="prod-section-label">Talla</p>
+          <div class="size-pills" id="size-pills" role="group" aria-label="Seleccionar talla"></div>
+          <button class="size-guide-toggle" id="size-guide-toggle" aria-expanded="false" onclick="toggleSizeGuide()" style="margin-top:14px">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            <span>Guía de tallas</span>
+          </button>
+          <div class="size-guide-drawer" id="size-guide-drawer" role="region" aria-label="Guía de tallas">
+            <div class="size-guide-inner" id="size-guide-inner"></div>
+          </div>
+        </div>
+
+        <hr class="prod-divider" />
+
+        <!-- CTAs -->
+        <div class="cta-stack" id="panel-ctas"></div>
+
+        <!-- Precio vendedor inline (se muestra al pulsar "Ver precio vendedor") -->
+        <div class="seller-price-row" id="seller-price-row">
+          <span class="seller-price-label">Precio vendedor</span>
+          <span class="seller-price-val" id="seller-price-val">—</span>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Scripts (mismo orden que catalogo.html) -->
+  <script src="js/config.js" onerror="console.info('[laurean] sin js/config.js — modo offline')"></script>
+  <script src="js/auth.js"></script>
+  <script src="data/products.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script defer src="js/visit-tracker.js"></script>
+  <script src="js/catalog-loader.js"></script>
+
+  <script>
+    /* ─── Utilidades ─────────────────────────────────────────────────────────── */
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    var _product     = null;
+    var _selectedSize = null;
+    var TOAST_TIMER  = null;
+    var FAVORITES_KEY = 'laurean_favorites';
+
+    function jsAttr(s) {
+      return String(s == null ? '' : s)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r?\n/g, ' ')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function shouldShowPublicPrice(p) {
+      return p && p.show_price !== false && Number(p.price_gtq || p.base_gtq || 0) > 0;
+    }
+
+    function getVisiblePrices(p) {
+      var baseGtq = p.price_gtq != null ? p.price_gtq : (p.base_gtq || 0);
+      var baseUsd = p.price_usd != null ? p.price_usd : (p.base_usd || 0);
+      if (typeof getAllPricesForProduct === 'function') return getAllPricesForProduct(p.id, baseGtq, baseUsd);
+      var pub = (typeof getProductPrice === 'function') ? getProductPrice(p.id, baseGtq, baseUsd, 'guest') : { gtq: baseGtq, usd: baseUsd };
+      var seller = (typeof getProductPrice === 'function') ? getProductPrice(p.id, baseGtq, baseUsd, 'vendedor') : pub;
+      return { laurean_gtq: pub.gtq, laurean_usd: pub.usd, seller_gtq: seller.gtq, seller_usd: seller.usd };
+    }
+
+    function getFavoriteIds() {
+      try {
+        var ids = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+        return Array.isArray(ids) ? ids.map(String) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function saveFavoriteIds(ids) {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
+    }
+
+    function isFavorite(id) {
+      return getFavoriteIds().indexOf(String(id)) !== -1;
+    }
+
+    function toggleFavorite(id) {
+      var sid = String(id);
+      var ids = getFavoriteIds();
+      var active = ids.indexOf(sid) !== -1;
+      ids = active ? ids.filter(function(x){ return x !== sid; }) : ids.concat(sid);
+      saveFavoriteIds(ids);
+      updateFavoriteUi();
+      renderFavorites();
+      showToast((_product && String(_product.id) === sid ? _product.name : 'Producto') + (active ? ' eliminado de favoritos' : ' agregado a favoritos'));
+    }
+
+    function updateFavoriteUi() {
+      var ids = getFavoriteIds();
+      var badge = document.getElementById('fav-badge');
+      if (badge) {
+        badge.textContent = ids.length;
+        badge.classList.toggle('show', ids.length > 0);
+      }
+      var favBtn = document.getElementById('product-fav-btn');
+      if (favBtn && _product) {
+        var active = ids.indexOf(String(_product.id)) !== -1;
+        favBtn.classList.toggle('active', active);
+        favBtn.textContent = active ? 'Quitar de favoritos' : 'Agregar a favoritos';
+        favBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
+    }
+
+    function allProducts() {
+      var data = window.LAUREAN_DATA || {};
+      var all = []
+        .concat(data.products || [])
+        .concat(data.sweaters || [])
+        .concat(data.accessories || []);
+      if (typeof getCustomProducts === 'function') {
+        getCustomProducts().forEach(function(cp) {
+          if (!all.some(function(p){ return String(p.id) === String(cp.id); }))
+            all.push(Object.assign({}, cp, { parent: cp.parent || cp.category }));
+        });
+      }
+      return all;
+    }
+
+    function getProductById(id) {
+      return allProducts().find(function(p){ return String(p.id) === String(id); }) || null;
+    }
+
+    function addFavoriteToCart(id) {
+      var p = getProductById(id);
+      if (!p || !shouldShowPublicPrice(p)) return;
+      var session = (typeof getSession === 'function') ? getSession() : null;
+      var role = session ? session.role : null;
+      var priceObj = (typeof getProductPrice === 'function')
+        ? getProductPrice(p.id, p.price_gtq || p.base_gtq || 0, p.price_usd || p.base_usd || 0, role)
+        : { gtq: p.price_gtq || p.base_gtq || 0, usd: p.price_usd || p.base_usd || 0 };
+      addToCart(p, priceObj);
+      showToast(p.name + ' agregado al carrito');
+    }
+
+    function renderFavorites() {
+      var body = document.getElementById('fav-body');
+      if (!body) return;
+      var items = getFavoriteIds().map(getProductById).filter(Boolean);
+      if (!items.length) {
+        body.innerHTML = '<div class="fav-empty"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg><p>Aún no tienes favoritos</p></div>';
+        return;
+      }
+      body.innerHTML = items.map(function(p) {
+        var canBuy = shouldShowPublicPrice(p);
+        var prices = canBuy ? getVisiblePrices(p) : null;
+        return '<div class="fav-item">'
+          + '<img class="fav-item-img" src="' + esc(p.image || '') + '" alt="' + esc(p.name) + '" onerror="this.style.opacity=.15" />'
+          + '<div>'
+          + '<a class="fav-item-name" href="producto.html?id=' + encodeURIComponent(p.id) + '">' + esc(p.name) + '</a>'
+          + '<div class="fav-item-meta">Favorito</div>'
+          + (canBuy ? '<button class="fav-item-action" onclick="addFavoriteToCart(\'' + jsAttr(p.id) + '\')">Agregar al carrito</button>' : '<a class="fav-item-action" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>')
+          + '<button class="fav-item-action" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')">Quitar favorito</button>'
+          + '</div>'
+          + (prices ? '<div class="fav-item-price">Q' + Number(prices.laurean_gtq).toLocaleString() + '</div>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    function openFavorites() {
+      renderFavorites();
+      document.getElementById('fav-drawer').classList.add('open');
+      document.getElementById('fav-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeFavorites() {
+      document.getElementById('fav-drawer').classList.remove('open');
+      document.getElementById('fav-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    /* ─── Guía de tallas ────────────────────────────────────────────────────── */
+    var SIZE_GUIDE_OPEN = false;
+    function toggleSizeGuide() {
+      SIZE_GUIDE_OPEN = !SIZE_GUIDE_OPEN;
+      var toggle  = document.getElementById('size-guide-toggle');
+      var drawer  = document.getElementById('size-guide-drawer');
+      toggle.setAttribute('aria-expanded', SIZE_GUIDE_OPEN ? 'true' : 'false');
+      toggle.classList.toggle('open', SIZE_GUIDE_OPEN);
+      drawer.classList.toggle('open', SIZE_GUIDE_OPEN);
+    }
+
+    function buildSizeTable(sizeChart) {
+      /* Si el producto tiene size_chart como objeto o array, úsalo; de lo contrario
+         renderiza tabla referencial con medidas estándar. */
+      var rows = '';
+      var REF = [
+        { talla: 'XS', busto: '80–84', cintura: '62–66', cadera: '86–90' },
+        { talla: 'S',  busto: '84–88', cintura: '66–70', cadera: '90–94' },
+        { talla: 'M',  busto: '88–92', cintura: '70–74', cadera: '94–98' },
+        { talla: 'L',  busto: '92–96', cintura: '74–78', cadera: '98–102' },
+        { talla: 'XL', busto: '96–100', cintura: '78–82', cadera: '102–106' },
+      ];
+
+      var isNote = false;
+
+      if (sizeChart && typeof sizeChart === 'object' && !Array.isArray(sizeChart)) {
+        /* Objeto: { XS: { busto, cintura, cadera }, … } */
+        var keys = Object.keys(sizeChart);
+        keys.forEach(function(k) {
+          var r = sizeChart[k];
+          rows += '<tr><td>' + esc(k) + '</td><td>' + esc(r.busto || '—') + '</td><td>' + esc(r.cintura || '—') + '</td><td>' + esc(r.cadera || '—') + '</td></tr>';
+        });
+      } else if (Array.isArray(sizeChart) && sizeChart.length) {
+        sizeChart.forEach(function(r) {
+          rows += '<tr><td>' + esc(r.talla || r.size || '') + '</td><td>' + esc(r.busto || '—') + '</td><td>' + esc(r.cintura || '—') + '</td><td>' + esc(r.cadera || '—') + '</td></tr>';
+        });
+      } else {
+        /* Sin datos: tabla referencial */
+        isNote = true;
+        REF.forEach(function(r) {
+          rows += '<tr><td>' + r.talla + '</td><td>' + r.busto + '</td><td>' + r.cintura + '</td><td>' + r.cadera + '</td></tr>';
+        });
+      }
+
+      return '<table class="size-table">'
+        + '<thead><tr><th>Talla</th><th>Busto (cm)</th><th>Cintura (cm)</th><th>Cadera (cm)</th></tr></thead>'
+        + '<tbody>' + rows + '</tbody>'
+        + '</table>'
+        + (isNote ? '<p class="size-note">Medidas referenciales; pueden variar según la prenda.</p>' : '');
+    }
+
+    /* ─── Toast ──────────────────────────────────────────────────────────────── */
+    function showToast(msg) {
+      var el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(TOAST_TIMER);
+      TOAST_TIMER = setTimeout(function() { el.classList.remove('show'); }, 2800);
+    }
+
+    /* ─── Carrito: persiste en localStorage (laurean_pending_cart) ──────────── */
+    /* Laurean.html maneja su carrito en memoria. Para agregar desde una página
+       externa, escribimos el item en laurean_pending_cart y redirigimos.
+       Laurean.html puede consumir esta clave en su DOMContentLoaded (Fase E). */
+    function addToCart(product, priceObj) {
+      var CART_KEY = 'laurean_pending_cart';
+      var cart = [];
+      try { cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch(e) { cart = []; }
+      var existing = cart.find(function(i) { return i.id === product.id; });
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({
+          id:        product.id,
+          name:      product.name,
+          image:     product.image || '',
+          price_gtq: priceObj ? priceObj.gtq : (product.price_gtq || 0),
+          price_usd: priceObj ? priceObj.usd : (product.price_usd || 0),
+          qty:       1,
+        });
+      }
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }
+
+    /* ─── Ver precio vendedor ────────────────────────────────────────────────── */
+    function handleVerPrecioVendedor() {
+      var session = (typeof getSession === 'function') ? getSession() : null;
+      if (!session) {
+        window.location.href = 'vendedoras.html';
+        return;
+      }
+      if (!_product) return;
+      var pr = getVisiblePrices(_product);
+      var row  = document.getElementById('seller-price-row');
+      var val  = document.getElementById('seller-price-val');
+      val.textContent = 'Q' + (pr ? pr.seller_gtq : _product.price_gtq) + ' GTQ';
+      row.classList.add('visible');
+    }
+
+    /* ─── Renderizar producto ────────────────────────────────────────────────── */
+    function renderProduct(p) {
+      _product = p;
+      document.title = 'LAUREAN — ' + p.name;
+      document.getElementById('page-title').textContent = 'LAUREAN — ' + esc(p.name);
+
+      /* Galería */
+      var images = (Array.isArray(p.gallery) && p.gallery.length) ? p.gallery : (p.image ? [p.image] : []);
+      var galleryEl = document.getElementById('prod-gallery');
+      if (images.length) {
+        galleryEl.innerHTML = images.map(function(url, idx) {
+          return '<div class="prod-gallery-img brand-img" id="prod-img-' + idx + '"><img class="brand-img-photo" src="' + esc(url) + '" alt="' + esc(p.name) + '" loading="lazy" /></div>';
+        }).join('');
+      } else {
+        galleryEl.innerHTML = '<div class="prod-gallery-img brand-img"></div>';
+      }
+      if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(galleryEl);
+
+      /* Panel: encabezado */
+      var eyebrow = [];
+      if (p.parent)  eyebrow.push(esc(p.parent));
+      if (p.subcat)  eyebrow.push(esc(p.subcat));
+      document.getElementById('panel-eyebrow').textContent = eyebrow.length ? eyebrow.join(' · ') : 'Laurean';
+      document.getElementById('panel-name').textContent    = p.name;
+      document.getElementById('panel-meta').textContent    = p.week_number ? 'Semana ' + p.week_number : '';
+
+      /* Panel: descripción */
+      document.getElementById('panel-desc').textContent = p.description || '';
+
+      /* Panel: precio */
+      var showPrice = shouldShowPublicPrice(p);
+      var priceObj  = showPrice ? getVisiblePrices(p) : null;
+
+      var priceBlock = document.getElementById('panel-price-block');
+      if (showPrice && priceObj) {
+        priceBlock.innerHTML = '<div class="prod-price">Q' + esc(String(Number(priceObj.laurean_gtq).toLocaleString())) + ' <small>GTQ</small></div>';
+      } else {
+        priceBlock.innerHTML = '<p style="font-size:13px;color:rgba(25,26,24,0.5);font-style:italic">Precio disponible por asesoría — contáctanos para más información.</p>';
+      }
+
+      /* Panel: tallas */
+      var sizes = ['XS', 'S', 'M', 'L', 'XL'];
+      var pillsEl = document.getElementById('size-pills');
+      pillsEl.innerHTML = sizes.map(function(s) {
+        return '<button class="size-pill" data-size="' + s + '" onclick="selectSize(\'' + s + '\')" aria-label="Talla ' + s + '">' + s + '</button>';
+      }).join('');
+
+      /* Panel: guía de tallas */
+      document.getElementById('size-guide-inner').innerHTML = buildSizeTable(p.size_chart || null);
+
+      /* Panel: variantes de color/diseño */
+      renderVariants(p);
+
+      /* Panel: CTAs */
+      var ctasEl = document.getElementById('panel-ctas');
+      if (showPrice && priceObj) {
+        /* Carrito + WhatsApp */
+        ctasEl.innerHTML =
+          '<button class="btn-primary" onclick="handleComprar()">Comprar</button>'
+          + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>'
+          + '<a class="btn-secondary" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>'
+          + '<a class="seller-hook" href="vendedoras.html">Precio vendedor Q' + Number(priceObj.seller_gtq).toLocaleString() + ' — regístrate como vendedora</a>';
+      } else {
+        /* Solo WhatsApp + favorito */
+        ctasEl.innerHTML =
+          '<a class="btn-primary contact" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>'
+          + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>';
+      }
+      updateFavoriteUi();
+
+      /* Mostrar todo */
+      document.getElementById('prod-loading').style.display  = 'none';
+      document.getElementById('prod-main').style.display     = '';
+      document.getElementById('site-footer').style.display   = '';
+    }
+
+    /* ─── Selección de talla ─────────────────────────────────────────────────── */
+    function selectSize(s) {
+      _selectedSize = s;
+      document.querySelectorAll('.size-pill').forEach(function(pill) {
+        pill.classList.toggle('selected', pill.dataset.size === s);
+      });
+    }
+
+    /* ─── Variantes de color/diseño ──────────────────────────────────────────── */
+    var _selectedVariant = null;
+
+    function renderVariants(p) {
+      var wrap = document.getElementById('panel-variants');
+      var sw   = document.getElementById('prod-swatches');
+      var variants = Array.isArray(p.variants) ? p.variants : [];
+      if (!variants.length) { wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+      sw.innerHTML = variants.map(function(v, i) {
+        var hex = v.hex || '#ccc';
+        return '<button class="prod-swatch" style="background:' + esc(hex) + '" data-idx="' + i + '" '
+          + 'aria-pressed="' + (i === 0 ? 'true' : 'false') + '" title="' + esc(v.label || ('Color ' + (i + 1)))
+          + '" onclick="selectVariant(' + i + ')"></button>';
+      }).join('');
+      selectVariant(0);
+    }
+
+    function selectVariant(i) {
+      var p = _product;
+      if (!p || !Array.isArray(p.variants) || !p.variants[i]) return;
+      var v = p.variants[i];
+      _selectedVariant = v;
+      document.querySelectorAll('.prod-swatch').forEach(function(b) {
+        b.setAttribute('aria-pressed', String(parseInt(b.dataset.idx, 10) === i));
+      });
+      var cur = document.getElementById('variant-current');
+      if (cur) cur.textContent = v.label ? '· ' + v.label : '';
+
+      /* Descripción específica de la variante (si trae) */
+      if (v.description) document.getElementById('panel-desc').textContent = v.description;
+      else if (p.description) document.getElementById('panel-desc').textContent = p.description;
+
+      /* Tallas disponibles de la variante (si trae stock por talla) */
+      if (Array.isArray(v.sizes) && v.sizes.length) {
+        var pillsEl = document.getElementById('size-pills');
+        pillsEl.innerHTML = v.sizes.map(function(sz) {
+          var avail = (sz.qty || 0) > 0;
+          return '<button class="size-pill" data-size="' + esc(sz.size) + '" '
+            + (avail ? '' : 'disabled style="opacity:.35;cursor:not-allowed" ')
+            + 'onclick="selectSize(\'' + esc(sz.size) + '\')" aria-label="Talla ' + esc(sz.size) + '">'
+            + esc(sz.size) + '</button>';
+        }).join('');
+        _selectedSize = null;
+      }
+
+      /* Scroll de la galería vertical a la foto enlazada */
+      if (v.imageIndex != null) {
+        var target = document.getElementById('prod-img-' + v.imageIndex);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    /* ─── WhatsApp URL ───────────────────────────────────────────────────────── */
+    function buildWhatsApp(p) {
+      var text = encodeURIComponent('Hola Laurean, me interesa el producto: ' + p.name + ' (' + p.id + ')');
+      return 'https://wa.me/50236672415?text=' + text;
+    }
+
+    /* ─── Comprar ────────────────────────────────────────────────────────────── */
+    function handleComprar() {
+      if (!_product) return;
+      var session  = (typeof getSession === 'function') ? getSession() : null;
+      var role     = session ? session.role : null;
+      var priceObj = (typeof getProductPrice === 'function')
+        ? getProductPrice(_product.id, _product.price_gtq, _product.price_usd, role)
+        : { gtq: _product.price_gtq, usd: _product.price_usd };
+
+      addToCart(_product, priceObj);
+      showToast(_product.name + ' agregado al carrito');
+      setTimeout(function() {
+        window.location.href = 'Laurean.html';
+      }, 900);
+    }
+
+    /* ─── Buscar producto ────────────────────────────────────────────────────── */
+    function findAndRender() {
+      var params = new URLSearchParams(window.location.search);
+      var id     = params.get('id');
+
+      if (!id) {
+        document.getElementById('prod-loading').style.display  = 'none';
+        document.getElementById('prod-not-found').style.display = '';
+        return;
+      }
+
+      // Incluye productos creados localmente en el dashboard (normaliza category→parent)
+      var allProds = allProducts();
+      if (!allProds.length) {
+        document.getElementById('prod-loading').style.display  = 'none';
+        document.getElementById('prod-not-found').style.display = '';
+        return;
+      }
+
+      var product = allProds.find(function(p) { return String(p.id) === String(id); });
+      if (!product) {
+        document.getElementById('prod-loading').style.display  = 'none';
+        document.getElementById('prod-not-found').style.display = '';
+        return;
+      }
+
+      renderProduct(product);
+    }
+
+    /* ─── Escuchar catalog-ready (igual que catalogo.html) ───────────────────── */
+    /* Si el evento ya disparó antes de que este listener se registrara,
+       intentamos leer window.LAUREAN_DATA directamente (caso: carga rápida desde cache). */
+    updateFavoriteUi();
+    renderFavorites();
+    if ((window.LAUREAN_DATA && (window.LAUREAN_DATA.products || window.LAUREAN_DATA.sweaters || window.LAUREAN_DATA.accessories)) ||
+        (typeof getCustomProducts === 'function' && getCustomProducts().length)) {
+      findAndRender();
+    } else {
+      document.addEventListener('laurean:catalog-ready', function() {
+        findAndRender();
+        renderFavorites();
+      });
+    }
+  </script>
+  <script src="js/site-footer.js"></script>
+  <script defer src="js/cursor.js"></script>
+</body>
+</html>

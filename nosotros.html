@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAUREAN — Nosotros</title>
+  <link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/brand.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <script defer src="js/brand-img.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --nav-h: 80px; --acento: #8F3833; --acento-dk: #531F23; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--fb); font-size: 15px; line-height: 1.6; color: var(--carbon); background: var(--crema); overflow-x: hidden; }
+    img { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* Reveal on scroll */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.85s var(--ease), transform 0.85s var(--ease); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── Navbar ───────────────────────────────────────────────────────────── */
+    .nav { position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h); z-index: 100;
+           display: flex; align-items: center; justify-content: space-between; padding: 0 52px;
+           background: rgba(241,236,232,0.92); backdrop-filter: blur(20px) saturate(1.2);
+           -webkit-backdrop-filter: blur(20px) saturate(1.2); }
+    .nav-logo { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; z-index: 2; }
+    .nav-logo img { height: 48px; width: auto; }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--carbon); opacity: 0.6; transition: opacity 0.2s; }
+    .nav-links a:hover, .nav-links a.active { opacity: 1; }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-btn { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s var(--ease); }
+    .nav-btn:hover { background: rgba(25,26,24,0.06); }
+    .nav-btn svg { width: 20px; height: 20px; stroke: var(--carbon); fill: none; stroke-width: 1.4; }
+    @media (max-width: 820px) { .nav { padding: 0 20px; } .nav-links { display: none; } }
+
+    /* ─── Hero ─────────────────────────────────────────────────────────────── */
+    .ab-hero { position: relative; height: 78vh; min-height: 480px; overflow: hidden; }
+    .ab-hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 12%; }
+    .ab-hero::after { content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(20,15,14,0.62) 0%, rgba(20,15,14,0.15) 50%, rgba(20,15,14,0.10) 100%); }
+    .ab-hero-overlay { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 52px 60px; max-width: 1320px; margin: 0 auto; color: #fff; }
+    .ab-hero-eyebrow { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; opacity: 0.86; margin-bottom: 16px; }
+    .ab-hero-title { font-family: var(--fd); font-weight: 300; font-size: clamp(46px, 7vw, 92px); line-height: 1.0; }
+    .ab-hero-title em { font-style: italic; }
+    .ab-hero-sub { margin-top: 18px; max-width: 520px; font-size: 16px; line-height: 1.7; font-weight: 300; opacity: 0.92; }
+    @media (max-width: 720px) { .ab-hero-overlay { padding: 0 20px 40px; } }
+
+    /* ─── Historia (editorial split) ───────────────────────────────────────── */
+    .ab-historia { max-width: 1320px; margin: 0 auto; padding: 96px 52px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .ab-historia-img { aspect-ratio: 4/5; overflow: hidden; border-radius: 4px; background: var(--piedra); }
+    .ab-historia-img img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+    .ab-eyebrow { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--acento); margin-bottom: 14px; }
+    .ab-h2 { font-family: var(--fd); font-weight: 300; font-size: clamp(30px, 4vw, 48px); line-height: 1.08; color: var(--carbon); margin-bottom: 20px; }
+    .ab-h2 em { font-style: italic; }
+    .ab-p { font-size: 15.5px; line-height: 1.8; color: rgba(25,26,24,0.74); max-width: 540px; }
+    .ab-p + .ab-p { margin-top: 16px; }
+    @media (max-width: 860px) { .ab-historia { grid-template-columns: 1fr; gap: 36px; padding: 64px 20px; } .ab-historia-img { aspect-ratio: 16/11; } }
+
+    /* ─── Tarjetas de marca ────────────────────────────────────────────────── */
+    .ab-cards-wrap { background: var(--white); border-top: 1px solid rgba(25,26,24,0.06); border-bottom: 1px solid rgba(25,26,24,0.06); }
+    .ab-cards { max-width: 1320px; margin: 0 auto; padding: 88px 52px; }
+    .ab-cards-head { text-align: center; margin-bottom: 48px; }
+    .ab-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .ab-card { background: var(--crema); border: 1px solid rgba(25,26,24,0.07); border-radius: 8px; padding: 36px 32px; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); }
+    .ab-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,0.07); }
+    .ab-card-num { font-family: var(--fd); font-style: italic; font-size: 30px; color: var(--acento); margin-bottom: 14px; }
+    .ab-card-title { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--carbon); margin-bottom: 12px; }
+    .ab-card-body { font-size: 14.5px; line-height: 1.75; color: rgba(25,26,24,0.72); }
+    @media (max-width: 860px) { .ab-cards { padding: 64px 20px; } .ab-grid3 { grid-template-columns: 1fr; } }
+
+    /* ─── Valores ──────────────────────────────────────────────────────────── */
+    .ab-valores { max-width: 1320px; margin: 0 auto; padding: 88px 52px; text-align: center; }
+    .ab-valores-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 36px; }
+    .ab-valor { border: 1px solid rgba(143,56,51,0.28); color: var(--acento-dk); border-radius: 100px; padding: 12px 26px; font-size: 13px; letter-spacing: 0.06em; background: rgba(143,56,51,0.04); }
+    @media (max-width: 720px) { .ab-valores { padding: 56px 20px; } }
+
+    /* ─── Visión / Misión (banda ruby) ─────────────────────────────────────── */
+    .ab-vm { background: var(--vino-dk); color: var(--crema); position: relative; overflow: hidden; }
+    .ab-vm::before { content: ''; position: absolute; top: -40%; right: -8%; width: 460px; height: 460px;
+      background: radial-gradient(circle, rgba(235,195,114,0.18), transparent 70%); pointer-events: none; }
+    .ab-vm-inner { max-width: 1320px; margin: 0 auto; padding: 92px 52px; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; position: relative; z-index: 1; }
+    .ab-vm-eyebrow { font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--dorado); margin-bottom: 16px; }
+    .ab-vm h3 { font-family: var(--fd); font-weight: 300; font-size: clamp(24px, 2.6vw, 34px); line-height: 1.15; margin-bottom: 14px; }
+    .ab-vm p { font-size: 15px; line-height: 1.8; color: rgba(241,236,232,0.82); max-width: 520px; }
+    @media (max-width: 860px) { .ab-vm-inner { grid-template-columns: 1fr; gap: 40px; padding: 64px 20px; } }
+
+    /* ─── CTA + firma ──────────────────────────────────────────────────────── */
+    .ab-cta { text-align: center; padding: 96px 52px 40px; max-width: 800px; margin: 0 auto; }
+    .ab-cta h2 { font-family: var(--fd); font-weight: 300; font-size: clamp(30px, 4vw, 50px); line-height: 1.08; margin-bottom: 26px; }
+    .ab-cta h2 em { font-style: italic; }
+    .ab-btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 36px; border-radius: 4px;
+      background: var(--carbon); color: var(--crema); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
+      transition: background 0.3s var(--ease), transform 0.3s var(--ease); }
+    .ab-btn:hover { background: var(--vino-dk); transform: translateY(-2px); }
+    .ab-firma { text-align: center; padding: 0 20px 80px; }
+    .ab-firma span { font-family: var(--fd); font-style: italic; font-size: 20px; color: var(--acento-dk); }
+    .ab-firma small { display: block; margin-top: 6px; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(25,26,24,0.45); }
+
+    /* ─── Footer ───────────────────────────────────────────────────────────── */
+    footer { background: var(--carbon); color: rgba(255,255,255,0.7); padding: 64px 52px 32px; }
+    .footer-top { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 44px; padding-bottom: 44px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .footer-logo img { height: 36px; width: auto; display: block; }
+    .footer-logo a { display: inline-block; transition: opacity .2s var(--ease); }
+    .footer-logo a:hover { opacity: 0.7; }
+    .footer-tagline { margin-top: 14px; font-size: 13.5px; max-width: 280px; line-height: 1.6; }
+    .footer-signature { margin-top: 14px; font-family: var(--fd); font-style: italic; font-size: 16px; color: var(--dorado); }
+    .footer-signature small { display: block; font-family: var(--fb); font-style: normal; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-top: 3px; }
+    .footer-social { display: flex; gap: 10px; margin-top: 18px; }
+    .footer-social a { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.75); transition: color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease); }
+    .footer-social a:hover { color: #fff; border-color: rgba(255,255,255,0.5); transform: translateY(-2px); }
+    .footer-social svg { width: 17px; height: 17px; fill: currentColor; }
+    .footer-col-title { color: var(--white); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 14px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .footer-links a { font-size: 13.5px; color: rgba(255,255,255,0.7); transition: color 0.2s var(--ease); }
+    .footer-links a:hover { color: rgba(255,255,255,0.95); }
+    .footer-bottom { max-width: 1280px; margin: 24px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.5); }
+    .pay-badges { display: flex; align-items: center; gap: 10px; }
+    .pay-badge { font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.2); padding: 4px 9px; border-radius: 5px; }
+    @media (max-width: 720px) { footer { padding: 48px 20px 24px; } .footer-top { grid-template-columns: 1fr 1fr; gap: 28px; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="nav">
+    <a href="Laurean.html#inicio" class="nav-logo" aria-label="Laurean — Inicio"><img src="images/brand/logo-navbar.svg" alt="Laurean" /></a>
+    <ul class="nav-links">
+      <li><a href="Laurean.html#inicio">Inicio</a></li>
+      <li><a href="catalogo.html">Tienda</a></li>
+      <li><a href="Laurean.html#las-colecciones">Colecciones</a></li>
+      <li><a href="nosotros.html" class="active">Nosotros</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="login.html" class="nav-btn" aria-label="Iniciar sesión">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="ab-hero">
+    <img src="images/categorias/women-6.jpg" alt="Laurean — Nuestra historia" />
+    <div class="ab-hero-overlay">
+      <p class="ab-hero-eyebrow">Desde 2019 · Guatemala</p>
+      <h1 class="ab-hero-title">El arte de<br>vestir <em>bien</em>.</h1>
+      <p class="ab-hero-sub">La elegancia está en lo simple. Creemos que vestirse bien no debería ser complicado ni exclusivo de unos pocos.</p>
+    </div>
+  </section>
+
+  <!-- Historia -->
+  <section class="ab-historia">
+    <div class="ab-historia-img reveal"><img src="images/categorias/men-1.jpg" alt="Laurean lifestyle" loading="lazy" /></div>
+    <div class="reveal">
+      <p class="ab-eyebrow">Nuestra historia</p>
+      <h2 class="ab-h2">Elegancia simple,<br><em>cercana y real</em>.</h2>
+      <p class="ab-p">Laurean nace del gusto por la moda elegante y simple. Desde 2019 desarrollamos prendas donde la comodidad, la estética y la practicidad conviven en equilibrio, pensadas para quienes buscan verse bien sin perder autenticidad.</p>
+      <p class="ab-p">Hemos construido una identidad basada en la honestidad, la cercanía y la confianza. A través de una experiencia de compra acompañada y una estética cálida y coherente, convertimos la elegancia en algo cotidiano y accesible para todos.</p>
+    </div>
+  </section>
+
+  <!-- Tarjetas de marca -->
+  <div class="ab-cards-wrap">
+    <section class="ab-cards">
+      <div class="ab-cards-head reveal">
+        <p class="ab-eyebrow">Lo que creemos</p>
+        <h2 class="ab-h2">Vestir bien, <em>sin riesgo</em>.</h2>
+      </div>
+      <div class="ab-grid3">
+        <div class="ab-card reveal">
+          <div class="ab-card-num">01</div>
+          <div class="ab-card-title">El insight</div>
+          <p class="ab-card-body">Muchos quieren verse elegantes y sentirse seguros con lo que usan, pero perciben la moda elegante como algo complicado, costoso o lejano. Laurean la vuelve simple, accesible y natural.</p>
+        </div>
+        <div class="ab-card reveal">
+          <div class="ab-card-num">02</div>
+          <div class="ab-card-title">Propuesta de valor</div>
+          <p class="ab-card-body">Elegancia y practicidad que conviven de forma natural. Más allá de vender prendas, acompañamos cada compra con asesoría cercana, envío de dos tallas y garantía en productos.</p>
+        </div>
+        <div class="ab-card reveal">
+          <div class="ab-card-num">03</div>
+          <div class="ab-card-title">Nuestra promesa</div>
+          <p class="ab-card-body">La verdadera elegancia nace de la simplicidad, la confianza y el criterio, no del exceso. Por eso vestirse bien con Laurean es una experiencia cercana, práctica y sin riesgos.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Valores -->
+  <section class="ab-valores reveal">
+    <p class="ab-eyebrow">Lo que nos guía</p>
+    <h2 class="ab-h2">Nuestros <em>valores</em></h2>
+    <div class="ab-valores-grid">
+      <span class="ab-valor">Honestidad</span>
+      <span class="ab-valor">Transparencia</span>
+      <span class="ab-valor">Calidad</span>
+      <span class="ab-valor">Cercanía</span>
+      <span class="ab-valor">Responsabilidad</span>
+      <span class="ab-valor">Coherencia</span>
+    </div>
+  </section>
+
+  <!-- Visión / Misión -->
+  <section class="ab-vm">
+    <div class="ab-vm-inner">
+      <div class="reveal">
+        <p class="ab-vm-eyebrow">Visión</p>
+        <h3>Ser referente de moda en Centroamérica</h3>
+        <p>Reconocidos por el equilibrio entre elegancia y practicidad, y por escalar como proveedor de grandes tiendas sin perder nuestra esencia: cercanía, calidad y confianza en cada prenda.</p>
+      </div>
+      <div class="reveal">
+        <p class="ab-vm-eyebrow">Misión</p>
+        <h3>Que vestirse bien sea simple y seguro</h3>
+        <p>Brindar prendas elegantes, accesibles y funcionales que se adapten a la vida real, acompañando cada compra con una experiencia confiable, cercana y sin complicaciones.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA + firma -->
+  <section class="ab-cta reveal">
+    <h2>La elegancia, <em>hecha cotidiana</em>.</h2>
+    <a href="catalogo.html" class="ab-btn">Descubre la colección →</a>
+  </section>
+  <div class="ab-firma reveal">
+    <span>Laurean</span>
+    <small>by Seong Woo</small>
+  </div>
+
+  <!-- Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/config.js" onerror="console.info('[laurean] sin js/config.js — modo offline')"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script defer src="js/visit-tracker.js"></script>
+  <script>
+    // Reveal on scroll
+    (function(){
+      var els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) { els.forEach(function(e){ e.classList.add('visible'); }); return; }
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ if (en.isIntersecting) { en.target.classList.add('visible'); io.unobserve(en.target); } });
+      }, { threshold: 0.14 });
+      els.forEach(function(e){ io.observe(e); });
+    })();
+  </script>
+  <script src="js/site-footer.js"></script>
+  <script defer src="js/cursor.js"></script>
+</body>
+</html>

@@ -13,6 +13,19 @@
 //   flash_end     → ISO string de fin de oferta flash (solo subcategoría "flash")
 // ============================================================
 
+// ─── Feature flags globales ─────────────────────────────────
+// SHOW_USD: muestra precios en USD junto al GTQ. Apagado mientras no haya venta internacional.
+// La data USD se mantiene en localStorage/DB para reactivar sin migración.
+window.LAUREAN_FLAGS = {
+  SHOW_USD: false,
+};
+
+// Propaga flags al DOM para que el CSS pueda reaccionar con `html[data-show-usd="false"] .usd-only`
+(function applyFlags(){
+  var el = document.documentElement;
+  el.dataset.showUsd = window.LAUREAN_FLAGS.SHOW_USD ? 'true' : 'false';
+})();
+
 window.LAUREAN_DATA = {
 
   // ─── CATEGORÍAS PADRE (nav principal) ──────────────────────────────────────

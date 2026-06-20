@@ -1,0 +1,77 @@
+/* ============================================================
+   LAUREAN — Marca común (paleta oficial Wiimuto)
+   Fuente única de la identidad visual. Editar aquí afecta a
+   TODAS las páginas que enlacen este archivo.
+
+   Cargar SIEMPRE antes del <style> inline de cada página:
+     <link rel="stylesheet" href="css/brand.css" />
+
+   Las variables específicas de cada vista (sidebar, topbar,
+   colores de estado del POS, etc.) siguen en el :root inline
+   de cada HTML.
+   ============================================================ */
+
+:root {
+  /* Paleta oficial — alineada al manual de marca (ver memory/marca-laurean.md)
+     Ruby Antiguo #531F23 · El Salva #8F3833 · Concreto #F2F2F2 · Dark Gunmetal #192729 */
+  --ruby:     #531F23;   /* Ruby Antiguo (oficial) */
+  --salva:    #8F3833;   /* El Salva (oficial) */
+  --concreto: #F2F2F2;   /* Concreto — neutro frío (secciones de submarca) */
+  --gunmetal: #192729;   /* Dark Gunmetal (oficial) */
+
+  /* Tokens en uso (alineados a la paleta oficial) */
+  --crema:    #F1ECE8;   /* base cálida deliberada de la UI (se mantiene) */
+  --piedra:   #E8E3DC;
+  --carbon:   #192729;   /* dark principal = Dark Gunmetal oficial */
+  --warm-mid: #8F3833;   /* acento vino / texto cálido secundario */
+  --vino:     #8F3833;   /* El Salva */
+  --vino-dk:  #531F23;   /* Ruby Antiguo */
+  --dorado:   #EBC372;   /* Rob Roy (oficial) */
+  --white:    #FCFBFC;
+
+  /* Tipografías */
+  --fd: 'Cormorant Garamond', Georgia, serif;
+  --fb: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Easing compartido */
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ============================================================
+   Placeholder / loader de marca reutilizable.
+   Uso:
+     <div class="brand-img">
+       <img class="brand-img-photo" src="..." alt="..." loading="lazy">
+     </div>
+   - Sin imagen (o mientras carga / si falla): se ve el logo
+     Laurean tenue sobre fondo en tono de marca (--piedra).
+   - Al cargar la foto, hace fade-in y cubre el logo.
+   js/brand-img.js cablea onload/onerror automáticamente
+   (incluye imágenes insertadas dinámicamente).
+   ============================================================ */
+.brand-img {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--piedra);
+}
+.brand-img::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url('../images/brand/logo-navbar.svg') center / 42% auto no-repeat;
+  opacity: .13;
+  pointer-events: none;
+}
+.brand-img-photo {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .45s var(--ease);
+}
+.brand-img-photo.is-loaded { opacity: 1; }
+/* Si la imagen falla, se oculta para dejar ver el logo de fondo. */
+.brand-img-photo.is-error { opacity: 0; }

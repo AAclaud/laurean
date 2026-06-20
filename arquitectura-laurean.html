@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arquitectura — Laurean Shop</title>
+<link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* BRAND: paleta oficial Laurean */
+    --crema:     #F1ECE8;
+    --crema-d:   #EDE7DD;
+    --piedra:    #E8E3DC;
+    --carbon:    #191A18;
+    --carbon-2:  #2A2925;
+    --warm:      #8E3833;
+    --warm-d:    #531F23;
+    --accent:    #8E3833;
+    --accent-d:  #531F23;
+    --gold:      #E7BD69;
+    --green:     #4A6B3E;
+    --rust:      #932725;
+    --blue:      #3F5C7A;
+    --white:     #FCFBFC;
+    --fd: 'Cormorant Garamond', Georgia, serif;
+    --fb: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--crema); color: var(--carbon); font-family: var(--fb); font-size: 14px; line-height: 1.55; }
+  body { padding: 32px 16px; }
+  .doc { max-width: 960px; margin: 0 auto; background: var(--white); border-radius: 4px; overflow: hidden; box-shadow: 0 2px 20px rgba(26,25,22,0.06); }
+
+  .hero { background: var(--carbon); color: var(--crema); padding: 44px 56px 36px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -40%; right: -10%; width: 60%; height: 180%; background: radial-gradient(ellipse, rgba(184,153,104,0.15) 0%, transparent 60%); pointer-events: none; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--fd); font-size: 20px; letter-spacing: 0.18em; font-weight: 500; margin-bottom: 24px; }
+  .brand-mark { width: 28px; height: 28px; border: 1px solid var(--gold); display: inline-flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 14px; color: var(--gold); }
+  .hero .eye { font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; font-weight: 600; }
+  .hero h1 { font-family: var(--fd); font-size: 36px; line-height: 1.1; font-weight: 400; margin-bottom: 12px; max-width: 24ch; }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero p { font-size: 13.5px; opacity: 0.85; max-width: 64ch; font-weight: 300; }
+
+  .section { padding: 36px 56px; }
+  .section + .section { border-top: 1px solid var(--piedra); }
+  .eyebrow { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 10px; }
+  .section h2 { font-family: var(--fd); font-size: 26px; font-weight: 500; line-height: 1.15; margin-bottom: 6px; color: var(--carbon); }
+  .section h2 em { font-style: italic; color: var(--accent); }
+  .section > p.intro { font-size: 13px; color: var(--warm-d); margin-bottom: 18px; max-width: 64ch; }
+
+  /* DIAGRAMA */
+  .diag-wrap { background: var(--crema); border: 1px solid var(--piedra); border-radius: 6px; padding: 28px 20px 20px; margin-top: 10px; position: relative; }
+
+  .diag {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 11;
+    min-height: 520px;
+  }
+  .diag svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+  .node { position: absolute; background: var(--white); border: 1.5px solid var(--piedra); border-radius: 6px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(26,25,22,0.05); z-index: 2; }
+  .node .ico { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; background: var(--crema); color: var(--accent); margin-bottom: 6px; }
+  .node h4 { font-family: var(--fd); font-size: 15px; font-weight: 500; color: var(--carbon); margin-bottom: 2px; }
+  .node h4 em { font-style: italic; color: var(--accent); }
+  .node small { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--warm); font-weight: 600; display: block; margin-bottom: 4px; }
+  .node p { font-size: 11px; color: var(--warm-d); line-height: 1.35; margin: 0; }
+
+  /* Variantes de nodo */
+  .node.frontend { border-color: var(--accent); }
+  .node.frontend .ico { background: var(--accent); color: var(--white); }
+  .node.frontend small { color: var(--accent); }
+
+  .node.entry { border-color: var(--blue); }
+  .node.entry .ico { background: var(--blue); color: var(--white); }
+  .node.entry small { color: var(--blue); }
+
+  .node.landing { border-color: var(--gold); }
+  .node.landing .ico { background: var(--gold); color: var(--carbon); }
+  .node.landing small { color: var(--accent-d); }
+
+  .node.db { background: var(--carbon); color: var(--crema); border: 1.5px solid var(--gold); padding: 16px 18px; }
+  .node.db h4 { color: var(--gold); font-size: 17px; }
+  .node.db small { color: var(--gold); opacity: 0.85; }
+  .node.db p { color: rgba(245,242,237,0.7); }
+  .node.db .keys { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-top: 8px; }
+  .node.db .keys span { font-family: 'SF Mono', Menlo, monospace; font-size: 9.5px; color: var(--crema); opacity: 0.85; padding-left: 9px; position: relative; }
+  .node.db .keys span::before { content: '·'; position: absolute; left: 0; top: -4px; color: var(--gold); font-size: 14px; }
+
+  /* Posiciones absolutas (en %) */
+  .n-tienda  { left: 4%;   top: 4%;   width: 26%; }
+  .n-admin   { left: 37%;  top: 4%;   width: 26%; }
+  .n-pos     { left: 70%;  top: 4%;   width: 26%; }
+  .n-login   { left: 4%;   top: 46%;  width: 22%; }
+  .n-vendedoras { left: 74%; top: 46%;  width: 22%; }
+  .n-db      { left: 26%;  top: 44%;  width: 48%; }
+  .n-roles   { left: 4%;   top: 80%;  width: 92%; }
+
+  .n-roles { background: var(--white); border: 1.5px dashed var(--warm); padding: 12px 18px; }
+  .n-roles h4 { color: var(--carbon); margin-bottom: 6px; }
+  .n-roles .role-line { display: flex; flex-wrap: wrap; gap: 8px; }
+  .n-roles .pill { display: inline-flex; align-items: center; gap: 6px; background: var(--crema); padding: 4px 10px; border-radius: 100px; font-size: 11px; color: var(--carbon-2); border: 1px solid var(--piedra); }
+  .n-roles .pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .pill .dot.super { background: var(--rust); }
+  .pill .dot.admin { background: var(--accent); }
+  .pill .dot.vendedora { background: var(--gold); }
+  .pill .dot.bodega { background: var(--green); }
+  .pill .dot.cliente { background: var(--warm); }
+
+  /* Leyenda */
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 18px; padding: 12px 16px; background: var(--white); border: 1px solid var(--piedra); border-radius: 4px; font-size: 11.5px; color: var(--warm-d); }
+  .legend .l-item { display: flex; align-items: center; gap: 8px; }
+  .legend .l-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; }
+  .l-swatch.frontend { border-color: var(--accent); background: rgba(139,111,71,0.08); }
+  .l-swatch.entry { border-color: var(--blue); background: rgba(63,92,122,0.08); }
+  .l-swatch.landing { border-color: var(--gold); background: rgba(184,153,104,0.12); }
+  .l-swatch.db { border-color: var(--gold); background: var(--carbon); }
+  .l-line { display: inline-flex; align-items: center; gap: 6px; }
+  .l-line .l-arrow { display: inline-block; width: 28px; height: 2px; position: relative; }
+  .l-line .l-arrow.rw { background: var(--accent); }
+  .l-line .l-arrow.r  { background: var(--warm); }
+  .l-line .l-arrow.auth { background: var(--blue); }
+  .l-line .l-arrow::after { content: ''; position: absolute; right: -3px; top: -3px; width: 0; height: 0; border-left: 6px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; color: inherit; }
+  .l-line .l-arrow.rw::after { color: var(--accent); }
+  .l-line .l-arrow.r::after { color: var(--warm); }
+  .l-line .l-arrow.auth::after { color: var(--blue); }
+
+  /* Tabla de conexiones */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 6px 0; font-size: 12px; }
+  table th, table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--piedra); vertical-align: top; }
+  table th { background: var(--crema); font-weight: 700; color: var(--carbon); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; }
+  table code { background: var(--crema-d); padding: 1.5px 5px; border-radius: 3px; font-family: 'SF Mono', Menlo, monospace; font-size: 10.5px; color: var(--accent-d); }
+  table .tag-rw { display: inline-block; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; background: var(--accent); color: var(--white); padding: 2px 6px; border-radius: 3px; font-weight: 700; margin-right: 4px; }
+  table .tag-r { display: inline-block; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; background: var(--warm); color: var(--white); padding: 2px 6px; border-radius: 3px; font-weight: 700; margin-right: 4px; }
+
+  /* Flujo de venta */
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+  .flow-step { background: var(--crema); border: 1px solid var(--piedra); border-radius: 4px; padding: 12px 10px; position: relative; }
+  .flow-step .num { font-family: var(--fd); font-size: 22px; color: var(--gold); font-style: italic; line-height: 1; margin-bottom: 4px; }
+  .flow-step h5 { font-family: var(--fd); font-size: 13.5px; font-weight: 500; color: var(--carbon); margin-bottom: 3px; }
+  .flow-step p { font-size: 10.5px; color: var(--warm-d); line-height: 1.35; margin: 0; }
+  .flow-step:not(:last-child)::after { content: '›'; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); color: var(--gold); font-size: 22px; font-weight: 700; z-index: 5; background: var(--white); width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+
+  .footer { background: var(--carbon); color: var(--crema); padding: 22px 56px; }
+  .footer .row { display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,242,237,0.6); }
+  .footer b { color: var(--gold); }
+
+  @media (max-width: 820px) {
+    body { padding: 12px 0; }
+    .doc { border-radius: 0; }
+    .hero, .section, .footer { padding-left: 24px; padding-right: 24px; }
+    .hero h1 { font-size: 26px; }
+    .diag { aspect-ratio: auto; min-height: 0; }
+    .diag svg.lines { display: none; }
+    .node { position: static; width: 100% !important; margin-bottom: 10px; }
+    .flow { grid-template-columns: 1fr; }
+    .flow-step:not(:last-child)::after { display: none; }
+  }
+
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  @media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    html, body { background: var(--white) !important; padding: 0 !important; font-size: 11px; }
+    .doc { box-shadow: none !important; max-width: 100% !important; border-radius: 0 !important; }
+    .section { page-break-inside: avoid; }
+    .diag-wrap { page-break-inside: avoid; }
+  }
+</style>
+  <link rel="stylesheet" href="css/cursor.css" />
+</head>
+<body>
+<div class="doc">
+
+  <section class="hero">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span>AA&nbsp;PROJECTS</span>
+    </div>
+    <div class="eye">Diagrama de arquitectura · Mayo 2026</div>
+    <h1>Arquitectura del <em>sistema Laurean</em></h1>
+    <p>Visión general de cómo se conectan la tienda en línea, el panel administrativo y el punto de venta con la base de datos compartida. Pensado para que cualquier persona del equipo entienda dónde vive cada cosa y cómo fluye la información.</p>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Mapa general</div>
+    <h2>Componentes y <em>conexiones</em></h2>
+    <p class="intro">Los tres frontales (Tienda, Admin, POS) leen y escriben sobre la <b>misma base de datos</b>. El login es la puerta única para todos los roles; la landing de vendedoras es pública.</p>
+
+    <div class="diag-wrap">
+      <div class="diag">
+        <!-- SVG con líneas de conexión -->
+        <svg class="lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <marker id="arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#8B6F47"/>
+            </marker>
+            <marker id="arrow-warm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#9B8E7F"/>
+            </marker>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#3F5C7A"/>
+            </marker>
+          </defs>
+
+          <!-- Tienda <-> DB (lectura/escritura) -->
+          <path d="M 17 16 C 25 32, 35 38, 42 44" stroke="#8B6F47" stroke-width="0.4" fill="none" marker-end="url(#arrow-accent)" marker-start="url(#arrow-accent)" />
+          <!-- Admin <-> DB -->
+          <path d="M 50 16 L 50 44" stroke="#8B6F47" stroke-width="0.4" fill="none" marker-end="url(#arrow-accent)" marker-start="url(#arrow-accent)" />
+          <!-- POS <-> DB -->
+          <path d="M 83 16 C 75 32, 65 38, 58 44" stroke="#8B6F47" stroke-width="0.4" fill="none" marker-end="url(#arrow-accent)" marker-start="url(#arrow-accent)" />
+
+          <!-- Login -> Tienda (auth) -->
+          <path d="M 15 46 C 15 30, 15 22, 17 16" stroke="#3F5C7A" stroke-width="0.4" fill="none" marker-end="url(#arrow-blue)" stroke-dasharray="1.2 1" />
+          <!-- Login -> Admin (auth) -->
+          <path d="M 18 50 C 30 38, 40 24, 48 16" stroke="#3F5C7A" stroke-width="0.4" fill="none" marker-end="url(#arrow-blue)" stroke-dasharray="1.2 1" />
+          <!-- Login -> POS (auth) -->
+          <path d="M 18 52 C 40 56, 65 36, 82 16" stroke="#3F5C7A" stroke-width="0.4" fill="none" marker-end="url(#arrow-blue)" stroke-dasharray="1.2 1" />
+          <!-- Login <-> DB (lee users/session) -->
+          <path d="M 26 56 L 42 56" stroke="#9B8E7F" stroke-width="0.4" fill="none" marker-end="url(#arrow-warm)" />
+
+          <!-- Vendedoras -> DB (escribe solicitudes) -->
+          <path d="M 74 56 L 58 56" stroke="#9B8E7F" stroke-width="0.4" fill="none" marker-end="url(#arrow-warm)" />
+        </svg>
+
+        <!-- NODES -->
+        <div class="node frontend n-tienda">
+          <span class="ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/></svg>
+          </span>
+          <small>Frontend</small>
+          <h4>Tienda <em>en línea</em></h4>
+          <p>Laurean.html — catálogo público, carrito, checkout, comisiones de vendedora.</p>
+        </div>
+
+        <div class="node frontend n-admin">
+          <span class="ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+          </span>
+          <small>Frontend</small>
+          <h4>Panel <em>administrativo</em></h4>
+          <p>admin.html — productos, pedidos, comisiones, configuración, cotizaciones.</p>
+        </div>
+
+        <div class="node frontend n-pos">
+          <span class="ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>
+          </span>
+          <small>Frontend</small>
+          <h4>Punto de venta <em>(POS)</em></h4>
+          <p>pos.html — venta táctil, historial diario, cierre de caja.</p>
+        </div>
+
+        <div class="node entry n-login">
+          <span class="ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          </span>
+          <small>Entrada</small>
+          <h4>Login</h4>
+          <p>login.html — autenticación única (admin, vendedora, bodega, super).</p>
+        </div>
+
+        <div class="node landing n-vendedoras">
+          <span class="ico">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>
+          </span>
+          <small>Landing pública</small>
+          <h4>Vendedoras</h4>
+          <p>vendedoras.html — reclutamiento. Envía solicitudes a la BD.</p>
+        </div>
+
+        <div class="node db n-db">
+          <span class="ico" style="background: var(--gold); color: var(--carbon);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </span>
+          <small>Base de datos compartida</small>
+          <h4>localStorage <em>del navegador</em></h4>
+          <p style="margin-top:4px;">Hoy, toda la persistencia vive aquí. En fase 2 migra a base de datos en la nube sin cambiar el frontend.</p>
+          <div class="keys">
+            <span>laurean_users</span>
+            <span>laurean_session</span>
+            <span>laurean_orders</span>
+            <span>laurean_commissions</span>
+            <span>laurean_prices</span>
+            <span>laurean_settings</span>
+            <span>laurean_vendor_apps</span>
+            <span>laurean_custom_products</span>
+            <span>laurean_custom_categories</span>
+            <span>laurean_proveedores</span>
+            <span>laurean_bodegas</span>
+            <span>laurean_cotizaciones</span>
+          </div>
+        </div>
+
+        <div class="node n-roles">
+          <h4 style="font-family: var(--fd); font-size: 14px; font-weight: 500;">Roles que entran al sistema</h4>
+          <div class="role-line">
+            <span class="pill"><span class="dot super"></span>Superusuario</span>
+            <span class="pill"><span class="dot admin"></span>Administrador</span>
+            <span class="pill"><span class="dot vendedora"></span>Vendedora</span>
+            <span class="pill"><span class="dot bodega"></span>Bodega</span>
+            <span class="pill"><span class="dot cliente"></span>Cliente (sin login)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="l-item"><span class="l-swatch frontend"></span> Frontend</div>
+        <div class="l-item"><span class="l-swatch entry"></span> Entrada / autenticación</div>
+        <div class="l-item"><span class="l-swatch landing"></span> Landing pública</div>
+        <div class="l-item"><span class="l-swatch db"></span> Base de datos</div>
+        <div class="l-item"><span class="l-line"><span class="l-arrow rw"></span> Lectura + escritura</span></div>
+        <div class="l-item"><span class="l-line"><span class="l-arrow r"></span> Solo lectura / escritura puntual</span></div>
+        <div class="l-item"><span class="l-line"><span class="l-arrow auth"></span> Flujo de autenticación</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Detalle</div>
+    <h2>Quién toca <em>qué llave</em> de la BD</h2>
+    <p class="intro">Cada frontal lee y escribe llaves específicas del localStorage. Esto es lo que mañana, al migrar a base de datos en la nube, se convertirá en tablas (users, orders, commissions, etc.).</p>
+    <table>
+      <thead><tr><th style="width:18%">Componente</th><th>Llave</th><th>Acceso</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="4"><b>Tienda</b><br><code>Laurean.html</code></td>
+          <td><code>laurean_session</code></td><td><span class="tag-r">Lee</span></td><td>Detectar usuario, mostrar precio por rol y panel de vendedora.</td></tr>
+        <tr><td><code>laurean_orders</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Crear pedido al confirmar checkout.</td></tr>
+        <tr><td><code>laurean_commissions</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Generar comisión si hay código referral.</td></tr>
+        <tr><td><code>laurean_settings</code></td><td><span class="tag-r">Lee</span></td><td>Aplicar % descuento por rol y validar PIN.</td></tr>
+
+        <tr><td rowspan="9"><b>Admin</b><br><code>admin.html</code></td>
+          <td><code>laurean_session</code></td><td><span class="tag-r">Lee</span></td><td>Validar rol (admin/superuser) antes de mostrar contenido.</td></tr>
+        <tr><td><code>laurean_users</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Crear vendedoras, asignar código referral.</td></tr>
+        <tr><td><code>laurean_orders</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Listado de pedidos, borrado en bloque (zona de peligro).</td></tr>
+        <tr><td><code>laurean_commissions</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Listado y marcado de pagadas.</td></tr>
+        <tr><td><code>laurean_prices</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Override de precios por producto.</td></tr>
+        <tr><td><code>laurean_custom_products</code> · <code>_categories</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Productos y categorías creadas desde admin.</td></tr>
+        <tr><td><code>laurean_proveedores</code> · <code>laurean_bodegas</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Maestros de proveedores y bodegas.</td></tr>
+        <tr><td><code>laurean_cotizaciones</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Generador de cotizaciones para mayoristas.</td></tr>
+        <tr><td><code>laurean_settings</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>PIN, % por rol, comisión.</td></tr>
+
+        <tr><td rowspan="4"><b>POS</b><br><code>pos.html</code></td>
+          <td><code>laurean_session</code></td><td><span class="tag-r">Lee</span></td><td>Identificar vendedora y aplicar precio por rol.</td></tr>
+        <tr><td><code>laurean_orders</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Cobro: crea orden con método de pago y descuento aplicado.</td></tr>
+        <tr><td><code>laurean_settings</code></td><td><span class="tag-r">Lee</span></td><td>Validar PIN de descuento manual.</td></tr>
+        <tr><td><code>laurean_commissions</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Acreditar comisión si hay vendedora asociada.</td></tr>
+
+        <tr><td><b>Login</b><br><code>login.html</code></td>
+          <td><code>laurean_users</code> · <code>laurean_session</code></td><td><span class="tag-rw">Lee/Escribe</span></td><td>Verificar credenciales y abrir sesión.</td></tr>
+
+        <tr><td><b>Vendedoras</b><br><code>vendedoras.html</code></td>
+          <td><code>laurean_vendor_apps</code></td><td><span class="tag-rw">Escribe</span></td><td>Guarda formulario de solicitud para revisión en admin.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Flujo principal</div>
+    <h2>Una venta <em>de principio a fin</em></h2>
+    <p class="intro">Mismo flujo, dos puntos de entrada: el cliente que compra desde la tienda online, o la vendedora que cobra en el POS.</p>
+    <div class="flow">
+      <div class="flow-step"><div class="num">01</div><h5>Catálogo</h5><p>Cliente o vendedora navega el catálogo (Tienda o POS).</p></div>
+      <div class="flow-step"><div class="num">02</div><h5>Carrito</h5><p>Se agregan productos; precio se calcula por rol y referral.</p></div>
+      <div class="flow-step"><div class="num">03</div><h5>Descuento</h5><p>Opcional: PIN de descuento manual o código referral.</p></div>
+      <div class="flow-step"><div class="num">04</div><h5>Cobro</h5><p>POS: método (efectivo, tarjeta, QR). Tienda: confirma pedido.</p></div>
+      <div class="flow-step"><div class="num">05</div><h5>Registro</h5><p>Se escribe en <code>laurean_orders</code> y, si aplica, <code>commissions</code>.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Hoy vs. mañana</div>
+    <h2>Cómo <em>evoluciona</em> la arquitectura</h2>
+    <p class="intro">Lo que hoy vive en el navegador es suficiente para arrancar. Cuando el volumen lo exija, se migra a base de datos en la nube sin cambiar la cara del sistema.</p>
+    <table>
+      <thead><tr><th>Capa</th><th>Hoy (Fase 1)</th><th>Mañana (Fase 2 · cambio grande)</th></tr></thead>
+      <tbody>
+        <tr><td><b>Persistencia</b></td><td><code>localStorage</code> por navegador</td><td>Firebase / Supabase / Postgres en la nube</td></tr>
+        <tr><td><b>Autenticación</b></td><td>Usuarios y sesión en <code>laurean_users</code></td><td>OAuth / Firebase Auth con recuperación de contraseña</td></tr>
+        <tr><td><b>Pagos</b></td><td>Sin pasarela activa</td><td>Visa Cuotas / Recurrente / NeoNet</td></tr>
+        <tr><td><b>Multi-dispositivo en tiempo real</b></td><td>No (cada navegador tiene su copia)</td><td>Sí (sincronización entre POS, admin y tienda)</td></tr>
+        <tr><td><b>Factura</b></td><td>No</td><td>FEL vía emisor autorizado SAT</td></tr>
+        <tr><td><b>Stock</b></td><td>Maestros sin resta automática</td><td>Stock deductivo por bodega + multi-sucursal</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="footer">
+    <div class="row">
+      <span>Arquitectura · <b>ARQ-LRN-2026-001</b></span>
+      <span><b>AA Projects</b> · Diseño técnico</span>
+    </div>
+  </section>
+
+</div>
+<script src="js/config.js" onerror="console.info('[laurean] sin js/config.js — modo offline')"></script>
+<script src="js/supabase-client.js"></script>
+<script defer src="js/visit-tracker.js"></script>
+  <script defer src="js/cursor.js"></script>
+</body>
+</html>
