@@ -129,7 +129,7 @@ end $$;
 -- Column-level security para autoservicio de vendedores.
 -- Sin esto, own_profile_update permitiría cambiar role/active/can_login_pos/etc.
 revoke update on table public.profiles from anon, authenticated;
-grant update (dpi, bank_name, bank_account, bank_account_type, account_holder)
+grant update (dpi, bank_name, bank_account, bank_account_type, account_holder, birthday)
   on table public.profiles to authenticated;
 
 -- ────────────────────────────────────────────────────────────
