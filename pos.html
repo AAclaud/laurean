@@ -4,23 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Punto de Venta — LAUREAN</title>
+  <link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/brand.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <script defer src="js/brand-img.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --crema:    #F5F2ED;
-      --piedra:   #E8E3DC;
-      --carbon:   #1A1916;
-      --warm-mid: #9B8E7F;
+      /* Paleta y tipografías en css/brand.css. Aquí solo vars del POS. */
       --green:    #388E3C;
       --red:      #c62828;
       --amber:    #D4A017;
       --blue:     #1565C0;
-      --fd: 'Cormorant Garamond', Georgia, serif;
-      --fb: 'DM Sans', -apple-system, sans-serif;
-      --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
       --topbar-h: 52px;
       --sidebar-w: 280px;
     }
@@ -40,12 +38,13 @@
       background: var(--crema);
     }
     .login-brand {
-      font-family: var(--fd);
-      font-size: 22px;
-      letter-spacing: 0.36em;
-      text-transform: uppercase;
-      font-weight: 300;
-      margin-bottom: 6px;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .login-brand img {
+      height: 32px;
+      width: auto;
+      display: block;
     }
     .login-sub {
       font-size: 11px;
@@ -66,6 +65,7 @@
       width: 100%;
       padding: 12px 14px;
       border: 1px solid var(--piedra);
+      border-radius: 4px;
       background: white;
       font-family: var(--fb);
       font-size: 15px;
@@ -91,6 +91,7 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       border: none;
+      border-radius: 6px;
       cursor: pointer;
       margin-top: 4px;
       transition: opacity 0.2s;
@@ -113,12 +114,16 @@
       z-index: 50;
     }
     .pos-brand {
-      font-family: var(--fd);
-      font-size: 17px;
-      letter-spacing: 0.32em;
-      text-transform: uppercase;
-      color: var(--crema);
-      font-weight: 300;
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      transition: opacity .2s var(--ease);
+    }
+    .pos-brand:hover { opacity: 0.75; }
+    .pos-brand img {
+      height: 28px;
+      width: auto;
+      display: block;
     }
     .pos-brand-sub {
       font-size: 10px;
@@ -141,6 +146,7 @@
       background: none;
       border: none;
       border-bottom: 2px solid transparent;
+      border-radius: 6px 6px 0 0;
       cursor: pointer;
       font-family: var(--fb);
       transition: color 0.2s, border-color 0.2s;
@@ -207,6 +213,7 @@
       background: var(--piedra);
       color: var(--warm-mid);
       border: none;
+      border-radius: 6px;
       cursor: pointer;
       font-family: var(--fb);
       transition: background 0.2s, color 0.2s;
@@ -223,6 +230,7 @@
       outline: none;
       min-width: 180px;
     }
+    .pos-cat-search { border-radius: 4px; }
     .pos-cat-search:focus { border-color: var(--carbon); }
     .pos-product-grid {
       flex: 1;
@@ -234,8 +242,10 @@
       align-content: start;
     }
     .pos-prod-card {
+      position: relative;
       background: white;
       border: 1px solid var(--piedra);
+      border-radius: 6px;
       padding: 12px;
       cursor: pointer;
       transition: border-color 0.2s, box-shadow 0.2s;
@@ -249,9 +259,11 @@
     .pos-prod-img {
       width: 100%;
       aspect-ratio: 1;
-      object-fit: cover;
       background: var(--piedra);
       margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 4px;
     }
     .pos-prod-name {
       font-size: 13px;
@@ -265,14 +277,17 @@
       color: var(--warm-mid);
     }
     .pos-prod-badge-new {
-      display: inline-block;
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 2;
       background: #C8A96E;
       color: white;
       font-size: 9px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       padding: 2px 6px;
-      margin-bottom: 6px;
+      border-radius: 3px;
     }
     .pos-empty {
       grid-column: 1/-1;
@@ -381,6 +396,7 @@
       width: 100%;
       padding: 8px 10px;
       border: 1px solid var(--piedra);
+      border-radius: 4px;
       font-family: var(--fb);
       font-size: 13px;
       color: var(--carbon);
@@ -415,6 +431,7 @@
       width: 70px;
       padding: 7px 8px;
       border: 1px solid var(--piedra);
+      border-radius: 4px;
       font-family: var(--fb);
       font-size: 14px;
       text-align: center;
@@ -462,6 +479,7 @@
       letter-spacing: 0.16em;
       text-transform: uppercase;
       border: none;
+      border-radius: 6px;
       cursor: pointer;
       transition: opacity 0.2s;
     }
@@ -565,6 +583,66 @@
     }
     .pos-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ─── BODEGA SELECTOR ────────────────────────────────────────── */
+    #pos-bodega-select {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--carbon);
+    }
+    .pbs-option {
+      display: block;
+      width: 100%;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      background: white;
+      border: 2px solid var(--piedra);
+      border-radius: 6px;
+      font-family: var(--fb);
+      font-size: 14px;
+      color: var(--carbon);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .pbs-option:hover { border-color: var(--carbon); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .pbs-option strong { display: block; font-weight: 500; }
+    .pbs-option small  { color: var(--warm-mid); font-size: 12px; }
+
+    /* ─── TOPBAR BODEGA BADGE ─────────────────────────────────────── */
+    .pos-bodega-badge {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: rgba(212,160,23,0.18);
+      color: var(--amber);
+      padding: 4px 10px;
+      border-radius: 10px;
+    }
+
+    /* ─── DISCOUNT CODE ROW ───────────────────────────────────────── */
+    .pos-dsc-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .pos-dsc-row .pos-field-input { margin-bottom: 0; flex: 1; }
+    .pos-dsc-apply {
+      padding: 8px 12px;
+      background: var(--carbon);
+      color: white;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--fb);
+      white-space: nowrap;
+    }
+    .pos-dsc-msg { font-size: 11px; margin-bottom: 6px; min-height: 16px; }
+
     /* Responsive */
     @media (max-width: 768px) {
       :root { --sidebar-w: 100%; }
@@ -580,7 +658,7 @@
 <!-- ═══════════════════════════════════════════════════════ LOGIN -->
 <div id="pos-login">
   <div class="login-box">
-    <div class="login-brand">Laurean</div>
+    <div class="login-brand"><img src="images/brand/logo-navbar.svg" alt="Laurean" /></div>
     <div class="login-sub">Punto de Venta</div>
     <label class="lf-label" for="lf-email">Correo electrónico</label>
     <input class="lf-input" type="email" id="lf-email" placeholder="correo@ejemplo.com" autocomplete="email" />
@@ -591,13 +669,22 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ BODEGA SELECTOR -->
+<div id="pos-bodega-select" style="display:none">
+  <div class="login-box">
+    <div class="login-brand"><img src="images/brand/logo-navbar.svg" alt="Laurean" /></div>
+    <div class="login-sub">Selecciona tu bodega</div>
+    <div id="pbs-list"></div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════ APP -->
 <div id="pos-app">
 
   <!-- Topbar -->
   <div class="pos-topbar">
     <div>
-      <span class="pos-brand">Laurean</span>
+      <a class="pos-brand" href="Laurean.html#inicio" title="Ir al inicio"><img src="images/brand/logo-oscuro.svg" alt="Laurean" /></a>
       <span class="pos-brand-sub">POS</span>
     </div>
     <div class="pos-topbar-tabs">
@@ -606,6 +693,7 @@
       <button class="pos-tab"        onclick="showScreen('cierre')"    id="tab-cierre">Cierre</button>
     </div>
     <div class="pos-topbar-right">
+      <span class="pos-bodega-badge" id="pos-active-bodega" style="display:none"></span>
       <span class="pos-user-chip"><strong id="pos-user-name">—</strong> · <span id="pos-user-role">—</span></span>
       <button class="pos-logout" onclick="posLogout()">Salir</button>
     </div>
@@ -622,6 +710,7 @@
         <div class="pos-cat-filter">
           <button class="pos-filter-btn active" onclick="filterCat('all')" id="pf-all">Todo</button>
           <div id="pos-cat-btns"></div>
+          <button class="pos-filter-btn" onclick="filterCat('__combos__')" id="pf-combos" style="background:var(--warm-dark);color:#fff;border-color:var(--warm-dark);">Combos</button>
           <input class="pos-cat-search" id="pos-search" placeholder="Buscar producto…" oninput="renderPosProducts()" />
         </div>
         <div class="pos-product-grid" id="pos-product-grid"></div>
@@ -657,6 +746,14 @@
               <button class="pos-pct-apply" onclick="posApplyDiscount()">Aplicar %</button>
             </div>
           </div>
+
+          <!-- Código de descuento -->
+          <div class="pos-field-label" style="margin-top:8px">Código de descuento</div>
+          <div class="pos-dsc-row">
+            <input class="pos-field-input" id="pos-dsc-code" placeholder="Ej: PROMO20" style="text-transform:uppercase" />
+            <button class="pos-dsc-apply" onclick="applyDiscountCodePOS()">Aplicar</button>
+          </div>
+          <div class="pos-dsc-msg" id="pos-dsc-msg"></div>
 
           <!-- Método de pago -->
           <div class="pos-field-label" style="margin-top:8px">Método de pago</div>
@@ -706,61 +803,153 @@
 <div class="pos-toast" id="pos-toast"></div>
 
 <!-- Auth & Data -->
+<script src="js/config.js" onerror="console.info('[pos] js/config.js no existe; sin Supabase')"></script>
 <script src="js/auth.js"></script>
 <script src="data/products.js"></script>
+<script src="js/supabase-client.js"></script>
 <script>
   // ─── State ─────────────────────────────────────────────────────────────────
-  let POS_SESSION     = null;
-  let posCart         = [];
-  let posPayMethod    = 'efectivo';
-  let posManualDisc   = 0;    // %
-  let posActiveCat    = 'all';
-  let POS_PRODUCTS    = [];   // flat array of all products
+  let POS_SESSION          = null;
+  let posCart              = [];
+  let posPayMethod         = 'efectivo';
+  let posManualDisc        = 0;    // %
+  let posActiveCat         = 'all';
+  let POS_PRODUCTS         = [];   // flat array of all products
+  let posAppliedDscCode    = null; // { id, code, discountGtq }
 
   // ─── Login ─────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
     const s = getSession();
     if (s && ['vendedor','admin','superuser','bodega'].includes(s.role)) {
+      if (s.canLoginPOS === false) {
+        logout();
+        document.getElementById('lf-error').textContent = 'Sin acceso al POS. Contacta al administrador.';
+        return;
+      }
       POS_SESSION = s;
-      initPosApp();
+      chooseBodegaThen(initPosApp);
     }
     document.getElementById('lf-pass').addEventListener('keydown', e => {
       if (e.key === 'Enter') posLogin();
     });
   });
 
-  function posLogin() {
+  async function posLogin() {
     const email = document.getElementById('lf-email').value.trim();
     const pass  = document.getElementById('lf-pass').value;
     const errEl = document.getElementById('lf-error');
     errEl.textContent = '';
     if (!email || !pass) { errEl.textContent = 'Completa todos los campos.'; return; }
-    const result = login(email, pass);
-    if (!result.ok) { errEl.textContent = result.error; return; }
+
+    // SEC: requiere Supabase Auth (sin fallback inseguro)
+    if (window.LAUREAN_CONFIG && !window.LAUREAN_SUPABASE_READY) {
+      await new Promise(r => {
+        const t = setTimeout(r, 1500);
+        document.addEventListener('laurean:supabase-ready', () => { clearTimeout(t); r(); }, { once: true });
+      });
+    }
+    if (!window.LAUREAN_DB || typeof loginSupabase !== 'function') {
+      errEl.textContent = 'Servidor no disponible. Recarga la página.';
+      return;
+    }
+
+    const result = await loginSupabase(email, pass);
+    if (!result.ok) {
+      let msg = result.error || 'No se pudo iniciar sesión.';
+      if (msg === 'Invalid login credentials') msg = 'Correo o contraseña incorrectos.';
+      errEl.textContent = msg;
+      return;
+    }
     if (!['vendedor','admin','superuser','bodega'].includes(result.session.role)) {
       logout();
       errEl.textContent = 'Sin acceso al POS. Contacta al administrador.';
       return;
     }
+    if (result.session.canLoginPOS === false) {
+      logout();
+      errEl.textContent = 'Sin acceso al POS. Contacta al administrador.';
+      return;
+    }
     POS_SESSION = result.session;
-    initPosApp();
+    chooseBodegaThen(initPosApp);
+  }
+
+  // ─── Bodega Selector ───────────────────────────────────────────────────────
+  function chooseBodegaThen(initFn) {
+    const s = POS_SESSION;
+    const allBodegas = getBodegas ? getBodegas() : [];
+    let candidates;
+    if (s.role === 'admin' || s.role === 'superuser') {
+      candidates = allBodegas;
+    } else {
+      const ids = s.bodegaIds || [];
+      candidates = ids.length ? allBodegas.filter(b => ids.includes(b.id)) : allBodegas;
+    }
+
+    if (candidates.length === 0) {
+      // No bodega constraint — go straight in
+      initFn();
+      return;
+    }
+    if (candidates.length === 1) {
+      setActiveBodega(candidates[0].id);
+      initFn();
+      return;
+    }
+
+    // Multiple candidates: show selector
+    document.getElementById('pos-login').style.display = 'none';
+    const sel = document.getElementById('pos-bodega-select');
+    sel.style.display = 'flex';
+    document.getElementById('pbs-list').innerHTML = candidates.map(b => `
+      <button class="pbs-option" onclick="pickBodega('${jsAttr(b.id)}')">
+        <strong>${escapeHtml(b.name)}</strong>
+        <small>${escapeHtml(b.address || b.location || '')}</small>
+      </button>`).join('');
+    // Store initFn for pickup
+    window._posBodegaInitFn = initFn;
+  }
+
+  function pickBodega(id) {
+    setActiveBodega(id);
+    document.getElementById('pos-bodega-select').style.display = 'none';
+    if (window._posBodegaInitFn) {
+      const fn = window._posBodegaInitFn;
+      window._posBodegaInitFn = null;
+      fn();
+    }
   }
 
   function posLogout() {
     logout();
     POS_SESSION = null;
     posCart = [];
+    posAppliedDscCode = null;
     document.getElementById('pos-app').classList.remove('visible');
+    document.getElementById('pos-bodega-select').style.display = 'none';
     document.getElementById('pos-login').style.display = 'flex';
   }
 
   // ─── Init App ──────────────────────────────────────────────────────────────
   function initPosApp() {
     document.getElementById('pos-login').style.display = 'none';
+    document.getElementById('pos-bodega-select').style.display = 'none';
     document.getElementById('pos-app').classList.add('visible');
     document.getElementById('pos-user-name').textContent = POS_SESSION.name.split(' ')[0];
     document.getElementById('pos-user-role').textContent = roleLabel(POS_SESSION.role);
     document.getElementById('hist-date-label').textContent = 'Hoy — ' + new Date().toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' });
+
+    // Show active bodega in topbar
+    const activeBodegaId = getActiveBodega();
+    if (activeBodegaId) {
+      const bodega = (getBodegas ? getBodegas() : []).find(b => b.id === activeBodegaId);
+      if (bodega) {
+        const badge = document.getElementById('pos-active-bodega');
+        badge.textContent = bodega.name;
+        badge.style.display = '';
+      }
+    }
+
     buildProductList();
     buildCatFilters();
     renderPosProducts();
@@ -771,7 +960,8 @@
   function buildProductList() {
     const data = window.LAUREAN_DATA;
     if (!data) return;
-    const role = POS_SESSION.role;
+    const role     = POS_SESSION.role;
+    const bodegaId = getActiveBodega();
     POS_PRODUCTS = [
       ...(data.products    || []),
       ...(data.sweaters    || []),
@@ -779,7 +969,7 @@
       ...getCustomProducts(),
     ].map(p => ({
       ...p,
-      displayPrice: getProductPrice(p.id, p.price_gtq || p.base_gtq || 0, p.price_usd || p.base_usd || 0, role).gtq,
+      displayPrice: getProductPrice(p.id, p.price_gtq || p.base_gtq || 0, p.price_usd || p.base_usd || 0, role, bodegaId).gtq,
     }));
   }
 
@@ -787,7 +977,7 @@
     const data = window.LAUREAN_DATA;
     const cats = [...(data?.parentCategories || data?.categories || [])];
     document.getElementById('pos-cat-btns').innerHTML = cats.map(c =>
-      `<button class="pos-filter-btn" onclick="filterCat('${c.id}')" id="pf-${c.id}">${c.name}</button>`
+      `<button class="pos-filter-btn" onclick="filterCat('${jsAttr(c.id)}')" id="pf-${c.id}">${escapeHtml(c.name)}</button>`
     ).join('');
   }
 
@@ -799,8 +989,40 @@
     renderPosProducts();
   }
 
+  function _getPosVisibleCombos() {
+    const session = POS_SESSION;
+    if (!session) return [];
+    const isAdmin = session.role === 'admin' || session.role === 'superuser';
+    return getCombos().filter(c => {
+      if (!c.active) return false;
+      if (isAdmin) return true;
+      const assigned = c.assignedTo || [];
+      return assigned.includes('all') || assigned.includes('store');
+    });
+  }
+
   function renderPosProducts() {
     const search = (document.getElementById('pos-search')?.value || '').toLowerCase();
+    const grid   = document.getElementById('pos-product-grid');
+
+    if (posActiveCat === '__combos__') {
+      const combos = _getPosVisibleCombos();
+      if (!combos.length) {
+        grid.innerHTML = '<div class="pos-empty">No hay combos disponibles para esta sesión</div>'; return;
+      }
+      grid.innerHTML = combos.map(c => `
+        <div class="pos-prod-card" onclick="posAddComboToCart('${jsAttr(c.id)}')"
+             style="position:relative;border:2px solid var(--warm-dark);">
+          <div style="position:absolute;top:6px;left:6px;background:var(--warm-dark);color:#fff;font-size:9px;padding:2px 7px;border-radius:10px;">COMBO</div>
+          <div class="pos-prod-img brand-img">${c.image ? `<img class="brand-img-photo" src="${escapeAttr(c.image)}" alt="${escapeAttr(c.name)}" loading="lazy" />` : ''}</div>
+          <div class="pos-prod-name">${escapeHtml(c.name)}</div>
+          <div style="font-size:10px;color:var(--warm-mid);padding:0 8px 4px;">${(c.items||[]).length} productos</div>
+          <div class="pos-prod-price">Q${(c.totalPrice_gtq||0).toLocaleString()}</div>
+        </div>`).join('');
+      if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+      return;
+    }
+
     let list = POS_PRODUCTS;
     if (posActiveCat !== 'all') {
       list = list.filter(p => p.parent === posActiveCat || p.category === posActiveCat);
@@ -808,18 +1030,38 @@
     if (search) {
       list = list.filter(p => p.name.toLowerCase().includes(search));
     }
-    const grid = document.getElementById('pos-product-grid');
     if (!list.length) {
       grid.innerHTML = '<div class="pos-empty">Sin productos</div>'; return;
     }
     grid.innerHTML = list.map(p => `
-      <div class="pos-prod-card" onclick="posAddToCart('${p.id}')">
+      <div class="pos-prod-card" onclick="posAddToCart('${jsAttr(p.id)}')">
         ${p.is_new_arrival ? '<div class="pos-prod-badge-new">New</div>' : ''}
-        <img class="pos-prod-img" src="${p.image || ''}" alt="${p.name}"
-             onerror="this.style.background='var(--piedra)';this.removeAttribute('src')" />
-        <div class="pos-prod-name">${p.name}</div>
+        <div class="pos-prod-img brand-img">${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}</div>
+        <div class="pos-prod-name">${escapeHtml(p.name)}</div>
         <div class="pos-prod-price">Q${p.displayPrice.toLocaleString()}</div>
       </div>`).join('');
+    if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+  }
+
+  function posAddComboToCart(comboId) {
+    const combo = getCombos().find(c => c.id === comboId);
+    if (!combo || !combo.active) return;
+    (combo.items || []).forEach(item => {
+      const cartId   = item.productId + '_combo_' + comboId;
+      const existing = posCart.find(i => i.id === cartId);
+      if (existing) {
+        existing.qty += (item.quantity || 1);
+      } else {
+        posCart.push({
+          id:    cartId,
+          name:  item.productName + ' (Combo: ' + combo.name + ')',
+          price: item.comboPrice_gtq || 0,
+          qty:   item.quantity || 1,
+        });
+      }
+    });
+    renderPosCart();
+    showToast('Combo "' + combo.name + '" agregado');
   }
 
   // ─── Cart ──────────────────────────────────────────────────────────────────
@@ -844,28 +1086,32 @@
   function posClearCart() {
     posCart = [];
     posManualDisc = 0;
+    posAppliedDscCode = null;
     document.getElementById('pos-pin').value = '';
     document.getElementById('pos-pin-msg').textContent = '';
     document.getElementById('pos-pct-row').style.display = 'none';
+    document.getElementById('pos-dsc-code').value = '';
+    document.getElementById('pos-dsc-msg').textContent = '';
     renderPosCart();
   }
 
   function renderPosCart() {
-    const itemsEl  = document.getElementById('pos-cart-items');
-    const subtotal = posCart.reduce((s, i) => s + i.price * i.qty, 0);
-    const discAmt  = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
-    const total    = subtotal - discAmt;
+    const itemsEl   = document.getElementById('pos-cart-items');
+    const subtotal  = posCart.reduce((s, i) => s + i.price * i.qty, 0);
+    const manualAmt = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
+    const codeAmt   = posAppliedDscCode ? posAppliedDscCode.discountGtq : 0;
+    const total     = Math.max(0, subtotal - manualAmt - codeAmt);
 
     if (!posCart.length) {
       itemsEl.innerHTML = '<div class="pos-cart-empty">Agrega productos al carrito</div>';
     } else {
       itemsEl.innerHTML = posCart.map(i => `
         <div class="pos-cart-item">
-          <div class="pos-ci-name">${i.name}</div>
+          <div class="pos-ci-name">${escapeHtml(i.name)}</div>
           <div class="pos-ci-qty">
-            <button class="pos-ci-qty-btn" onclick="posChangeQty('${i.id}',-1)">−</button>
+            <button class="pos-ci-qty-btn" onclick="posChangeQty('${jsAttr(i.id)}',-1)">−</button>
             <span class="pos-ci-qty-num">${i.qty}</span>
-            <button class="pos-ci-qty-btn" onclick="posChangeQty('${i.id}',1)">+</button>
+            <button class="pos-ci-qty-btn" onclick="posChangeQty('${jsAttr(i.id)}',1)">+</button>
           </div>
           <div class="pos-ci-price">Q${(i.price * i.qty).toLocaleString()}</div>
         </div>`).join('');
@@ -873,10 +1119,14 @@
 
     document.getElementById('pos-subtotal').textContent = 'Q' + subtotal.toLocaleString();
     const discRow = document.getElementById('pos-disc-row');
-    if (discAmt > 0) {
+    const totalDisc = manualAmt + codeAmt;
+    if (totalDisc > 0) {
       discRow.style.display = '';
-      document.getElementById('pos-disc-label').textContent = `Descuento (${posManualDisc}%)`;
-      document.getElementById('pos-disc-amt').textContent   = '−Q' + discAmt.toLocaleString();
+      const labels = [];
+      if (manualAmt > 0) labels.push(`${posManualDisc}% especial`);
+      if (codeAmt   > 0) labels.push(`código ${posAppliedDscCode.code}`);
+      document.getElementById('pos-disc-label').textContent = 'Descuento (' + labels.join(' + ') + ')';
+      document.getElementById('pos-disc-amt').textContent   = '−Q' + totalDisc.toLocaleString();
     } else {
       discRow.style.display = 'none';
     }
@@ -911,6 +1161,27 @@
     showToast(`Descuento del ${pct}% aplicado`);
   }
 
+  function applyDiscountCodePOS() {
+    const codeStr = (document.getElementById('pos-dsc-code').value || '').trim().toUpperCase();
+    const msgEl   = document.getElementById('pos-dsc-msg');
+    if (!codeStr) { msgEl.style.color = 'var(--red)'; msgEl.textContent = 'Ingresa un código.'; return; }
+
+    const subtotal = posCart.reduce((s, i) => s + i.price * i.qty, 0);
+    const result   = applyDiscountCode(codeStr, subtotal);
+    if (!result.ok) {
+      msgEl.style.color   = 'var(--red)';
+      msgEl.textContent   = result.error || 'Código inválido.';
+      posAppliedDscCode   = null;
+      renderPosCart();
+      return;
+    }
+    posAppliedDscCode = { id: result.code.id, code: result.code.code, discountGtq: result.discountGtq };
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = `✓ Código aplicado — ahorro Q${result.discountGtq.toLocaleString()}`;
+    renderPosCart();
+    showToast(`Código ${codeStr} aplicado`);
+  }
+
   // ─── Método de pago ────────────────────────────────────────────────────────
   function selectPayMethod(method) {
     posPayMethod = method;
@@ -922,10 +1193,15 @@
   // ─── Cobrar ────────────────────────────────────────────────────────────────
   function posCobrar() {
     if (!posCart.length) return;
-    const subtotal = posCart.reduce((s, i) => s + i.price * i.qty, 0);
-    const discAmt  = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
-    const total    = subtotal - discAmt;
-    const client   = document.getElementById('pos-client').value.trim() || 'Cliente POS';
+    const subtotal  = posCart.reduce((s, i) => s + i.price * i.qty, 0);
+    const manualAmt = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
+    const codeAmt   = posAppliedDscCode ? posAppliedDscCode.discountGtq : 0;
+    const total     = Math.max(0, subtotal - manualAmt - codeAmt);
+    const client    = document.getElementById('pos-client').value.trim() || 'Cliente POS';
+
+    const activeBodegaId = getActiveBodega();
+    const bodegas        = getBodegas ? getBodegas() : [];
+    const activeBodega   = bodegas.find(b => b.id === activeBodegaId);
 
     const orderData = {
       userId:              POS_SESSION.userId,
@@ -937,29 +1213,49 @@
       subtotal_gtq:        subtotal,
       discount_gtq:        0,
       manual_discount_pct: posManualDisc,
-      manual_discount_gtq: discAmt,
+      manual_discount_gtq: manualAmt,
+      discountCode:        posAppliedDscCode ? posAppliedDscCode.code : null,
+      discountCode_gtq:    codeAmt,
       total_gtq:           total,
       referral_code:       null,
       pay_method:          posPayMethod,
       channel:             'pos',
+      origin:              'pos',
+      bodegaId:            activeBodegaId || null,
+      bodegaName:          activeBodega ? activeBodega.name : null,
     };
     createOrder(orderData);
+
+    // Increment discount code usage after order is created
+    if (posAppliedDscCode) {
+      incrementCodeUsage(posAppliedDscCode.id);
+    }
 
     showToast(`✓ Venta de Q${total.toLocaleString()} registrada`);
     posClearCart();
     document.getElementById('pos-client').value = '';
     posManualDisc = 0;
+    posAppliedDscCode = null;
     document.getElementById('pos-pin').value = '';
     document.getElementById('pos-pin-msg').textContent = '';
     document.getElementById('pos-pct-row').style.display = 'none';
     document.getElementById('pos-pct').value = '';
+    document.getElementById('pos-dsc-code').value = '';
+    document.getElementById('pos-dsc-msg').textContent = '';
   }
 
   // ─── Historial ─────────────────────────────────────────────────────────────
   function renderHistorial() {
-    const today = new Date().toDateString();
+    const today     = new Date().toDateString();
+    const bodegaId  = getActiveBodega();
     const orders = getOrders()
-      .filter(o => new Date(o.createdAt).toDateString() === today || o.channel === 'pos')
+      .filter(o => {
+        const isToday = new Date(o.createdAt).toDateString() === today;
+        const isPos   = o.channel === 'pos' || o.origin === 'pos';
+        if (!isToday && !isPos) return false;
+        if (bodegaId && o.bodegaId && o.bodegaId !== bodegaId) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const tbody = document.getElementById('pos-hist-tbody');
@@ -972,25 +1268,30 @@
       const hora = d.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' });
       const disc = (o.manual_discount_gtq || 0) + (o.discount_gtq || 0);
       return `<tr>
-        <td>${hora}</td>
-        <td style="font-size:11px;color:var(--warm-mid)">${o.id.slice(-8)}</td>
-        <td>${o.customerName || '—'}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td style="font-size:11px;color:var(--warm-mid)">${escapeHtml(o.id.slice(-8))}</td>
+        <td>${escapeHtml(o.customerName || '—')}</td>
         <td style="font-size:12px;color:var(--warm-mid)">${(o.items || []).length} items</td>
         <td><strong>Q${(o.total_gtq || 0).toLocaleString()}</strong></td>
         <td style="color:var(--green)">${disc > 0 ? '−Q' + disc.toLocaleString() : '—'}</td>
-        <td style="font-size:12px">${o.pay_method || '—'}</td>
-        <td><span class="status-chip" style="background:${statusColor(o.status)}22;color:${statusColor(o.status)}">${statusLabel(o.status)}</span></td>
+        <td style="font-size:12px">${escapeHtml(o.pay_method || '—')}</td>
+        <td><span class="status-chip" style="background:${statusColor(o.status)}22;color:${statusColor(o.status)}">${escapeHtml(statusLabel(o.status))}</span></td>
       </tr>`;
     }).join('');
   }
 
   // ─── Cierre ────────────────────────────────────────────────────────────────
   function renderCierre() {
-    const today  = new Date().toDateString();
-    const orders = getOrders().filter(o => new Date(o.createdAt).toDateString() === today);
+    const today    = new Date().toDateString();
+    const bodegaId = getActiveBodega();
+    const orders   = getOrders().filter(o => {
+      if (new Date(o.createdAt).toDateString() !== today) return false;
+      if (bodegaId && o.bodegaId && o.bodegaId !== bodegaId) return false;
+      return true;
+    });
     const done   = orders.filter(o => o.status !== 'cancelado');
     const total  = done.reduce((s, o) => s + (o.total_gtq || 0), 0);
-    const disc   = done.reduce((s, o) => s + (o.manual_discount_gtq || 0) + (o.discount_gtq || 0), 0);
+    const disc   = done.reduce((s, o) => s + (o.manual_discount_gtq || 0) + (o.discount_gtq || 0) + (o.discountCode_gtq || 0), 0);
 
     document.getElementById('pos-cierre-kpis').innerHTML = [
       { label: 'Ventas del día', value: 'Q' + total.toLocaleString(), sub: done.length + ' transacciones' },
@@ -1006,13 +1307,18 @@
   }
 
   function exportPosCSV() {
-    const today  = new Date().toDateString();
-    const orders = getOrders().filter(o => new Date(o.createdAt).toDateString() === today);
-    const header = ['Hora','ID','Cliente','Total Q','Descuento Q','Método','Estado'];
+    const today    = new Date().toDateString();
+    const bodegaId = getActiveBodega();
+    const orders   = getOrders().filter(o => {
+      if (new Date(o.createdAt).toDateString() !== today) return false;
+      if (bodegaId && o.bodegaId && o.bodegaId !== bodegaId) return false;
+      return true;
+    });
+    const header = ['Hora','ID','Cliente','Total Q','Descuento Q','Código Descuento','Método','Estado','Bodega'];
     const rows   = orders.map(o => {
       const hora = new Date(o.createdAt).toLocaleTimeString('es-GT', { hour:'2-digit', minute:'2-digit' });
-      const disc = (o.manual_discount_gtq || 0) + (o.discount_gtq || 0);
-      return [hora, o.id.slice(-8), o.customerName || '—', o.total_gtq, disc, o.pay_method || '—', o.status]
+      const disc = (o.manual_discount_gtq || 0) + (o.discount_gtq || 0) + (o.discountCode_gtq || 0);
+      return [hora, o.id.slice(-8), o.customerName || '—', o.total_gtq, disc, o.discountCode || '—', o.pay_method || '—', o.status, o.bodegaName || '—']
         .map(v => `"${v}"`).join(',');
     });
     const csv  = [header.join(','), ...rows].join('\n');
@@ -1043,5 +1349,6 @@
     _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
   }
 </script>
+  <script defer src="js/cursor.js"></script>
 </body>
 </html>

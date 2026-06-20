@@ -4,23 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Programa de Vendedores — LAUREAN</title>
+  <link rel="icon" type="image/svg+xml" href="images/brand/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/brand.css" />
+  <link rel="stylesheet" href="css/cursor.css" />
+  <script defer src="js/brand-img.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --crema:    #F5F2ED;
-      --piedra:   #E8E3DC;
-      --carbon:   #1A1916;
-      --warm-mid: #9B8E7F;
-      --white:    #FFFFFF;
-      --fd: 'Cormorant Garamond', Georgia, serif;
-      --fb: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
+    /* Paleta y tipografías en css/brand.css. */
 
     html { scroll-behavior: smooth; }
     body {
@@ -51,12 +45,16 @@
       border-bottom: 1px solid rgba(155, 142, 127, 0.18);
     }
     .vd-nav-logo {
-      font-family: var(--fd);
-      font-size: 20px;
-      font-weight: 400;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: var(--carbon);
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      transition: opacity .2s var(--ease);
+    }
+    .vd-nav-logo:hover { opacity: 0.7; }
+    .vd-nav-logo img {
+      height: 48px;
+      width: auto;
+      display: block;
     }
     .vd-nav-back {
       font-size: 11.5px;
@@ -663,27 +661,23 @@
       line-height: 1.6;
     }
 
-    /* ─── Footer ──────────────────────────────────────────────────────────────── */
-    .vd-footer {
-      background: var(--carbon);
-      padding: 36px 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .vd-footer-copy {
-      font-size: 12px;
-      color: rgba(245,242,237,0.3);
-      letter-spacing: 0.04em;
-    }
-    .vd-footer-link {
-      font-size: 11.5px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(245,242,237,0.45);
-      transition: color 0.2s;
-    }
-    .vd-footer-link:hover { color: rgba(245,242,237,0.9); }
+    /* ─── Footer (marca, consistente con Laurean.html/catalogo.html) ───────────── */
+    footer { background: var(--carbon); color: rgba(255,255,255,0.7); padding: 72px 52px 36px; }
+    .footer-top { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 48px; padding-bottom: 56px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .footer-logo img { height: 30px; width: auto; display:block; }
+    .footer-logo a { display:inline-block; transition: opacity .2s var(--ease); }
+    .footer-logo a:hover { opacity: 0.7; }
+    .footer-tagline { margin-top: 16px; font-size: 13.5px; max-width: 260px; line-height: 1.6; }
+    .footer-col-title { color: var(--white); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 16px; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; }
+    .footer-links a { font-size: 13.5px; color: rgba(255,255,255,0.7); transition: color 0.2s; text-decoration: none; }
+    .footer-links a:hover { color: rgba(255,255,255,0.95); }
+    .footer-bottom { max-width: 1280px; margin: 28px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.5); }
+    .footer-copy a { color: inherit; text-decoration: underline; opacity: 0.7; }
+    .pay-badges { display: flex; align-items: center; gap: 10px; }
+    .pay-badge { font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.2); padding: 4px 9px; border-radius: 5px; }
+    @media (max-width: 720px) { footer { padding: 52px 20px 28px; } .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
 
     /* ─── Responsive ─────────────────────────────────────────────────────────── */
     @media (max-width: 1024px) {
@@ -691,7 +685,6 @@
       .vd-hero-content { padding: 64px 48px; }
       .vd-counters { padding: 64px 32px; }
       .vd-benefits, .vd-how, .vd-compare, .vd-faq { padding: 80px 32px; }
-      .vd-footer { padding: 32px; }
     }
 
     @media (max-width: 768px) {
@@ -708,7 +701,6 @@
       .vd-steps::before { display: none; }
       .vd-how-image { height: 240px; }
       .vd-compare-grid { grid-template-columns: 1fr; }
-      .vd-footer { flex-direction: column; gap: 16px; align-items: flex-start; padding: 28px 24px; }
       .vd-cta-buttons { flex-direction: column; }
       .vd-form { grid-template-columns: 1fr; }
     }
@@ -727,46 +719,29 @@
     }
     #page-loader.fade-out { opacity: 0; pointer-events: none; }
     .loader-logo {
-      font-family: var(--fd);
-      font-size: 26px; font-weight: 300;
-      letter-spacing: 0.42em; text-transform: uppercase;
-      color: var(--crema);
+      display: inline-block;
       animation: loader-pulse 1.6s ease-in-out infinite;
+    }
+    .loader-logo img {
+      height: 56px;
+      width: auto;
+      display: block;
     }
     @keyframes loader-pulse {
       0%, 100% { opacity: 0.22; }
       50%       { opacity: 1; }
     }
 
-    /* ─── Custom Cursor ────────────────────────────────────────────────────── */
-    .cursor-dot, .cursor-ring { display: none; }
-    @media (hover: hover) and (pointer: fine) {
-      body, * { cursor: none !important; }
-      .cursor-dot, .cursor-ring {
-        display: block; position: fixed; top: 0; left: 0;
-        border-radius: 50%; pointer-events: none; z-index: 9999;
-        will-change: transform;
-        transition: width 0.25s cubic-bezier(0.25, 0.1, 0.25, 1),
-                    height 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
-      }
-      .cursor-dot  { width: 6px; height: 6px; background: white; mix-blend-mode: difference; }
-      .cursor-ring { width: 32px; height: 32px; border: 1.5px solid white; mix-blend-mode: difference; }
-      .cursor-ring.cursor-hover { width: 52px; height: 52px; }
-    }
   </style>
 </head>
 <body>
 
   <!-- Page Loader -->
-  <div id="page-loader"><span class="loader-logo">Laurean</span></div>
-
-  <!-- Custom cursor -->
-  <div class="cursor-dot" id="cursor-dot"></div>
-  <div class="cursor-ring" id="cursor-ring"></div>
+  <div id="page-loader"><span class="loader-logo"><img src="images/brand/loader.svg" alt="Laurean" /></span></div>
 
   <!-- Navbar -->
   <nav class="vd-nav">
-    <span class="vd-nav-logo">Laurean</span>
+    <a class="vd-nav-logo" href="Laurean.html#inicio" aria-label="Laurean — Inicio"><img src="images/brand/logo-navbar.svg" alt="Laurean" /></a>
     <a href="Laurean.html" class="vd-nav-back">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       Ver tienda
@@ -1033,7 +1008,7 @@
 
       <p class="vd-form-fallback">
         ¿Prefieres escribirnos?
-        <a href="https://wa.me/50200000000?text=Hola%2C%20quiero%20ser%20vendedora%20de%20Laurean" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://wa.me/50236672415?text=Hola%2C%20quiero%20ser%20vendedora%20de%20Laurean" target="_blank" rel="noopener">WhatsApp</a>
         ·
         <a href="mailto:vendedoras@laurean.gt">vendedoras@laurean.gt</a>
       </p>
@@ -1041,10 +1016,7 @@
   </section>
 
   <!-- Footer -->
-  <footer class="vd-footer">
-    <span class="vd-footer-copy">© Laurean 2026 · Guatemala</span>
-    <a href="Laurean.html" class="vd-footer-link">Ver tienda →</a>
-  </footer>
+  <footer id="site-footer"></footer>
 
   <script src="js/auth.js"></script>
   <script>
@@ -1137,32 +1109,9 @@
       }, 520);
     })();
 
-    // ─── Custom cursor ────────────────────────────────────────────────────────
-    (function () {
-      var dot  = document.getElementById('cursor-dot');
-      var ring = document.getElementById('cursor-ring');
-      if (!dot || !ring) return;
-      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-      var mx = -200, my = -200, rx = -200, ry = -200;
-      document.addEventListener('mousemove', function (e) {
-        mx = e.clientX; my = e.clientY;
-        dot.style.transform = 'translate(calc(' + mx + 'px - 50%), calc(' + my + 'px - 50%))';
-      }, { passive: true });
-      (function animateRing() {
-        rx += (mx - rx) * 0.11;
-        ry += (my - ry) * 0.11;
-        ring.style.transform = 'translate(calc(' + rx + 'px - 50%), calc(' + ry + 'px - 50%))';
-        requestAnimationFrame(animateRing);
-      })();
-      var sel = 'a, button, [role="button"]';
-      document.addEventListener('mouseover', function (e) {
-        if (e.target.closest(sel)) ring.classList.add('cursor-hover');
-      });
-      document.addEventListener('mouseout', function (e) {
-        if (e.target.closest(sel)) ring.classList.remove('cursor-hover');
-      });
-    })();
   </script>
 
+  <script src="js/site-footer.js"></script>
+  <script defer src="js/cursor.js"></script>
 </body>
 </html>
