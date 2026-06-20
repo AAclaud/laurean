@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contrato de Servicios — AA Projects · Laurean</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crema:     #F5F2ED;
+    --crema-d:   #EDE7DD;
+    --piedra:    #E8E3DC;
+    --carbon:    #1A1916;
+    --carbon-2:  #2A2925;
+    --warm:      #9B8E7F;
+    --warm-d:    #7A6E60;
+    --accent:    #8B6F47;
+    --accent-d:  #6B5535;
+    --gold:      #B89968;
+    --white:     #FFFFFF;
+    --fd: 'Cormorant Garamond', Georgia, serif;
+    --fb: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--crema); color: var(--carbon); font-family: var(--fb); font-size: 14px; line-height: 1.6; }
+  body { padding: 32px 16px; }
+  .doc { max-width: 780px; margin: 0 auto; background: var(--white); border-radius: 4px; overflow: hidden; box-shadow: 0 2px 20px rgba(26,25,22,0.06); }
+
+  .hero { background: var(--carbon); color: var(--crema); padding: 48px 56px 40px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -40%; right: -10%; width: 60%; height: 180%; background: radial-gradient(ellipse, rgba(184,153,104,0.15) 0%, transparent 60%); pointer-events: none; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--fd); font-size: 20px; letter-spacing: 0.18em; font-weight: 500; margin-bottom: 28px; }
+  .brand-mark { width: 28px; height: 28px; border: 1px solid var(--gold); display: inline-flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 14px; color: var(--gold); }
+  .hero .eye { font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; font-weight: 600; }
+  .hero h1 { font-family: var(--fd); font-size: 38px; line-height: 1.1; font-weight: 400; letter-spacing: 0.01em; margin-bottom: 18px; max-width: 22ch; }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero .meta { margin-top: 24px; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.7; display: flex; gap: 28px; flex-wrap: wrap; }
+  .hero .meta span b { color: var(--gold); font-weight: 500; }
+
+  .section { padding: 36px 56px; }
+  .section + .section { border-top: 1px solid var(--piedra); }
+  .eyebrow { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+  .section h2 { font-family: var(--fd); font-size: 24px; font-weight: 500; line-height: 1.2; margin-bottom: 18px; color: var(--carbon); }
+  .section h2 em { font-style: italic; color: var(--accent); }
+
+  .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px; }
+  .party { background: var(--crema); border: 1px solid var(--piedra); border-radius: 4px; padding: 22px 22px; }
+  .party .role { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+  .party h3 { font-family: var(--fd); font-size: 20px; font-weight: 500; color: var(--carbon); margin-bottom: 4px; }
+  .party p.sub { font-size: 12.5px; color: var(--warm-d); margin-bottom: 12px; }
+  .party ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--carbon-2); }
+  .party ul li { padding-left: 14px; position: relative; }
+  .party ul li::before { content: '·'; position: absolute; left: 4px; top: -3px; font-size: 18px; color: var(--gold); }
+  .party ul li b { font-weight: 600; color: var(--carbon); }
+
+  .preamble { font-size: 13.5px; color: var(--carbon-2); margin-top: 8px; max-width: 64ch; }
+  .preamble b { color: var(--carbon); font-weight: 600; }
+
+  ol.clauses { list-style: none; padding: 0; counter-reset: cl; margin-top: 6px; }
+  ol.clauses > li { counter-increment: cl; padding: 18px 0 18px 56px; position: relative; border-bottom: 1px dashed var(--piedra); }
+  ol.clauses > li:last-child { border-bottom: none; }
+  ol.clauses > li::before {
+    content: counter(cl, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 18px;
+    width: 40px;
+    font-family: var(--fd);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--gold);
+    line-height: 1;
+    font-style: italic;
+  }
+  ol.clauses h4 { font-family: var(--fd); font-size: 17px; font-weight: 500; color: var(--carbon); margin-bottom: 6px; letter-spacing: 0.01em; }
+  ol.clauses p { font-size: 13px; color: var(--carbon-2); line-height: 1.55; }
+  ol.clauses p + p { margin-top: 6px; }
+  ol.clauses b { color: var(--carbon); font-weight: 600; }
+  ol.clauses .note { display: inline-block; font-size: 11px; color: var(--accent-d); background: var(--crema); padding: 2px 8px; border-radius: 100px; margin-left: 4px; font-weight: 600; }
+
+  .anexo { background: var(--crema); padding: 32px 56px; }
+  .anexo .eyebrow { color: var(--accent); }
+  .anexo h2 { font-family: var(--fd); font-size: 22px; font-weight: 500; color: var(--carbon); margin-bottom: 14px; }
+  .anexo h2 em { font-style: italic; color: var(--accent); }
+  .anexo-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 8px; }
+  .anexo-col { background: var(--white); border: 1px solid var(--piedra); border-radius: 4px; padding: 18px 16px; }
+  .anexo-col h5 { font-family: var(--fd); font-size: 15px; font-weight: 500; margin-bottom: 10px; color: var(--carbon); border-bottom: 1px solid var(--piedra); padding-bottom: 6px; }
+  .anexo-col ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .anexo-col ul li { font-size: 11.5px; color: var(--carbon-2); padding-left: 14px; position: relative; line-height: 1.4; }
+  .anexo-col ul li::before { content: ''; position: absolute; left: 0; top: 6px; width: 7px; height: 4px; border-left: 1.5px solid var(--accent); border-bottom: 1.5px solid var(--accent); transform: rotate(-45deg); }
+
+  .firmas { padding: 44px 56px; background: var(--white); border-top: 1px solid var(--piedra); }
+  .firmas .row { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 20px; }
+  .firma-block { display: flex; flex-direction: column; }
+  .firma-line { border-bottom: 1.5px solid var(--carbon); height: 70px; margin-bottom: 10px; }
+  .firma-block .role { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .firma-block .name { font-family: var(--fd); font-size: 17px; font-weight: 500; color: var(--carbon); margin-bottom: 2px; }
+  .firma-block .org { font-size: 12px; color: var(--warm-d); }
+  .firma-block .by { font-size: 11.5px; color: var(--carbon-2); margin-top: 6px; }
+
+  .footer { background: var(--carbon); color: var(--crema); padding: 26px 56px; }
+  .footer .row { display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,242,237,0.6); }
+  .footer b { color: var(--gold); font-weight: 600; }
+
+  @media (max-width: 720px) {
+    body { padding: 12px 0; }
+    .doc { border-radius: 0; }
+    .hero { padding: 36px 28px 28px; }
+    .hero h1 { font-size: 28px; }
+    .section, .anexo, .firmas, .footer { padding-left: 24px; padding-right: 24px; }
+    .parties, .anexo-grid, .firmas .row { grid-template-columns: 1fr; }
+    .firmas .row { gap: 32px; }
+  }
+
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    html, body { background: var(--white) !important; padding: 0 !important; font-size: 11px; }
+    .doc { box-shadow: none !important; max-width: 100% !important; border-radius: 0 !important; }
+    .hero { padding: 32px 36px 26px; }
+    .hero h1 { font-size: 26px; }
+    .section, .anexo, .firmas, .footer { padding: 22px 36px; }
+    ol.clauses > li { page-break-inside: avoid; padding: 12px 0 12px 48px; }
+    .anexo, .firmas { page-break-inside: avoid; }
+    .parties { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <section class="hero">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span>AA&nbsp;PROJECTS</span>
+    </div>
+    <div class="eye">Documento legal · Mayo 2026</div>
+    <h1>Contrato de Prestación de Servicios de <em>Desarrollo y Soporte</em> de Software</h1>
+    <div class="meta">
+      <span>Prestador · <b>AA Projects</b></span>
+      <span>Cliente · <b>Laurean by Seong Woo</b></span>
+      <span>Ref. cotización · <b>LRN-2026-002</b></span>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Comparecientes</div>
+    <h2>Partes <em>del contrato</em></h2>
+    <div class="parties">
+      <div class="party">
+        <div class="role">Prestador</div>
+        <h3>AA Projects</h3>
+        <p class="sub">Equipo de desarrollo y soporte de software</p>
+        <ul>
+          <li>Representado por <b>Andrés Barahona</b></li>
+          <li>Representado por <b>Honiel Sánchez</b></li>
+          <li>Correo: <b>ninesubset@gmail.com</b></li>
+          <li>WhatsApp: <b>+502 3667 2415</b></li>
+          <li>WhatsApp: <b>+502 5981 1242</b></li>
+        </ul>
+      </div>
+      <div class="party">
+        <div class="role">Cliente</div>
+        <h3>Laurean</h3>
+        <p class="sub">Tienda de moda</p>
+        <ul>
+          <li>Representado por <b>Seong Woo</b></li>
+          <li>Marca: <b>Laurean by Seong Woo</b></li>
+        </ul>
+      </div>
+    </div>
+    <p class="preamble">Las partes anteriormente identificadas, actuando libre y voluntariamente, declaran tener la capacidad legal suficiente para celebrar el presente contrato y, en consecuencia, suscriben las cláusulas que a continuación se desarrollan.</p>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Cláusulas</div>
+    <h2>Términos <em>acordados</em></h2>
+
+    <ol class="clauses">
+      <li>
+        <h4>Objeto</h4>
+        <p>El <b>Prestador</b> desarrollará, desplegará y dará soporte al sistema <b>Laurean Shop</b>, integrado por los siguientes módulos contratados por el Cliente: (a) <b>Tienda en Línea + Panel Administrativo</b> y/o (b) <b>Punto de Venta (POS)</b>, conforme al alcance funcional descrito en la cotización <b>LRN-2026-002</b>, que se incorpora a este contrato como referencia.</p>
+      </li>
+
+      <li>
+        <h4>Alcance del entregable</h4>
+        <p>El alcance incluye instalación, despliegue, configuración inicial, carga de catálogo, configuración de usuarios y roles, y capacitación al equipo del Cliente. Las funciones específicas entregadas se detallan en el <b>Anexo A</b> del presente contrato.</p>
+      </li>
+
+      <li>
+        <h4>Precio y forma de pago del setup</h4>
+        <p>El precio total del setup será el indicado en la cotización <b>LRN-2026-002</b> (con el descuento del 15% aplicado). La forma de pago será <b>50% como anticipo</b> al firmar este contrato y <b>50% como saldo</b> contra entrega del sistema funcionando y aceptado por el Cliente.</p>
+      </li>
+
+      <li>
+        <h4>Inicio y cobro de la mensualidad</h4>
+        <p>La <b>primera mensualidad</b> de soporte se cobrará <b>un (1) mes después</b> de la entrega formal del setup, no al momento de firmar este contrato. Las mensualidades posteriores se cobrarán de forma mensual y consecutiva.</p>
+      </li>
+
+      <li>
+        <h4>Plazo de entrega</h4>
+        <p>El Prestador entregará el sistema funcionando en un plazo máximo de <b>dos (2) semanas calendario</b>, contadas a partir del día en que el Cliente haya entregado de forma completa los <b>datos y contenidos requeridos</b> para el arranque del proyecto (catálogo de productos, imágenes, credenciales de cuentas necesarias y demás información del negocio).</p>
+        <p>Cualquier retraso en la entrega de información por parte del Cliente extenderá el plazo de entrega de forma proporcional.</p>
+      </li>
+
+      <li>
+        <h4>Soporte mensual incluido</h4>
+        <p>La mensualidad cubre <b>4 a 5 cambios menores</b> por mes, mantenimiento preventivo, monitoreo, actualizaciones de seguridad y atención por WhatsApp y correo en horario hábil.</p>
+        <p>Cualquier solicitud que implique un cambio mayor de alcance (nuevo módulo, integración con servicios externos, rediseño de sección, migración tecnológica, etc.) <span class="note">cambio grande</span> será cotizada por separado y requerirá aprobación expresa del Cliente antes de iniciar su desarrollo.</p>
+      </li>
+
+      <li>
+        <h4>Propiedad intelectual</h4>
+        <p>El código fuente, la marca <b>Laurean</b> y todo el contenido cargado por el Cliente son y permanecerán de su exclusiva propiedad. El Prestador retiene el derecho de <b>mencionar el proyecto en su portafolio profesional</b> con fines no comerciales.</p>
+      </li>
+
+      <li>
+        <h4>Confidencialidad</h4>
+        <p>Ambas partes se obligan a guardar la más estricta confidencialidad sobre la información comercial, técnica, financiera y operativa a la que tengan acceso durante la ejecución de este contrato, durante su vigencia y por un plazo de <b>dos (2) años</b> posteriores a su terminación.</p>
+      </li>
+
+      <li>
+        <h4>Datos y respaldos</h4>
+        <p>El sistema cuenta con <b>respaldos diarios automáticos</b> de la información operativa del Cliente. El Cliente podrá solicitar una exportación de su información cuando lo requiera, dentro del <b>horario hábil de mañana o tarde</b> (días laborales), con un tiempo de respuesta razonable. No se atenderán solicitudes fuera de horario ni en días no hábiles.</p>
+      </li>
+
+      <li>
+        <h4>Suspensión por mora</h4>
+        <p>El servicio podrá ser <b>suspendido</b> de forma temporal cuando exista un atraso superior a <b>sesenta (60) días</b> en el pago de la mensualidad. La reactivación procederá una vez regularizada la mora.</p>
+      </li>
+
+      <li>
+        <h4>Terminación</h4>
+        <p>Cualquiera de las partes podrá dar por terminado este contrato mediante <b>aviso por escrito con al menos treinta (30) días de anticipación</b>, sin necesidad de expresar causa, y sin que ello genere indemnización alguna, salvo el pago de los servicios efectivamente prestados hasta la fecha de terminación.</p>
+      </li>
+
+      <li>
+        <h4>Limitación de responsabilidad</h4>
+        <p>La responsabilidad total del Prestador frente al Cliente, por cualquier reclamo derivado de este contrato, no excederá del monto efectivamente pagado por el Cliente en los <b>tres (3) meses</b> inmediatamente anteriores al hecho que origine el reclamo. El Prestador no será responsable por lucro cesante, pérdida de oportunidad, ni daños indirectos.</p>
+      </li>
+
+      <li>
+        <h4>Resolución de controversias</h4>
+        <p>Las partes acuerdan resolver cualquier diferencia que surja de la interpretación o ejecución del presente contrato mediante <b>mediación de buena fe</b>, en un esfuerzo razonable previo a recurrir a cualquier otra instancia.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="anexo">
+    <div class="eyebrow">Anexo A</div>
+    <h2>Funciones <em>entregadas</em> al cliente</h2>
+    <div class="anexo-grid">
+      <div class="anexo-col">
+        <h5>Tienda en línea</h5>
+        <ul>
+          <li>Catálogo por categorías y subcategorías</li>
+          <li>Carrito y checkout</li>
+          <li>Multi-moneda GTQ / USD</li>
+          <li>Código referral de vendedoras</li>
+          <li>Descuento manual con PIN</li>
+          <li>Panel de comisiones para vendedoras</li>
+          <li>Diseño responsive (móvil, tablet, escritorio)</li>
+        </ul>
+      </div>
+      <div class="anexo-col">
+        <h5>Panel administrativo</h5>
+        <ul>
+          <li>Dashboard con KPIs</li>
+          <li>Gestión de productos y categorías</li>
+          <li>Gestión de pedidos</li>
+          <li>Estadísticas con export CSV</li>
+          <li>Proveedores y bodegas</li>
+          <li>Vendedoras y comisiones</li>
+          <li>Generador de cotizaciones</li>
+          <li>Configuración global (PIN, % por rol)</li>
+        </ul>
+      </div>
+      <div class="anexo-col">
+        <h5>Punto de venta (POS)</h5>
+        <ul>
+          <li>Pantalla de venta táctil</li>
+          <li>Historial de ventas del día</li>
+          <li>Cierre de caja con KPIs</li>
+          <li>Métodos: efectivo, tarjeta, QR</li>
+          <li>Descuento autorizado con PIN</li>
+          <li>Precios diferenciados por rol</li>
+          <li>Export CSV diario</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="firmas">
+    <div class="eyebrow">Firmas</div>
+    <h2 style="font-family: var(--fd); font-size: 22px; font-weight: 500;">En constancia de <em style="color: var(--accent); font-style: italic;">conformidad</em></h2>
+    <div class="row">
+      <div class="firma-block">
+        <div class="firma-line"></div>
+        <div class="role">Por el Prestador</div>
+        <div class="name">Andrés Barahona · Honiel Sánchez</div>
+        <div class="org">AA Projects</div>
+        <div class="by">Lugar y fecha: ____________________________</div>
+      </div>
+      <div class="firma-block">
+        <div class="firma-line"></div>
+        <div class="role">Por el Cliente</div>
+        <div class="name">Seong Woo</div>
+        <div class="org">Laurean by Seong Woo</div>
+        <div class="by">Lugar y fecha: ____________________________</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="footer">
+    <div class="row">
+      <span>Contrato <b>LRN-CT-2026-001</b></span>
+      <span><b>AA Projects</b> · ninesubset@gmail.com</span>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -12,3 +12,10 @@
 # Logs / temporales
 *.log
 *.tmp
+
+# Configuración local con secrets — NO COMMITEAR
+js/config.js
+
+# Supabase CLI
+.supabase/
+supabase/.temp/

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integración Forza Delivery + Análisis de costos — LAUREAN</title>
+  <link rel="icon" type="image/svg+xml" href="../images/brand/isotipo-vino.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --crema:    #F1ECE8;
+      --piedra:   #E8E3DC;
+      --carbon:   #191A18;
+      --vino:     #8E3833;
+      --vino-dk:  #531F23;
+      --dorado:   #E7BD69;
+      --green:    #2e7d32;
+      --red:      #c62828;
+      --amber:    #D4A017;
+      --fd: 'Cormorant Garamond', Georgia, serif;
+      --fb: 'DM Sans', -apple-system, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--fb); background: var(--crema); color: var(--carbon); font-size: 14.5px; line-height: 1.7; }
+
+    /* Layout: sidebar TOC + main */
+    .wrap { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* TOC */
+    .toc { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; padding: 56px 28px 40px; border-right: 1px solid var(--piedra); }
+    .toc-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .toc-brand img { height: 38px; }
+    .toc-brand span { font-family: var(--fd); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--vino); font-weight: 500; }
+    .toc h4 { font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--vino); margin-bottom: 12px; font-weight: 600; }
+    .toc ul { list-style: none; margin-bottom: 22px; }
+    .toc a { display: block; font-size: 13px; color: rgba(25,26,24,0.65); text-decoration: none; padding: 5px 0 5px 8px; border-left: 2px solid transparent; transition: all .2s; }
+    .toc a:hover { color: var(--vino); border-left-color: var(--vino); }
+
+    /* Main */
+    main { padding: 64px 64px 96px; max-width: 880px; }
+    h1 { font-family: var(--fd); font-size: 48px; font-weight: 300; line-height: 1.1; margin-bottom: 12px; }
+    h1 em { font-style: italic; color: var(--vino); }
+    .eyebrow { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--vino); margin-bottom: 14px; font-weight: 600; }
+    h2 { font-family: var(--fd); font-size: 32px; font-weight: 400; line-height: 1.15; margin: 64px 0 14px; padding-top: 16px; border-top: 1px solid var(--piedra); }
+    h2 em { font-style: italic; color: var(--vino); }
+    h2:first-of-type { border-top: none; padding-top: 0; }
+    h3 { font-family: var(--fd); font-size: 22px; font-weight: 500; margin: 32px 0 10px; color: var(--carbon); }
+    h4 { font-size: 14px; font-weight: 600; margin: 18px 0 6px; color: var(--vino); letter-spacing: 0.06em; text-transform: uppercase; }
+    p { margin-bottom: 14px; color: rgba(25,26,24,0.85); }
+    p.lead { font-size: 18px; font-family: var(--fd); font-weight: 300; line-height: 1.6; color: rgba(25,26,24,0.78); margin-bottom: 32px; }
+    ul, ol { margin: 8px 0 16px 24px; }
+    li { margin-bottom: 6px; color: rgba(25,26,24,0.85); }
+
+    code { background: rgba(142,56,51,0.08); padding: 1.5px 6px; border-radius: 3px; font-family: SF Mono, Menlo, monospace; font-size: 12.5px; color: var(--vino-dk); }
+    pre { background: var(--carbon); color: #f0e8e6; padding: 18px 22px; border-radius: 8px; overflow-x: auto; margin: 12px 0 20px; font-family: SF Mono, Menlo, monospace; font-size: 12.5px; line-height: 1.65; }
+    pre code { background: transparent; color: inherit; padding: 0; }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; background: white; border: 1px solid var(--piedra); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 13px; vertical-align: top; }
+    thead { background: var(--crema); }
+    th { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--vino); font-weight: 600; }
+    tbody tr { border-top: 1px solid var(--piedra); }
+    tbody tr:hover { background: rgba(241,236,232,0.4); }
+    td strong { color: var(--carbon); }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+    .badge.method { background: rgba(142,56,51,0.1); color: var(--vino); }
+    .badge.cost-free { background: rgba(46,125,50,0.1); color: var(--green); }
+    .badge.cost-paid { background: rgba(212,160,23,0.15); color: #8a6a0e; }
+
+    blockquote { background: rgba(231,189,105,0.08); border-left: 3px solid var(--dorado); padding: 14px 18px; margin: 18px 0; font-size: 13.5px; color: rgba(25,26,24,0.82); border-radius: 0 6px 6px 0; }
+    blockquote strong { color: var(--vino-dk); }
+
+    /* Diagrama de arquitectura (SVG ASCII-like) */
+    .arch { background: white; border: 1px solid var(--piedra); border-radius: 8px; padding: 28px 22px; margin: 18px 0 24px; }
+    .arch-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .arch-node { padding: 14px 18px; border: 1.5px solid var(--piedra); border-radius: 6px; min-width: 130px; text-align: center; background: var(--crema); }
+    .arch-node.fe { border-color: var(--vino); }
+    .arch-node.edge { border-color: var(--dorado); background: rgba(231,189,105,0.06); }
+    .arch-node.ext { border-color: var(--carbon); background: var(--carbon); color: var(--crema); }
+    .arch-node small { display: block; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.65; margin-bottom: 4px; }
+    .arch-node strong { font-family: var(--fd); font-size: 16px; font-weight: 500; }
+    .arch-arrow { font-size: 22px; color: var(--vino); }
+    .arch-arrow.dn { transform: rotate(90deg); display: inline-block; }
+
+    /* Cost summary card */
+    .cost-card { background: linear-gradient(135deg, rgba(142,56,51,0.06), rgba(231,189,105,0.06)); border: 1px solid var(--vino); border-radius: 12px; padding: 28px 32px; margin: 24px 0; }
+    .cost-card .cost-big { font-family: var(--fd); font-size: 56px; font-weight: 300; color: var(--vino); line-height: 1; }
+    .cost-card .cost-big em { font-style: italic; }
+    .cost-card .cost-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--vino); font-weight: 600; margin-bottom: 6px; }
+    .cost-card .cost-sub { font-size: 14px; color: rgba(25,26,24,0.7); margin-top: 8px; }
+    .cost-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+    .meta-foot { margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--piedra); color: rgba(25,26,24,0.5); font-size: 12.5px; }
+
+    @media (max-width: 900px) {
+      .wrap { grid-template-columns: 1fr; }
+      .toc { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--piedra); padding: 32px 24px; }
+      main { padding: 32px 24px; }
+      .cost-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- TOC -->
+    <aside class="toc">
+      <div class="toc-brand">
+        <img src="../images/brand/isotipo-vino.svg" alt="Laurean" />
+        <span>Docs</span>
+      </div>
+      <h4>Contenido</h4>
+      <ul>
+        <li><a href="#resumen">Resumen ejecutivo</a></li>
+        <li><a href="#arquitectura">Arquitectura</a></li>
+        <li><a href="#endpoints">Endpoints disponibles</a></li>
+        <li><a href="#flujo">Flujo de pedido</a></li>
+        <li><a href="#instalacion">Setup paso a paso</a></li>
+        <li><a href="#credenciales">Credenciales</a></li>
+        <li><a href="#costos">Análisis de costos</a></li>
+        <li><a href="#alternativas">Alternativas</a></li>
+        <li><a href="#faq">FAQ operativo</a></li>
+        <li><a href="#soporte">Soporte y referencias</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main -->
+    <main>
+      <p class="eyebrow">Documentación técnica · v1</p>
+      <h1>Integración <em>Forza Delivery</em><br>+ análisis de costos</h1>
+      <p class="lead">
+        Esta documentación describe la integración entre la tienda Laurean y la API de
+        Forza Delivery Express vía Supabase Edge Functions, y presenta el análisis de
+        costos mensuales para operar el stack completo.
+      </p>
+
+      <!-- ── RESUMEN ────────────────────────────────────── -->
+      <h2 id="resumen">Resumen <em>ejecutivo</em></h2>
+      <p>
+        Forza Delivery Express es el courier que se utilizará para todos los envíos nacionales en Guatemala.
+        Su API (<a href="https://documenter.getpostman.com/view/38701531/2sAYdeMrmk" target="_blank" style="color:var(--vino)">documentación oficial</a>)
+        permite automatizar toda la operación logística: cotizar, generar guías, rastrear, recolectar y cancelar.
+      </p>
+      <p>
+        La integración está construida sobre <strong>tres capas</strong>:
+      </p>
+      <ol>
+        <li><strong>Frontend</strong> (<code>envios.html</code>): UI para operar todo el ciclo de envío.</li>
+        <li><strong>Edge Function</strong> (<code>forza-proxy</code> en Supabase, Deno): firma HMAC-SHA256 con la SecretKey de Forza, valida sesión del admin, llama a Forza.</li>
+        <li><strong>Webhook</strong> (<code>forza-webhook</code>): recibe eventos automáticos de cambio de estado y actualiza la tabla <code>orders</code> en Supabase.</li>
+      </ol>
+
+      <blockquote>
+        <strong>¿Por qué Edge Function y no llamar directo desde el navegador?</strong><br>
+        Forza autentica con HMAC-SHA256 firmado con una <code>SecretKey</code>. Si esa clave vivera en el navegador,
+        cualquier persona podría inspeccionarla y generar guías a tu nombre. La Edge Function la mantiene del lado servidor.
+      </blockquote>
+
+      <!-- ── ARQUITECTURA ──────────────────────────────── -->
+      <h2 id="arquitectura"><em>Arquitectura</em></h2>
+      <div class="arch">
+        <div class="arch-row">
+          <div class="arch-node fe">
+            <small>Frontend</small>
+            <strong>envios.html</strong>
+          </div>
+          <span class="arch-arrow">→</span>
+          <div class="arch-node edge">
+            <small>Supabase</small>
+            <strong>forza-proxy</strong>
+          </div>
+          <span class="arch-arrow">→</span>
+          <div class="arch-node ext">
+            <small>Externo</small>
+            <strong>Forza API</strong>
+          </div>
+        </div>
+        <div class="arch-row">
+          <div class="arch-node ext">
+            <small>Externo</small>
+            <strong>Forza Webhook</strong>
+          </div>
+          <span class="arch-arrow">→</span>
+          <div class="arch-node edge">
+            <small>Supabase</small>
+            <strong>forza-webhook</strong>
+          </div>
+          <span class="arch-arrow">→</span>
+          <div class="arch-node fe">
+            <small>DB</small>
+            <strong>orders</strong>
+          </div>
+        </div>
+      </div>
+      <p>
+        El frontend nunca toca a Forza directamente. Toda llamada pasa por la Edge Function que:
+      </p>
+      <ul>
+        <li>Verifica el JWT del usuario contra Supabase Auth.</li>
+        <li>Confirma que el rol sea <code>admin</code> o <code>superuser</code>.</li>
+        <li>Inyecta credenciales (<code>CodApp</code>, <code>CodeOfReference</code>, <code>IdClient</code>).</li>
+        <li>Firma el body con HMAC-SHA256 → header <code>LauValue</code> (44 chars base64).</li>
+        <li>Hace POST al endpoint correspondiente.</li>
+        <li>Devuelve la respuesta tal cual.</li>
+      </ul>
+
+      <!-- ── ENDPOINTS ─────────────────────────────────── -->
+      <h2 id="endpoints">Endpoints <em>disponibles</em></h2>
+      <p>13 métodos cubiertos por la Edge Function (whitelist explícita en el código):</p>
+      <table>
+        <thead>
+          <tr><th>Categoría</th><th>Método Forza</th><th>Wrapper JS</th><th>Propósito</th></tr>
+        </thead>
+        <tbody>
+          <tr><td rowspan="4"><strong>Catálogos</strong></td>
+              <td><span class="badge method">GET</span> GetListProvincesByHeaderCode</td><td><code>Forza.listDepartments()</code></td><td>Departamentos GT (22)</td></tr>
+          <tr><td><span class="badge method">GET</span> GetListTownshipByHeaderCode</td><td><code>Forza.listTownships(dept)</code></td><td>Municipios por dept</td></tr>
+          <tr><td><span class="badge method">GET</span> GetBankName</td><td><code>Forza.listBanks()</code></td><td>Bancos disponibles para COD</td></tr>
+          <tr><td><span class="badge method">GET</span> GetCatalogExpressCenter</td><td><code>Forza.listExpressCenters()</code></td><td>Puntos físicos Forza</td></tr>
+
+          <tr><td rowspan="6"><strong>Guías</strong></td>
+              <td><span class="badge method">POST</span> GetShippingRatesByHeaderCode</td><td><code>Forza.quoteRate(params)</code></td><td>Cotiza tarifa antes de generar</td></tr>
+          <tr><td><span class="badge method">POST</span> GetServiceByHeaderCodeRequest</td><td><code>Forza.createGuide(params)</code></td><td>Crea guía estándar o COD</td></tr>
+          <tr><td><span class="badge method">POST</span> GetTrackOrderDetail</td><td><code>Forza.trackGuide(serie, num)</code></td><td>Historial de eventos</td></tr>
+          <tr><td><span class="badge method">POST</span> SetCancelGuides</td><td><code>Forza.cancelGuide(serie, num)</code></td><td>Anula guía no recolectada</td></tr>
+          <tr><td><span class="badge method">POST</span> GetGuideReprintRequest</td><td><code>Forza.reprintGuide(serie, num)</code></td><td>Reimprime PDF de etiqueta</td></tr>
+          <tr><td><span class="badge method">POST</span> GetRouteAndHubByAddress</td><td><code>Forza.routeAndHub(params)</code></td><td>Verifica ruta/HUB asignado</td></tr>
+
+          <tr><td rowspan="3"><strong>Recolecciones</strong></td>
+              <td><span class="badge method">POST</span> SetAddressByIntegration</td><td><code>Forza.createAddress(params)</code></td><td>Registra punto de recolección</td></tr>
+          <tr><td><span class="badge method">POST</span> GetAddressByIntegration</td><td><code>Forza.listAddresses()</code></td><td>Lista direcciones registradas</td></tr>
+          <tr><td><span class="badge method">POST</span> SetPickupServiceByIntegration</td><td><code>Forza.createPickup(params)</code></td><td>Pide a Forza que pase a recoger</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Ejemplo: cotizar tarifa</h3>
+<pre><code>const r = await Forza.quoteRate({
+  HeaderCodeSource:    '0101',    // Guatemala / Ciudad
+  HeaderCodeDestiny:   '0301',    // Sacatepéquez / Antigua
+  Weight:              2.5,        // kg
+  Dateofsale:          '2026-05-25 14:30:00',
+  TypeServiceDelivery: 'STD',     // 'COD' para contra entrega
+});
+if (r.ok) {
+  console.log('Tarifa Q', r.data.Response.Rate);
+}</code></pre>
+
+      <h3>Ejemplo: generar guía COD</h3>
+<pre><code>const r = await Forza.createGuide({
+  Dateofsale:          '2026-05-25 14:30:00',
+  ContentDescription:  'Sweater Mujer x1',
+  to_address: {
+    Name:               'María González',
+    Phone:              '50212345678',
+    Address:            'Av. Reforma 12-34 Zona 9',
+    HeaderCodeTownship: '0101',
+  },
+  Weight:              0.8,
+  DeclaredValue:       749,
+  CodAmount:           799,        // monto a cobrar al destinatario
+  TypeServiceDelivery: 'COD',
+});</code></pre>
+
+      <!-- ── FLUJO ─────────────────────────────────────── -->
+      <h2 id="flujo">Flujo de <em>pedido</em> completo</h2>
+      <ol>
+        <li>Cliente compra en <code>Laurean.html</code> y confirma checkout.</li>
+        <li>Frontend hace <code>INSERT</code> en tabla <code>orders</code> de Supabase con datos del cliente y items.</li>
+        <li>(Opcional, si está activado <em>auto-Forza</em>) frontend llama <code>Forza.createGuide()</code> y guarda <code>forza_guide_serie</code>/<code>forza_guide_number</code> en el pedido.</li>
+        <li>Admin abre <code>envios.html</code> → tab "Crear guía" si quiere generar manualmente.</li>
+        <li>Forza recoge el paquete → emite evento PUP → <code>forza-webhook</code> actualiza estado a <code>en_preparacion</code>.</li>
+        <li>Eventos siguientes (OFD = en ruta, DLV = entregado) actualizan automáticamente <code>orders.status</code>.</li>
+        <li>Si es COD: Forza cobra al destinatario y deposita a la cuenta vinculada (Forza maneja la liquidación).</li>
+      </ol>
+
+      <!-- ── INSTALACIÓN ───────────────────────────────── -->
+      <h2 id="instalacion">Setup <em>paso a paso</em></h2>
+      <ol>
+        <li><strong>Crear proyecto Supabase</strong> en <a href="https://app.supabase.com" target="_blank" style="color:var(--vino)">app.supabase.com</a> (Free tier).</li>
+        <li><strong>Correr el schema</strong>: SQL Editor → pegar y ejecutar <code>supabase/schema.sql</code>.</li>
+        <li><strong>Correr el seed</strong>: SQL Editor → pegar y ejecutar <code>supabase/seed.sql</code> (categorías base).</li>
+        <li><strong>Crear usuarios admin</strong> en Authentication → Users → Add user (manual). Después correr el UPSERT en <code>seed.sql</code> con sus UUIDs.</li>
+        <li><strong>Configurar el frontend</strong>: copia <code>js/config.example.js</code> → <code>js/config.js</code> y pega <code>SUPABASE_URL</code> + <code>SUPABASE_ANON_KEY</code> de tu proyecto.</li>
+        <li><strong>Instalar Supabase CLI</strong>: <code>brew install supabase/tap/supabase</code></li>
+        <li><strong>Login y link</strong>:
+          <pre><code>supabase login
+supabase link --project-ref &lt;tu-project-ref&gt;</code></pre>
+        </li>
+        <li><strong>Configurar secrets de Forza</strong>:
+          <pre><code>supabase secrets set \
+  FORZA_BASE_URL=https://sandbox.apicore.forzadelivery.io:40467 \
+  FORZA_COD_APP=<FORZA_COD_APP> \
+  FORZA_SECRET_KEY=<FORZA_SECRET_KEY> \
+  FORZA_CODE_OF_REFERENCE=<FORZA_CODE_OF_REFERENCE> \
+  FORZA_ID_CLIENT=<FORZA_ID_CLIENT></code></pre>
+        </li>
+        <li><strong>Deploy de las Edge Functions</strong>:
+          <pre><code>supabase functions deploy forza-proxy
+supabase functions deploy forza-webhook</code></pre>
+        </li>
+        <li><strong>Registrar webhook con Forza</strong>: contactar al asesor de Forza con la URL
+          <code>https://&lt;tu-proyecto&gt;.supabase.co/functions/v1/forza-webhook</code> y pedir que activen las notificaciones.
+        </li>
+        <li><strong>Probar</strong>: abrir <code>envios.html</code>, ir a "Cotizar tarifa" y verificar que devuelve un costo.</li>
+      </ol>
+
+      <!-- ── CREDENCIALES ──────────────────────────────── -->
+      <h2 id="credenciales">Credenciales <em>de Forza</em></h2>
+      <p style="background:rgba(229,57,53,0.08);border-left:3px solid #c62828;padding:10px 14px;font-size:13px;">
+        <strong>Seguridad:</strong> los valores reales NO se guardan en este repositorio. Viven únicamente como
+        <em>secrets</em> de las Edge Functions en Supabase (<code>supabase secrets set …</code>). Los placeholders de abajo
+        indican qué variable corresponde a cada dato; pide los valores de sandbox a tu contacto de Forza / AA Projects.
+      </p>
+      <h3>Sandbox</h3>
+      <table>
+        <tbody>
+          <tr><td><strong>Base URL</strong></td><td><code>https://sandbox.apicore.forzadelivery.io:40467</code></td></tr>
+          <tr><td><strong>CodApp</strong></td><td><code><FORZA_COD_APP></code></td></tr>
+          <tr><td><strong>SecretKey</strong></td><td><code><FORZA_SECRET_KEY></code></td></tr>
+          <tr><td><strong>CodeOfReference</strong></td><td><code><FORZA_CODE_OF_REFERENCE></code></td></tr>
+          <tr><td><strong>idCliente</strong></td><td><code><FORZA_ID_CLIENT></code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Producción</h3>
+      <p>
+        Cuando estés listo para operar real, contacta a Forza (<a href="https://forzadelivery.com" target="_blank" style="color:var(--vino)">forzadelivery.com</a>)
+        para que emitan las credenciales productivas. El cambio se hace <strong>sólo en las variables de entorno</strong>
+        de la Edge Function — el código no cambia:
+      </p>
+<pre><code>supabase secrets set \
+  FORZA_BASE_URL=&lt;url_produccion&gt; \
+  FORZA_COD_APP=&lt;tu_codapp&gt; \
+  FORZA_SECRET_KEY=&lt;tu_secret_real&gt; \
+  FORZA_CODE_OF_REFERENCE=&lt;tu_codigo&gt; \
+  FORZA_ID_CLIENT=&lt;tu_id&gt;</code></pre>
+
+      <!-- ── COSTOS ────────────────────────────────────── -->
+      <h2 id="costos">Análisis de <em>costos</em></h2>
+
+      <div class="cost-grid">
+        <div class="cost-card">
+          <div class="cost-label">Costo inicial</div>
+          <div class="cost-big"><em>$0</em>/mes</div>
+          <div class="cost-sub">Todo en planes Free (Supabase Free + hosting estático + Forza por envío).</div>
+        </div>
+        <div class="cost-card">
+          <div class="cost-label">Costo en crecimiento</div>
+          <div class="cost-big"><em>$25</em>/mes</div>
+          <div class="cost-sub">Cuando superes 500 MB de DB o 50K usuarios activos al mes (Supabase Pro).</div>
+        </div>
+      </div>
+
+      <h3>Desglose por servicio</h3>
+      <table>
+        <thead>
+          <tr><th>Servicio</th><th>Plan</th><th>Costo / mes</th><th>Incluye</th><th>Cuándo subir</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Supabase</strong> (DB + Auth + Storage + Edge Functions)</td>
+            <td><span class="badge cost-free">Free</span></td>
+            <td class="num">$0</td>
+            <td>500 MB Postgres, 1 GB Storage, 2 GB bandwidth, 50K MAU, 500K invocaciones Edge Function</td>
+            <td>DB &gt; 400 MB · &gt;40K MAU · &gt;400K calls/mes</td>
+          </tr>
+          <tr>
+            <td><strong>Supabase</strong></td>
+            <td><span class="badge cost-paid">Pro</span></td>
+            <td class="num">$25</td>
+            <td>8 GB DB, 100 GB Storage, 250 GB bandwidth, 100K MAU, 2M calls, backups diarios, soporte email</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Hosting estático</strong> (Cloudflare Pages)</td>
+            <td><span class="badge cost-free">Free</span></td>
+            <td class="num">$0</td>
+            <td>Builds ilimitados, 500 deploys/mes, CDN global, SSL, dominio custom</td>
+            <td>Prácticamente nunca</td>
+          </tr>
+          <tr>
+            <td>Alternativa: <strong>Netlify</strong> o <strong>Vercel</strong></td>
+            <td><span class="badge cost-free">Free</span></td>
+            <td class="num">$0</td>
+            <td>100 GB bandwidth/mes — sobra para una tienda</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Dominio</strong> (Cloudflare Registrar)</td>
+            <td>—</td>
+            <td class="num">$9–12 / año</td>
+            <td><code>.com</code> · <code>.shop</code></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Dominio</strong> (.gt local)</td>
+            <td>—</td>
+            <td class="num">~Q300 / año</td>
+            <td><code>.com.gt</code> via gt.com.gt</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Forza Delivery</strong> (servicio courier)</td>
+            <td>Por envío</td>
+            <td class="num">Q15–Q35 / guía</td>
+            <td>El API es gratis; pagas por envío realizado</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Proyección por volumen</h3>
+      <table>
+        <thead>
+          <tr><th>Escenario</th><th>Pedidos / mes</th><th>Supabase</th><th>Forza (~Q25 promedio)</th><th>Total estimado</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Arranque</strong></td>
+            <td class="num">0–50</td>
+            <td class="num">$0 (Free)</td>
+            <td class="num">Q0–Q1,250</td>
+            <td class="num"><strong>$0 + Q0–1,250</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Crecimiento</strong></td>
+            <td class="num">50–500</td>
+            <td class="num">$0 (aún Free)</td>
+            <td class="num">Q1,250–Q12,500</td>
+            <td class="num"><strong>$0 + Q1,250–12,500</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Escala</strong></td>
+            <td class="num">500–5,000</td>
+            <td class="num">$25 (Pro)</td>
+            <td class="num">Q12,500–Q125,000</td>
+            <td class="num"><strong>$25 + Q12,500–125k</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Madurez</strong></td>
+            <td class="num">5,000+</td>
+            <td class="num">$25 + add-ons</td>
+            <td class="num">&gt;Q125,000</td>
+            <td class="num"><strong>Negociar tarifas con Forza</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        <strong>Recomendación:</strong> arranca en Free, monitorea uso desde el dashboard de Supabase
+        (Settings → Billing → Usage). Subir a Pro toma 5 minutos cuando lo necesites; no hay
+        migración ni downtime.
+      </blockquote>
+
+      <!-- ── ALTERNATIVAS ──────────────────────────────── -->
+      <h2 id="alternativas">Alternativas <em>consideradas</em></h2>
+      <table>
+        <thead>
+          <tr><th>Opción</th><th>Costo /mes</th><th>Pros</th><th>Contras</th><th>Veredicto</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Supabase</strong> (elegida)</td>
+            <td class="num">$0 → $25</td>
+            <td>SQL real, Auth + Storage + Edge Functions en un solo dashboard, RLS robusto, open-source (sin lock-in)</td>
+            <td>Plan Free se pausa tras 7 días inactivo (se reactiva al primer hit)</td>
+            <td>✅ Recomendada</td>
+          </tr>
+          <tr>
+            <td>Firebase</td>
+            <td class="num">$0 → $25</td>
+            <td>Madurez, SDKs muy pulidos</td>
+            <td>NoSQL (Firestore) malo para reporting financiero, lock-in con Google, Cloud Functions más caros a escala</td>
+            <td>Descartada por reporting</td>
+          </tr>
+          <tr>
+            <td>AWS Amplify</td>
+            <td class="num">Variable</td>
+            <td>Escalabilidad ilimitada, AWS ecosystem</td>
+            <td>Costos impredecibles, complejidad alta, IAM tedioso para una tienda chica</td>
+            <td>Overkill</td>
+          </tr>
+          <tr>
+            <td>Backend propio (VPS + Postgres)</td>
+            <td class="num">$6 + $15</td>
+            <td>Control total, sin límites</td>
+            <td>Requiere DevOps, backups manuales, SSL/certs, escalado manual</td>
+            <td>Más caro y menos seguro al inicio</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ── FAQ ───────────────────────────────────────── -->
+      <h2 id="faq">FAQ <em>operativo</em></h2>
+
+      <h4>¿Cómo cancelo una guía ya creada?</h4>
+      <p>
+        Sólo se pueden cancelar guías que <strong>aún no han sido recolectadas</strong> por Forza.
+        En <code>envios.html</code> → tab "Mis guías" → botón "Cancelar" sobre la fila correspondiente.
+        Internamente llama a <code>SetCancelGuides</code>. Después de cancelar, el estado en <code>orders</code>
+        pasa a <code>cancelado</code> automáticamente.
+      </p>
+
+      <h4>¿Qué hago si el cliente no contesta cuando llega el repartidor?</h4>
+      <p>
+        Forza intenta entregar hasta 3 veces. Después de la tercera, regresa el paquete al remitente
+        y emite el evento <code>RTN</code> (devolución). Aparecerá en <code>orders.forza_tracking_status</code>
+        como "Devuelto". Coordina con el cliente y genera una nueva guía manualmente.
+      </p>
+
+      <h4>¿COD me deposita automáticamente?</h4>
+      <p>
+        Sí. Forza tiene un ciclo de liquidación (consulta con tu asesor — típicamente semanal o quincenal).
+        El monto se deposita a la cuenta bancaria vinculada en tu contrato. La integración API solo automatiza
+        la <em>generación</em> de la guía; la liquidación financiera es offline.
+      </p>
+
+      <h4>¿Cómo sé si la Edge Function falla?</h4>
+      <p>
+        Supabase Dashboard → Functions → forza-proxy → tab "Logs". Cualquier error queda registrado.
+        Para alertas automáticas (Slack/email), se puede agregar un webhook desde Supabase o usar
+        <a href="https://uptimerobot.com" target="_blank" style="color:var(--vino)">UptimeRobot</a> (gratis hasta 50 monitores).
+      </p>
+
+      <h4>¿Puedo usar otro courier además de Forza?</h4>
+      <p>
+        Sí. La arquitectura es genérica: basta crear otra Edge Function (<code>cargo-expreso-proxy</code>, etc.)
+        y otro wrapper en <code>js/</code>. El frontend puede ofrecer al admin elegir courier por pedido.
+      </p>
+
+      <h4>¿La SecretKey está realmente segura?</h4>
+      <p>
+        Sí. Vive sólo como variable de entorno en Supabase Edge Functions (encriptada at-rest).
+        Nunca se serializa al cliente. La verificación en cada request:
+      </p>
+      <ol>
+        <li>Browser envía JWT del usuario admin.</li>
+        <li>Edge Function valida el JWT y consulta <code>profiles</code> para confirmar rol.</li>
+        <li>Sólo entonces firma con la SecretKey y llama a Forza.</li>
+      </ol>
+
+      <!-- ── SOPORTE ───────────────────────────────────── -->
+      <h2 id="soporte">Soporte y <em>referencias</em></h2>
+      <ul>
+        <li><strong>Forza Delivery</strong> · <a href="https://forzadelivery.com" target="_blank" style="color:var(--vino)">forzadelivery.com</a> · <a href="https://documenter.getpostman.com/view/38701531/2sAYdeMrmk" target="_blank" style="color:var(--vino)">documentación API completa</a></li>
+        <li><strong>Supabase Docs</strong> · <a href="https://supabase.com/docs" target="_blank" style="color:var(--vino)">supabase.com/docs</a></li>
+        <li><strong>Edge Functions (Deno)</strong> · <a href="https://supabase.com/docs/guides/functions" target="_blank" style="color:var(--vino)">guía oficial</a></li>
+        <li><strong>HMAC-SHA256 en Deno</strong> · Web Crypto API nativa, sin dependencias externas</li>
+        <li><strong>Hosting</strong> · <a href="https://pages.cloudflare.com" target="_blank" style="color:var(--vino)">Cloudflare Pages</a> · <a href="https://netlify.com" target="_blank" style="color:var(--vino)">Netlify</a></li>
+      </ul>
+
+      <p class="meta-foot">
+        Documento generado el 25 de mayo de 2026 · Versión 1 · Laurean Shop / AA Projects
+      </p>
+    </main>
+
+  </div>
+</body>
+</html>

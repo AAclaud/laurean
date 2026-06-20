@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Criterios de la cotización — Laurean</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crema:     #F5F2ED;
+    --crema-d:   #EDE7DD;
+    --piedra:    #E8E3DC;
+    --carbon:    #1A1916;
+    --carbon-2:  #2A2925;
+    --warm:      #9B8E7F;
+    --warm-d:    #7A6E60;
+    --accent:    #8B6F47;
+    --gold:      #B89968;
+    --green:     #4A6B3E;
+    --rust:      #A55A3A;
+    --white:     #FFFFFF;
+    --fd: 'Cormorant Garamond', Georgia, serif;
+    --fb: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--crema); color: var(--carbon); font-family: var(--fb); font-size: 14px; line-height: 1.6; }
+  body { padding: 32px 16px; }
+  .doc { max-width: 820px; margin: 0 auto; background: var(--white); border-radius: 4px; overflow: hidden; box-shadow: 0 2px 20px rgba(26,25,22,0.06); }
+
+  .hero { background: var(--carbon); color: var(--crema); padding: 44px 56px 36px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -40%; right: -10%; width: 60%; height: 180%; background: radial-gradient(ellipse, rgba(184,153,104,0.15) 0%, transparent 60%); pointer-events: none; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--fd); font-size: 20px; letter-spacing: 0.18em; font-weight: 500; margin-bottom: 24px; }
+  .brand-mark { width: 28px; height: 28px; border: 1px solid var(--gold); display: inline-flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 14px; color: var(--gold); }
+  .hero .eye { font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; font-weight: 600; }
+  .hero h1 { font-family: var(--fd); font-size: 34px; line-height: 1.1; font-weight: 400; margin-bottom: 14px; max-width: 24ch; }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero p { font-size: 13.5px; opacity: 0.85; max-width: 64ch; font-weight: 300; }
+
+  .section { padding: 32px 56px; }
+  .section + .section { border-top: 1px solid var(--piedra); }
+  .eyebrow { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
+  .section h2 { font-family: var(--fd); font-size: 24px; font-weight: 500; line-height: 1.2; margin-bottom: 6px; color: var(--carbon); }
+  .section h2 em { font-style: italic; }
+  .section > p.intro { font-size: 13px; color: var(--warm-d); margin-bottom: 18px; max-width: 64ch; }
+
+  .block-a .eyebrow { color: var(--green); }
+  .block-a h2 em { color: var(--green); }
+  .block-b .eyebrow { color: var(--rust); }
+  .block-b h2 em { color: var(--rust); }
+  .block-c .eyebrow { color: var(--accent); }
+  .block-c h2 em { color: var(--accent); }
+
+  .items { display: grid; gap: 10px; margin-top: 12px; }
+  .item { background: var(--crema); border: 1px solid var(--piedra); border-radius: 4px; padding: 14px 18px; display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: start; }
+  .item .ic { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: var(--fd); font-weight: 600; font-size: 13px; color: var(--white); flex-shrink: 0; }
+  .item .ic.ok { background: var(--green); }
+  .item .ic.no { background: var(--rust); }
+  .item .ic.ext { background: var(--accent); }
+  .item h4 { font-family: var(--fd); font-size: 16px; font-weight: 500; color: var(--carbon); margin-bottom: 3px; line-height: 1.25; }
+  .item p { font-size: 12.5px; color: var(--warm-d); line-height: 1.5; }
+  .item p b { color: var(--carbon); font-weight: 600; }
+
+  .footer { background: var(--carbon); color: var(--crema); padding: 22px 56px; }
+  .footer .row { display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,242,237,0.6); }
+  .footer b { color: var(--gold); }
+
+  @media (max-width: 720px) {
+    body { padding: 12px 0; }
+    .doc { border-radius: 0; }
+    .hero, .section, .footer { padding-left: 24px; padding-right: 24px; }
+    .hero h1 { font-size: 26px; }
+  }
+
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    html, body { background: var(--white) !important; padding: 0 !important; font-size: 11.5px; }
+    .doc { box-shadow: none !important; max-width: 100% !important; border-radius: 0 !important; }
+    .section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <section class="hero">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span>AA&nbsp;PROJECTS</span>
+    </div>
+    <div class="eye">Anexo de transparencia · Mayo 2026</div>
+    <h1>Criterios <em>de la cotización</em></h1>
+    <p>Documento interno y de respaldo al cliente: qué se incluyó en la cotización LRN-2026-002, qué se decidió dejar fuera del alcance inicial y por qué, y qué funciones del sistema ya existen aunque no se hayan resaltado en la propuesta comercial.</p>
+  </section>
+
+  <section class="section block-a">
+    <div class="eyebrow">A · Considerado e incluido</div>
+    <h2>Lo que <em>sí</em> se entrega y se cobra</h2>
+    <p class="intro">Lo que entra en el precio acordado, listo para operar desde el día uno.</p>
+    <div class="items">
+      <div class="item"><span class="ic ok">✓</span><div><h4>Tienda en línea + Panel administrativo</h4><p>Catálogo, carrito, checkout, multi-moneda GTQ/USD, gestión completa de productos, pedidos, comisiones, vendedoras, bodegas, proveedores y configuración.</p></div></div>
+      <div class="item"><span class="ic ok">✓</span><div><h4>Punto de venta (POS)</h4><p>Pantalla de venta, historial diario, cierre de caja con KPIs, métodos de pago (efectivo, tarjeta, QR), descuentos autorizados con PIN y export CSV.</p></div></div>
+      <div class="item"><span class="ic ok">✓</span><div><h4>Capacitación al equipo</h4><p>Sesión de arranque con vendedoras, bodega y administración para que operen el sistema sin asistencia técnica.</p></div></div>
+      <div class="item"><span class="ic ok">✓</span><div><h4>Soporte mensual: 4 a 5 cambios menores</h4><p>Ajustes pequeños incluidos cada mes sin costo extra. Cambios grandes se cotizan aparte (cláusula 6 del contrato).</p></div></div>
+      <div class="item"><span class="ic ok">✓</span><div><h4>Respaldos diarios automáticos</h4><p>Información operativa respaldada cada día. Solicitudes de exportación en horario hábil (mañana/tarde).</p></div></div>
+      <div class="item"><span class="ic ok">✓</span><div><h4>Actualizaciones de seguridad y mantenimiento preventivo</h4><p>Mientras la mensualidad esté activa, el sistema se mantiene al día sin que el cliente tenga que pedirlo.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section block-b">
+    <div class="eyebrow">B · Considerado pero NO incluido</div>
+    <h2>Lo que se <em>dejó fuera</em> del alcance — y por qué</h2>
+    <p class="intro">Funciones evaluadas que se decidió no incluir en esta fase. Cada una tiene una razón comercial o técnica. Se pueden agregar después como cambio grande.</p>
+    <div class="items">
+      <div class="item"><span class="ic no">×</span><div><h4>Pasarela de pago real (Visa Cuotas, Recurrente, NeoNet)</h4><p>Requiere proceso de KYC con el banco, comisión por transacción y contratos adicionales. <b>Mejor cotizarla en Fase 2</b> cuando ya haya volumen estable.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>App móvil nativa (iOS / Android)</h4><p>La tienda y el POS son <b>responsive</b> y funcionan en cualquier celular. Una app nativa duplicaría costo sin aportar valor inmediato.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Migración a base de datos en la nube (Firebase / Supabase)</h4><p>En esta fase los datos viven en el navegador (<i>localStorage</i>). Suficiente para arrancar; <b>se cotiza la migración cuando crezca el volumen</b> o se necesite multi-dispositivo en tiempo real.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Scanner de código de barras en el POS</h4><p>Requiere hardware compatible y configuración específica por modelo. No solicitado en este alcance.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Apertura/cierre formal de caja con monto inicial</h4><p>Hoy el POS calcula KPIs <b>retrospectivos del día</b>. Una apertura/cierre formal con conteo de efectivo no está implementada.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Devoluciones y anulación de ventas</h4><p>No incluido. Es un módulo que merece su propio flujo (motivo, autorización, ajuste de inventario y comisión). Queda para roadmap.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Impresión física de ticket (impresora térmica)</h4><p>Requiere driver y compatibilidad con el modelo de impresora. No incluido en setup base.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Multi-sucursal con stock independiente</h4><p>El sistema tiene módulo de <b>bodegas</b>, pero no resta stock automáticamente por sucursal. Cubre el caso de arranque (una operación principal).</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Facturación electrónica FEL ante SAT</h4><p>Requiere certificación y conexión con un emisor autorizado. Integración externa cotizable aparte.</p></div></div>
+      <div class="item"><span class="ic no">×</span><div><h4>Multi-idioma</h4><p>Hoy todo está en español. Si en algún momento se necesita inglés (o coreano), se trabaja como cambio grande.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section block-c">
+    <div class="eyebrow">C · Ya está en el sistema (valor extra)</div>
+    <h2>Funciones <em>silenciosas</em> que no se destacaron</h2>
+    <p class="intro">Cosas que ya construimos y entregamos, pero que no resaltamos como bullet de venta en la cotización. Vale la pena conocerlas porque dan más valor del que el cliente piensa que está comprando.</p>
+    <div class="items">
+      <div class="item"><span class="ic ext">+</span><div><h4>Multi-moneda GTQ / USD por producto</h4><p>Cada producto puede tener precio en quetzales y dólares. Útil si Seong Woo quiere mostrar precios a clientes con tarjeta internacional o turistas.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Código referral por vendedora con comisión automática</h4><p>Cada vendedora tiene un código único (formato <b>LAU-XXXX</b>). Cuando un cliente lo usa, se registra la venta y se acredita comisión sin intervención manual.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Descuentos diferenciados por rol</h4><p>Vendedora: 15%. Bodega: 30%. Admin: completo. <b>Configurable desde el panel</b>, sin tocar código.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Generador de cotizaciones desde el admin</h4><p>Crear cotizaciones para clientes mayoristas con productos, descuento global y total recalculado en tiempo real. Imprimible directo.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Export CSV en estadísticas y cierre de caja</h4><p>Cualquier reporte se puede descargar para llevarlo a Excel, contador, etc.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Configuración global (PIN y % de descuento por rol) editables</h4><p>El cliente puede cambiar el PIN de descuento y los porcentajes por rol cuando quiera, sin pedirlo a soporte.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Zona de peligro (reset) para superusuario</h4><p>Borrar pedidos, borrar comisiones o restaurar precios base. Pensado para limpiar entornos de prueba o reiniciar la operación cuando se necesite.</p></div></div>
+      <div class="item"><span class="ic ext">+</span><div><h4>Landing pública para reclutar vendedoras</h4><p>Página dedicada (<b>vendedoras.html</b>) con beneficios, modelo de negocio y formulario de aplicación. Lista para compartir en redes.</p></div></div>
+    </div>
+  </section>
+
+  <section class="footer">
+    <div class="row">
+      <span>Anexo · <b>CRT-LRN-2026-002</b></span>
+      <span><b>AA Projects</b> · Transparencia comercial</span>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -2,7 +2,11 @@
 
 Sistema de tienda online + panel administrativo + punto de venta (POS).  
 Stack: HTML5 / CSS3 / JavaScript vanilla — sin frameworks, sin build tools.  
-Persistencia: `localStorage` (Fase 1). Auth previsto para Firebase en Fase 2.
+Backend: **Supabase** (Postgres + Auth + Storage + Edge Functions).  
+`localStorage` se usa como caché/offline; Supabase es la fuente de verdad cuando está conectado.  
+Envíos: **Forza Delivery** vía Edge Function `forza-proxy`.
+
+Marca/colores y tipografías centralizados en [`css/brand.css`](css/brand.css).
 
 ---
 
@@ -18,17 +22,30 @@ Persistencia: `localStorage` (Fase 1). Auth previsto para Firebase en Fase 2.
 
 ---
 
-## Credenciales por defecto
+## Setup Supabase (resumen)
 
-> Estas cuentas se crean automáticamente la primera vez que se carga la app.  
-> Cambiarlas desde `admin.html → Configuración` o directamente en `localStorage`.
+1. Crear proyecto en [app.supabase.com](https://app.supabase.com).
+2. SQL Editor → ejecutar `supabase/schema.sql` y luego `supabase/seed.sql`.
+3. Crear el primer usuario en **Authentication → Users → Add user** y correr el UPSERT de perfil en `seed.sql` con su UUID.
+4. Copiar `js/config.example.js` → `js/config.js` y pegar `SUPABASE_URL` + `SUPABASE_ANON`.
+5. Edge Functions (Forza + gestión de usuarios):
 
-| Rol | Nombre | Email | Contraseña |
-|---|---|---|---|
-| Superusuario | AA Projects | super@aaprojects.com | SuperAA2026! |
-| Administrador | Admin Laurean | admin@laurean.gt | Admin2026! |
+```bash
+supabase login
+supabase link --project-ref <tu-project-ref>
+supabase secrets set FORZA_BASE_URL=... FORZA_COD_APP=... FORZA_SECRET_KEY=... \
+  FORZA_CODE_OF_REFERENCE=... FORZA_ID_CLIENT=...
+supabase functions deploy forza-proxy
+supabase functions deploy forza-webhook
+supabase functions deploy create-user
+```
 
-**PIN de descuento manual** (checkout / POS): `1234`
+> `create-user` usa `SUPABASE_SERVICE_ROLE_KEY` (ya disponible en el entorno de Functions; no la pongas en el frontend).
+
+Ver guía completa de hosting/DNS en [`Docs/deploy.md`](Docs/deploy.md).
+
+**Usuarios**: no hay credenciales por defecto. Se crean desde `admin.html → Vendedores/Usuarios` (vía edge function) o en Supabase Auth.  
+**PIN de descuento manual** (checkout / POS): sin valor por defecto. Configúralo desde el panel antes de usar descuentos manuales.
 
 ---
 

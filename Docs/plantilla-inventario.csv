@@ -1,0 +1,4 @@
+id,name,price_gtq,price_usd,parent_id,subcat_id,stock,is_new_arrival,image_url,description
+sweater-mujer-01,Sweater Mujer,749,97,mujer,novedades,12,true,images/laurean_mujer_sweater.jpg,Sweater tejido de algodón
+tshirt-hombre-01,T-Shirt Clásico,299,39,hombre,tshirt,40,false,images/laurean_hombre_sweater.jpg,
+pijama-nina-01,Pijama Niña,349,45,kids,nina-pijamas,8,false,,

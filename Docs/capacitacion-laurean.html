@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laurean — Manual de Capacitación</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<style>
+  :root{ --ruby:#531F23; --salva:#8F3833; --gun:#192729; --crema:#F1ECE8; --dorado:#EBC372; --tinta:#22201e; --muted:#6b6560; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;color:var(--tinta);line-height:1.65;background:#fff;font-size:15px}
+  .wrap{max-width:920px;margin:0 auto;padding:48px 40px 80px}
+  .fd{font-family:'Cormorant Garamond',serif}
+  header.cover{background:var(--ruby);color:var(--crema);padding:64px 40px;border-radius:0 0 4px 4px}
+  header.cover .wrap{padding:0;max-width:920px}
+  .brandmark{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:42px;letter-spacing:.02em}
+  .brandmark small{display:block;font-family:'DM Sans';font-style:normal;font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:.7;margin-top:2px}
+  header.cover h1{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:44px;margin:26px 0 8px;line-height:1.05}
+  header.cover p{opacity:.85;max-width:560px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--salva);margin:0 0 6px;font-weight:600}
+  h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:30px;color:var(--ruby);margin:46px 0 4px;padding-top:18px;border-top:2px solid rgba(143,56,51,.16)}
+  h3{font-size:16px;margin:26px 0 8px;color:var(--gun)}
+  p{margin:8px 0}
+  ul,ol{margin:10px 0 10px 22px}
+  li{margin:5px 0}
+  code{background:rgba(25,39,41,.07);padding:1px 6px;border-radius:4px;font-size:.9em}
+  .card{background:var(--crema);border:1px solid rgba(25,26,24,.08);border-radius:8px;padding:20px 24px;margin:16px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .pill{display:inline-block;background:rgba(143,56,51,.08);color:var(--ruby);border:1px solid rgba(143,56,51,.2);border-radius:100px;padding:3px 12px;font-size:12px;margin:2px 4px 2px 0}
+  .note{border-left:3px solid var(--dorado);background:rgba(235,195,114,.1);padding:12px 16px;border-radius:0 6px 6px 0;margin:14px 0;font-size:14px}
+  .warn{border-left:3px solid var(--salva);background:rgba(143,56,51,.06);padding:12px 16px;border-radius:0 6px 6px 0;margin:14px 0;font-size:14px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid rgba(25,26,24,.1);vertical-align:top}
+  th{background:rgba(25,39,41,.05);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+  .toc{columns:2;font-size:14px}
+  .toc a{color:var(--gun);text-decoration:none}
+  .toc a:hover{color:var(--salva)}
+  .step{counter-reset:none}
+  ol.steps{list-style:none;margin-left:0}
+  ol.steps li{counter-increment:s;padding-left:38px;position:relative;margin:10px 0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:-1px;width:26px;height:26px;background:var(--ruby);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+  footer{margin-top:60px;padding-top:20px;border-top:2px solid rgba(143,56,51,.16);color:var(--muted);font-size:13px}
+  @media print{ header.cover{border-radius:0} h2{break-after:avoid} .card,.note,.warn{break-inside:avoid} a{color:inherit;text-decoration:none} }
+  @media(max-width:680px){ .grid,.toc{grid-template-columns:1fr;columns:1} .wrap{padding:32px 20px} }
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap">
+    <div class="brandmark">Laurean<small>by Seong Woo</small></div>
+    <h1>Manual de Capacitación</h1>
+    <p>Guía operativa de la tienda en línea, el panel de administración y el punto de venta. Material de apoyo para la capacitación del equipo Laurean.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <p class="eyebrow" style="margin-top:34px">Contenido</p>
+  <div class="toc card">
+    <a href="#sistema">1. El sistema Laurean</a><br>
+    <a href="#roles">2. Roles y accesos</a><br>
+    <a href="#ingreso">3. Cómo ingresar</a><br>
+    <a href="#tienda">4. La tienda (cliente)</a><br>
+    <a href="#dashboard">5. El panel de administración</a><br>
+    <a href="#tareas">6. Tareas paso a paso</a><br>
+    <a href="#pos">7. Punto de venta (POS)</a><br>
+    <a href="#pagos">8. Pagos</a><br>
+    <a href="#faq">9. Preguntas frecuentes</a><br>
+    <a href="#pendientes">10. Pendientes para producción</a>
+  </div>
+
+  <h2 id="sistema">1. El sistema Laurean</h2>
+  <p>Laurean es una tienda de moda elegante y práctica. El sistema tiene tres partes que comparten la misma marca:</p>
+  <div class="grid">
+    <div class="card"><strong>Tienda pública</strong><br><span style="color:var(--muted)">Lo que ve el cliente: portada, colecciones (Women / Men / Kids), catálogo, producto, carrito y pago. Páginas: <code>Laurean.html</code>, <code>laurean-women/men/kids.html</code>, <code>catalogo.html</code>, <code>producto.html</code>, <code>nosotros.html</code>.</span></div>
+    <div class="card"><strong>Panel admin</strong><br><span style="color:var(--muted)">El "cerebro": pedidos, productos, inventario, vendedores, comisiones, configuración. Página: <code>admin.html</code>.</span></div>
+    <div class="card"><strong>Punto de venta (POS)</strong><br><span style="color:var(--muted)">Para vender en tienda física, rápido. Página: <code>pos.html</code>.</span></div>
+    <div class="card"><strong>Identidad</strong><br><span style="color:var(--muted)">"El arte de vestir bien". Submarcas Women (rubí), Men (gunmetal) y Kids (celeste). Todo comparte el mismo logotipo y voz.</span></div>
+  </div>
+  <div class="note"><strong>Local-first:</strong> el sistema guarda todo primero en el navegador y, si hay conexión a la base de datos (Supabase), sincroniza en la nube. Para la <strong>demo</strong> funciona aunque no haya nube.</div>
+
+  <h2 id="roles">2. Roles y accesos</h2>
+  <table>
+    <tr><th>Rol</th><th>Qué puede hacer</th></tr>
+    <tr><td><strong>Superusuario</strong></td><td>Todo. Único que ve la "Zona de Peligro" (borrar pedidos, restaurar precios) y crea administradores.</td></tr>
+    <tr><td><strong>Administrador</strong></td><td>Gestiona catálogo, pedidos, vendedores, inventario, comisiones, Configuración General, Canales y Pagos.</td></tr>
+    <tr><td><strong>Vendedor</strong></td><td>Tiene su código de referido y ve sus precios/comisiones. Puede usar el POS si se le habilita.</td></tr>
+    <tr><td><strong>Bodega</strong></td><td>Inventario por bodega; precios con descuento de bodega.</td></tr>
+    <tr><td><strong>Agente de pedidos</strong></td><td>Solo ve y gestiona pedidos.</td></tr>
+  </table>
+  <div class="note">Los precios cambian según quién esté logueado: público, vendedor (con su % menos) o bodega. Un indicador flotante ("Precios de administrador / vendedor") lo recuerda en la tienda.</div>
+
+  <h2 id="ingreso">3. Cómo ingresar</h2>
+  <ol class="steps">
+    <li>Abre <code>login.html</code> (o el botón de cuenta 👤 en la tienda).</li>
+    <li>Escribe correo y contraseña del usuario.</li>
+    <li>El sistema te lleva a tu panel según tu rol (admin → dashboard, vendedor → su panel, etc.).</li>
+  </ol>
+  <p>Para volver a la tienda, usa "Volver a la tienda". Para salir, "Cerrar sesión".</p>
+
+  <h2 id="tienda">4. La tienda (lo que ve el cliente)</h2>
+  <h3>Portada</h3>
+  <ul>
+    <li><strong>Selector de categorías:</strong> Mujer / Hombre / Laurean Kids / Ofertas. Al elegir una, la pantalla se ambienta con el color de esa submarca y muestra un breve "splash" con su logo.</li>
+    <li><strong>Las colecciones:</strong> 3 tarjetas que llevan a las páginas Women / Men / Kids.</li>
+    <li><strong>Productos:</strong> cada tarjeta tiene "Agregar al carrito". Los <strong>combos</strong> se agregan como bloque (no se pueden romper para abusar del precio).</li>
+    <li><strong>Programa de vendedores:</strong> banda que invita a unirse (lleva a <code>vendedoras.html</code>).</li>
+  </ul>
+  <h3>Carrito y pago</h3>
+  <ol class="steps">
+    <li>El cliente agrega productos y abre el carrito (🛍️).</li>
+    <li>Ajusta cantidades o quita productos. Los combos se quitan completos con "Quitar combo".</li>
+    <li>Llena sus datos y elige método de pago.</li>
+    <li>El pedido entra al panel admin → <strong>Pedidos</strong>.</li>
+  </ol>
+
+  <h2 id="dashboard">5. El panel de administración</h2>
+  <p>Menú lateral. Lo esencial:</p>
+  <table>
+    <tr><th>Sección</th><th>Para qué sirve</th></tr>
+    <tr><td>Dashboard</td><td>Resumen: pedidos, ingresos, vendedores, comisiones, solicitudes.</td></tr>
+    <tr><td>Pedidos</td><td>Ver y cambiar estado de pedidos, generar guía de envío (Forza).</td></tr>
+    <tr><td>Productos</td><td>Crear/editar productos y <strong>publicar al catálogo</strong> (precio público, foto, categoría).</td></tr>
+    <tr><td>Categorías</td><td>Categorías y subcategorías del catálogo.</td></tr>
+    <tr><td>Combos</td><td>Armar paquetes con precio especial.</td></tr>
+    <tr><td>Inventario</td><td>Stock por bodega; importar desde CSV; agrupar por mes o semana.</td></tr>
+    <tr><td>Vendedores</td><td>Crear/editar usuarios, asignar % de comisión, cumpleaños.</td></tr>
+    <tr><td>Comisiones</td><td>Comisiones generadas por ventas con código de referido.</td></tr>
+    <tr><td>Configuración</td><td>Descuentos y comisiones globales, <strong>Contenido del sitio</strong> (marquee, WhatsApp, <strong>Canales</strong>) y, solo superusuario, Zona de Peligro.</td></tr>
+    <tr><td>Pagos</td><td>Transacciones y datos de pago de la tienda.</td></tr>
+    <tr><td>Estadísticas</td><td>Reportes (HTML imprimible y CSV).</td></tr>
+  </table>
+
+  <h2 id="tareas">6. Tareas paso a paso</h2>
+
+  <h3>Publicar un producto al catálogo</h3>
+  <ol class="steps">
+    <li>Admin → <strong>Productos</strong> → elige el producto (o créalo).</li>
+    <li>Abre "Publicar al catálogo": pon el <strong>precio público</strong>, marca "Mostrar precio sin login" si quieres que se vea, elige categoría y sube foto.</li>
+    <li>Guarda. Aparece en la tienda en su categoría.</li>
+  </ol>
+  <div class="note">Tip de fotos: usa imágenes donde el sujeto se vea completo (sin cortar la cabeza). El sistema recorta para llenar el espacio, así que las fotos verticales y centradas se ven mejor.</div>
+
+  <h3>Crear un vendedor</h3>
+  <ol class="steps">
+    <li>Admin → <strong>Vendedores</strong> → "Nuevo usuario".</li>
+    <li>Nombre, correo, contraseña (mín. 6), teléfono y rol "Vendedor".</li>
+    <li>Opcional: % de comisión propio, cumpleaños, acceso a POS.</li>
+    <li>Guardar. Se genera su código de referido (LAU-XXXX).</li>
+  </ol>
+
+  <h3>Agregar un canal (redes / contacto del footer)</h3>
+  <ol class="steps">
+    <li>Admin → <strong>Configuración</strong> → "Canales".</li>
+    <li>"+ Agregar canal", elige el icono (Instagram, WhatsApp, Email, Teléfono…), escribe la etiqueta y el enlace, marca "Visible".</li>
+    <li>"Guardar contenido". Aparece en el footer de todas las páginas.</li>
+  </ol>
+
+  <h3>Editar anuncios y WhatsApp</h3>
+  <p>Admin → Configuración → "Contenido del sitio": edita los mensajes del marquee de la portada y el número de WhatsApp.</p>
+
+  <h2 id="pos">7. Punto de venta (POS)</h2>
+  <p><code>pos.html</code> — para vender en tienda física. Se agregan productos al ticket, se cobra y se cierra la venta. Solo los usuarios con "acceso a POS" habilitado pueden entrar.</p>
+
+  <h2 id="pagos">8. Pagos</h2>
+  <p>Para la demo, los pagos se manejan de forma <strong>manual/asistida</strong> (transferencia, QR, link o efectivo). El cobro con <strong>tarjeta en línea</strong> (QPayPro) está programado y se activa cuando el comercio esté activo y se carguen las llaves.</p>
+  <div class="warn"><strong>Pasarela QPayPro:</strong> requiere que el comercio esté <em>activo</em> (suscripción vigente). Si aparece inactivo, es trámite con QPayPro (ver sección 10).</div>
+
+  <h2 id="faq">9. Preguntas frecuentes</h2>
+  <h3>¿Por qué los precios cambian?</h3>
+  <p>Porque dependen de quién está logueado (público, vendedor, bodega). Es normal.</p>
+  <h3>La sección de Pagos dice "no hay transacciones"</h3>
+  <p>Es normal si aún no se ha conectado/creado la base de datos de pagos. No es un error de uso.</p>
+  <h3>¿Puedo trabajar sin internet?</h3>
+  <p>Sí, para la demo y operación básica: el sistema guarda en el navegador. La nube es para sincronizar entre dispositivos y respaldar.</p>
+
+  <h2 id="pendientes">10. Pendientes para producción (técnico)</h2>
+  <p>Para pasar de la demo local al sitio en vivo hace falta:</p>
+  <ul>
+    <li>Generar <code>js/config.js</code> con las llaves de Supabase (URL + anon) en el build.</li>
+    <li>Aplicar <code>supabase/schema.sql</code> en el proyecto Supabase (crea las tablas: pedidos, pagos, perfiles, inventario…).</li>
+    <li>Desplegar las Edge Functions: <code>forza-proxy</code>, <code>qpaypro-proxy</code> y <code>create-user</code>, con sus secretos.</li>
+    <li>Crear el primer usuario superusuario y el bucket de imágenes <code>product-images</code>.</li>
+    <li>Activar el comercio de la pasarela de pagos (QPayPro) y cargar sus llaves.</li>
+    <li>Desplegar en Vercel con las variables de entorno y el dominio.</li>
+  </ul>
+
+  <footer>
+    Laurean <em>by Seong Woo</em> · Manual de capacitación · Documento interno de apoyo. Para detalle técnico ver <code>Docs/manual-laurean.html</code>.
+  </footer>
+</div>
+</body>
+</html>

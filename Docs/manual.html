@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual de Usuario — LAUREAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --crema:    #F5F2ED;
+      --piedra:   #E8E3DC;
+      --carbon:   #1A1916;
+      --warm-mid: #9B8E7F;
+      --amber:    #D4A017;
+      --green:    #388E3C;
+      --red:      #c62828;
+      --blue:     #1565C0;
+      --fd: 'Cormorant Garamond', Georgia, serif;
+      --fb: 'DM Sans', -apple-system, sans-serif;
+      --sidebar-w: 270px;
+    }
+    html, body { height: 100%; font-family: var(--fb); background: var(--crema); color: var(--carbon); line-height: 1.6; }
+
+    /* ─── LAYOUT ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ─── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--carbon);
+      color: rgba(255,255,255,0.8);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-brand {
+      padding: 36px 28px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-brand-name {
+      font-family: var(--fd);
+      font-size: 20px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      font-weight: 300;
+      color: white;
+    }
+    .sidebar-brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-top: 4px;
+    }
+    .sidebar-nav { padding: 16px 0 32px; }
+    .sidebar-section-label {
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      padding: 16px 28px 6px;
+    }
+    .sidebar-link {
+      display: block;
+      padding: 9px 28px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      transition: color 0.18s, background 0.18s;
+      cursor: pointer;
+    }
+    .sidebar-link:hover { color: white; background: rgba(255,255,255,0.06); }
+    .sidebar-link.active { color: white; background: rgba(255,255,255,0.1); border-left: 2px solid var(--amber); padding-left: 26px; }
+
+    /* ─── CONTENT ── */
+    .content {
+      flex: 1;
+      padding: 64px 80px;
+      max-width: 860px;
+    }
+
+    /* ─── SECTIONS ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    h1 {
+      font-family: var(--fd);
+      font-size: 42px;
+      font-weight: 300;
+      margin-bottom: 8px;
+      line-height: 1.15;
+    }
+    h1 em { font-style: italic; font-weight: 300; }
+    h2 {
+      font-family: var(--fd);
+      font-size: 28px;
+      font-weight: 300;
+      margin-top: 48px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--piedra);
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      margin-top: 28px;
+      margin-bottom: 8px;
+      color: var(--carbon);
+    }
+    p { margin-bottom: 14px; font-size: 15px; color: #3a3735; }
+    ul, ol { margin: 0 0 16px 20px; }
+    li { font-size: 15px; color: #3a3735; margin-bottom: 6px; }
+    strong { font-weight: 600; color: var(--carbon); }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: var(--warm-mid);
+      margin-bottom: 40px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── ROLE BADGES ── */
+    .role-badge {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .rb-superuser { background: #6A1B9A22; color: #6A1B9A; }
+    .rb-admin     { background: #1565C022; color: #1565C0; }
+    .rb-vendedor  { background: #2E7D3222; color: #2E7D32; }
+    .rb-bodega    { background: #E65100;   color: white;   }
+    .rb-agente    { background: #D4A01722; color: #B8860B; }
+    .rb-cliente   { background: #9B8E7F22; color: #6B5E52; }
+
+    /* ─── INFO BOX ── */
+    .info-box {
+      background: white;
+      border: 1px solid var(--piedra);
+      border-left: 4px solid var(--amber);
+      border-radius: 0 6px 6px 0;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    .info-box.green  { border-left-color: var(--green); }
+    .info-box.red    { border-left-color: var(--red); }
+    .info-box.blue   { border-left-color: var(--blue); }
+    .info-box-title  { font-weight: 600; margin-bottom: 6px; }
+
+    /* ─── STEP BLOCK ── */
+    .steps { counter-reset: step; margin: 20px 0; }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      counter-increment: step;
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--carbon);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .step-body { font-size: 15px; color: #3a3735; }
+
+    /* ─── TABLE ── */
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin: 16px 0 24px;
+    }
+    .doc-table th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--warm-mid);
+      padding: 8px 12px;
+      border-bottom: 2px solid var(--piedra);
+    }
+    .doc-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--piedra);
+      vertical-align: top;
+    }
+    .doc-table tr:last-child td { border-bottom: none; }
+
+    /* ─── SCREENSHOT PLACEHOLDER ── */
+    .screenshot {
+      background: var(--piedra);
+      border: 1px solid rgba(155,142,127,0.3);
+      border-radius: 6px;
+      padding: 32px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--warm-mid);
+      letter-spacing: 0.08em;
+      margin: 16px 0 24px;
+    }
+
+    /* ─── GLOSARIO ── */
+    .glosario-term {
+      font-weight: 600;
+      color: var(--carbon);
+      font-size: 14px;
+      margin-top: 16px;
+    }
+    .glosario-def {
+      font-size: 14px;
+      color: #3a3735;
+      margin-left: 0;
+      margin-top: 2px;
+    }
+
+    /* ─── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .content { padding: 40px 28px; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ─── SIDEBAR ─────────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-name">Laurean</div>
+      <div class="sidebar-brand-sub">Manual de usuario</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="sidebar-section-label">General</div>
+      <a class="sidebar-link active" onclick="showSection('intro')">Introducción</a>
+      <a class="sidebar-link" onclick="showSection('roles')">Roles del sistema</a>
+
+      <div class="sidebar-section-label">Administración</div>
+      <a class="sidebar-link" onclick="showSection('productos')">Productos y precios</a>
+      <a class="sidebar-link" onclick="showSection('combos')">Combos</a>
+      <a class="sidebar-link" onclick="showSection('inventario')">Inventario y bodegas</a>
+      <a class="sidebar-link" onclick="showSection('pedidos')">Pedidos</a>
+      <a class="sidebar-link" onclick="showSection('clientes')">Clientes</a>
+      <a class="sidebar-link" onclick="showSection('descuentos')">Códigos de descuento</a>
+      <a class="sidebar-link" onclick="showSection('vendedores')">Vendedores y comisiones</a>
+      <a class="sidebar-link" onclick="showSection('usuarios')">Usuarios</a>
+      <a class="sidebar-link" onclick="showSection('proveedores')">Proveedores</a>
+      <a class="sidebar-link" onclick="showSection('configuracion')">Configuración</a>
+
+      <div class="sidebar-section-label">POS y Tienda</div>
+      <a class="sidebar-link" onclick="showSection('pos')">Punto de Venta (POS)</a>
+      <a class="sidebar-link" onclick="showSection('tienda')">Tienda Laurean</a>
+
+      <div class="sidebar-section-label">Extra</div>
+      <a class="sidebar-link" onclick="showSection('notificaciones')">Notificaciones</a>
+      <a class="sidebar-link" onclick="showSection('glosario')">Glosario</a>
+    </div>
+  </nav>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────────────────── -->
+  <main class="content">
+
+    <!-- ═══ INTRO ═══════════════════════════════════════════════════════ -->
+    <section class="section active" id="sec-intro">
+      <h1>Manual de <em>Usuario</em></h1>
+      <p class="section-subtitle">Sistema de gestión Laurean — versión 2.0</p>
+
+      <p>Bienvenido al sistema Laurean, una plataforma integral de gestión para el negocio de moda. Este manual cubre todas las funciones disponibles, organizadas por módulo y por rol de usuario.</p>
+
+      <h2>¿Qué incluye el sistema?</h2>
+      <ul>
+        <li><strong>Tienda en línea</strong> — Catálogo público en <code>Laurean.html</code> donde los clientes pueden explorar y ordenar productos.</li>
+        <li><strong>Panel de administración</strong> — <code>admin.html</code> para gestionar pedidos, productos, usuarios, clientes, descuentos, bodegas y configuración.</li>
+        <li><strong>Punto de Venta (POS)</strong> — <code>pos.html</code> para ventas presenciales en tienda o bodega, con soporte multi-bodega.</li>
+        <li><strong>Acceso con roles</strong> — Cada usuario accede solo a las funciones que le corresponden según su rol.</li>
+      </ul>
+
+      <h2>Cómo acceder</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Abre <code>login.html</code> en tu navegador.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Ingresa tu correo electrónico y contraseña.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">El sistema te redirigirá automáticamente al panel correspondiente a tu rol.</div></div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">Datos de prueba</div>
+        El sistema incluye un superusuario de prueba: <strong>super@laurean.gt</strong> con contraseña <strong>super2025</strong>. Úsalo solo para configuración inicial.
+      </div>
+
+      <h2>Navegación general</h2>
+      <p>El panel de administración tiene una barra lateral izquierda con los módulos disponibles. Haz clic en cualquier ítem para navegar. El módulo activo aparece resaltado. En dispositivos pequeños, usa el menú hamburguesa.</p>
+    </section>
+
+    <!-- ═══ ROLES ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-roles">
+      <h1>Roles del <em>Sistema</em></h1>
+      <p class="section-subtitle">Accesos y permisos por tipo de usuario</p>
+
+      <p>Laurean tiene 5 roles. Cada rol define qué módulos puede ver y qué acciones puede ejecutar el usuario.</p>
+
+      <table class="doc-table">
+        <thead><tr><th>Rol</th><th>Descripción</th><th>Acceso admin</th><th>POS</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="role-badge rb-superuser">Superusuario</span></td>
+            <td>Control total. Puede crear admins, borrar usuarios, ver toda la configuración.</td>
+            <td>Completo</td>
+            <td>Sí</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge rb-admin">Admin</span></td>
+            <td>Gestiona todo excepto crear otros admins o superusuarios.</td>
+            <td>Completo (sin gestión de admins)</td>
+            <td>Sí</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge rb-vendedor">Vendedor/a</span></td>
+            <td>Tiene un código de referido. Ve comisiones propias. Puede hacer ventas en POS.</td>
+            <td>Solo su panel de vendedor</td>
+            <td>Sí</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge rb-bodega">Bodega</span></td>
+            <td>Opera el inventario de bodegas asignadas. Puede hacer ventas POS en sus bodegas.</td>
+            <td>Vista de inventario/bodega</td>
+            <td>Sí (bodegas asignadas)</td>
+          </tr>
+          <tr>
+            <td><span class="role-badge rb-agente">Agente de pedidos</span></td>
+            <td>Solo gestiona pedidos. Recibe notificaciones de pedidos nuevos. Sin acceso a POS.</td>
+            <td>Solo módulo Pedidos</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Gestión de usuarios</h2>
+      <p>Los usuarios se crean desde <strong>Admin → Usuarios</strong>. Al crear un usuario debes asignar:</p>
+      <ul>
+        <li><strong>Nombre completo</strong> — Visible en el sistema.</li>
+        <li><strong>Correo electrónico</strong> — Usado para el inicio de sesión.</li>
+        <li><strong>Contraseña temporal</strong> — El usuario puede cambiarla después.</li>
+        <li><strong>Rol</strong> — Define los permisos (ver tabla arriba).</li>
+        <li><strong>Bodegas asignadas</strong> (solo rol Bodega) — Qué bodegas puede operar.</li>
+        <li><strong>Acceso al POS</strong> — Si puede iniciar sesión en el punto de venta.</li>
+      </ul>
+
+      <div class="info-box green">
+        <div class="info-box-title">Consejo</div>
+        Los usuarios de tipo <strong>Agente de pedidos</strong> son ideales para el equipo de logística: solo ven pedidos y reciben alertas de nuevos pedidos, sin acceso al inventario ni al POS.
+      </div>
+    </section>
+
+    <!-- ═══ PRODUCTOS ═══════════════════════════════════════════════════ -->
+    <section class="section" id="sec-productos">
+      <h1>Productos <em>y Precios</em></h1>
+      <p class="section-subtitle">Catálogo, precios por rol y historial de cambios</p>
+
+      <h2>Catálogo de productos</h2>
+      <p>Los productos del catálogo principal están definidos en <code>data/products.js</code>. Desde el panel de administración puedes también agregar <strong>productos custom</strong> (ropa personalizada o artículos especiales).</p>
+
+      <h3>Agregar un producto custom</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Ve a <strong>Admin → Productos</strong>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en <strong>Nuevo producto</strong>.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Completa: nombre, categoría, precio público en GTQ y USD, URL de imagen (opcional).</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Haz clic en <strong>Guardar</strong>. El producto aparece en el catálogo y en el POS.</div></div>
+      </div>
+
+      <h2>Precios por rol</h2>
+      <p>Cada producto tiene hasta 3 niveles de precio. El sistema aplica automáticamente el precio correcto según el rol del usuario.</p>
+
+      <table class="doc-table">
+        <thead><tr><th>Nivel</th><th>Aplica a</th><th>Campo</th></tr></thead>
+        <tbody>
+          <tr><td>Precio público</td><td>Clientes de la tienda</td><td><code>public_gtq / public_usd</code></td></tr>
+          <tr><td>Precio vendedor</td><td>Vendedores, Admin, Superusuario</td><td><code>seller_gtq / seller_usd</code></td></tr>
+          <tr><td>Precio bodega</td><td>Usuarios con rol Bodega</td><td><code>bodega_gtq / bodega_usd</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>También puedes configurar precios específicos <strong>por bodega</strong> usando el botón "Por bodega" en cada fila de la tabla de precios.</p>
+
+      <h3>Editar precios</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Ve a <strong>Admin → Productos</strong>, pestaña <em>Precios</em>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Edita los campos de precio en las celdas de la tabla.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Haz clic en <strong>Guardar precios</strong> para aplicar los cambios.</div></div>
+      </div>
+
+      <h2>Historial de precios</h2>
+      <p>Cada vez que guardas un cambio de precio, el sistema registra automáticamente: campo modificado, valor anterior, valor nuevo, fecha y quién lo cambió.</p>
+      <p>Para ver el historial de un producto, haz clic en el botón <strong>Historial</strong> en la columna de acciones de la tabla de precios.</p>
+
+      <div class="info-box">
+        <div class="info-box-title">Nota</div>
+        Solo se registran cambios cuando el precio anterior ya existe guardado (no en la primera configuración).
+      </div>
+    </section>
+
+    <!-- ═══ COMBOS ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-combos">
+      <h1>Combos <em>y Promociones</em></h1>
+      <p class="section-subtitle">Agrupaciones de productos a precio especial</p>
+
+      <h2>¿Qué es un combo?</h2>
+      <p>Un combo es un paquete de productos que se vende como una unidad con un precio total predeterminado. Los combos aparecen en el POS (sección "Combos") y pueden asignarse para venta en tienda, POS o ambos.</p>
+
+      <h2>Crear un combo</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Ve a <strong>Admin → Combos</strong>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en <strong>Nuevo combo</strong>.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Escribe el nombre, descripción y selecciona los productos que lo componen con sus cantidades.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">El precio total se calcula automáticamente; puedes ajustarlo manualmente.</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body">Selecciona dónde estará disponible: <em>Tienda</em>, <em>POS</em> o <em>Ambos</em>.</div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body">Actívalo y guarda.</div></div>
+      </div>
+
+      <h2>Gestionar combos</h2>
+      <p>Desde la lista de combos puedes <strong>editar</strong>, <strong>activar/desactivar</strong> o <strong>eliminar</strong> cualquier combo. Los combos inactivos no aparecen en el POS ni en la tienda.</p>
+    </section>
+
+    <!-- ═══ INVENTARIO ═══════════════════════════════════════════════════ -->
+    <section class="section" id="sec-inventario">
+      <h1>Inventario <em>y Bodegas</em></h1>
+      <p class="section-subtitle">Control de stock por ubicación</p>
+
+      <h2>Bodegas</h2>
+      <p>Una bodega representa una ubicación física (tienda, almacén, punto de distribución). Puedes crear tantas bodegas como necesites.</p>
+
+      <h3>Crear una bodega</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Ve a <strong>Admin → Bodegas</strong>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en <strong>Nueva bodega</strong>.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Completa: nombre, dirección y notas opcionales.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Guarda. La bodega estará disponible para asignar usuarios y stock.</div></div>
+      </div>
+
+      <h2>Control de inventario</h2>
+      <p>El módulo de inventario muestra el stock de cada producto en cada bodega. Puedes:</p>
+      <ul>
+        <li><strong>Ajustar stock manualmente</strong> — útil para ingresos de mercancía, mermas o correcciones.</li>
+        <li><strong>Ver stock bajo</strong> — productos con stock menor al umbral configurado aparecen resaltados en rojo.</li>
+        <li><strong>Configurar el umbral de stock bajo</strong> — en la tabla de inventario, edita el campo "Mínimo" por producto.</li>
+      </ul>
+
+      <h2>Alerta de stock bajo</h2>
+      <p>Cuando algún producto tiene stock por debajo de su umbral (default: 5 unidades), aparece un <strong>punto rojo pulsante</strong> junto al ítem "Inventario" en la barra lateral del panel de administración.</p>
+
+      <div class="info-box red">
+        <div class="info-box-title">Importante</div>
+        Las ventas en POS no descuentan automáticamente el inventario en esta versión. El ajuste de stock es manual.
+      </div>
+
+      <h2>Precios por bodega</h2>
+      <p>Puedes configurar un precio diferente para cada producto en cada bodega. Esto es útil si las bodegas tienen costos distintos.</p>
+      <p>Ve a <strong>Admin → Productos → Precios</strong> y haz clic en <strong>Por bodega</strong> en cualquier fila para configurar precios específicos.</p>
+    </section>
+
+    <!-- ═══ PEDIDOS ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-pedidos">
+      <h1>Pedidos</h1>
+      <p class="section-subtitle">Gestión de órdenes desde tienda y POS</p>
+
+      <h2>Ver pedidos</h2>
+      <p>Ve a <strong>Admin → Pedidos</strong>. La tabla muestra todos los pedidos con:</p>
+      <ul>
+        <li>ID del pedido (últimos 8 caracteres)</li>
+        <li>Fecha y hora</li>
+        <li>Cliente (nombre y teléfono)</li>
+        <li>Total en GTQ</li>
+        <li>Estado actual</li>
+        <li><strong>Origen</strong> — si vino de la Tienda o del POS (con nombre de bodega)</li>
+      </ul>
+
+      <h2>Filtrar y buscar pedidos</h2>
+      <p>Encima de la tabla hay controles de filtro:</p>
+      <ul>
+        <li><strong>Buscar</strong> — por nombre, teléfono o ID de pedido.</li>
+        <li><strong>Fecha desde / hasta</strong> — rango de fechas.</li>
+        <li><strong>Estado</strong> — Pendiente, Confirmado, Enviado, Entregado, Cancelado.</li>
+        <li><strong>Origen</strong> — Tienda o POS.</li>
+      </ul>
+
+      <h2>Ver detalle de un pedido</h2>
+      <p>Haz clic en cualquier fila de pedido para abrir el <strong>modal de detalle</strong>. Ahí verás:</p>
+      <ul>
+        <li>Datos completos del cliente (nombre, teléfono, dirección, notas).</li>
+        <li>Lista de productos con cantidad y precio.</li>
+        <li>Totales desglosados: subtotal, descuento referido, descuento manual, descuento por código, total.</li>
+        <li>Origen: si vino de tienda o POS (con nombre de bodega).</li>
+        <li><strong>Timeline de cambios</strong> — historial de cambios de estado con fecha, hora y usuario responsable.</li>
+      </ul>
+
+      <div class="info-box blue">
+        <div class="info-box-title">Tip</div>
+        El selector de estado en la fila NO abre el modal — puedes cambiar el estado directamente desde la tabla sin entrar al detalle.
+      </div>
+
+      <h2>Cambiar el estado de un pedido</h2>
+      <p>Hay dos formas de cambiar el estado:</p>
+      <ul>
+        <li><strong>Desde la tabla</strong> — usa el selector desplegable en la columna Estado. Guarda automáticamente al cambiar.</li>
+        <li><strong>Desde el modal de detalle</strong> — selecciona el nuevo estado y haz clic en <strong>Guardar cambio</strong>. El cambio queda registrado en el timeline.</li>
+      </ul>
+
+      <h3>Estados disponibles</h3>
+      <table class="doc-table">
+        <thead><tr><th>Estado</th><th>Significado</th></tr></thead>
+        <tbody>
+          <tr><td>Pendiente</td><td>Pedido recibido, aún sin confirmar.</td></tr>
+          <tr><td>Confirmado</td><td>Orden verificada, en proceso de preparación.</td></tr>
+          <tr><td>Enviado</td><td>Paquete despachado al cliente.</td></tr>
+          <tr><td>Entregado</td><td>Cliente recibió el pedido.</td></tr>
+          <tr><td>Cancelado</td><td>Pedido anulado.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Imprimir recibo</h2>
+      <p>Desde el modal de detalle del pedido, haz clic en <strong>Imprimir recibo</strong>. El sistema abrirá el diálogo de impresión del navegador con una vista limpia del pedido (sin el fondo oscuro ni la interfaz).</p>
+
+      <h2>Exportar CSV</h2>
+      <p>Haz clic en <strong>Exportar CSV</strong> (botón sobre la tabla de pedidos) para descargar un archivo con todos los pedidos actualmente filtrados. El CSV incluye: ID, fecha, cliente, teléfono, total, descuentos, origen, bodega y estado.</p>
+
+      <h2>Notificaciones de pedido nuevo</h2>
+      <p>Cuando llega un pedido nuevo (de tienda o POS), aparece un <strong>badge ámbar pulsante</strong> con el número de pedidos nuevos junto al ítem "Pedidos" en la barra lateral. El badge desaparece al hacer clic en Pedidos.</p>
+    </section>
+
+    <!-- ═══ CLIENTES ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-clientes">
+      <h1>Clientes</h1>
+      <p class="section-subtitle">Registro automático y manual de compradores</p>
+
+      <h2>Registro automático</h2>
+      <p>Cada vez que se crea un pedido (desde la tienda o el POS), el sistema registra o actualiza automáticamente al cliente usando su <strong>número de teléfono como clave</strong>. Si el teléfono ya existe, actualiza los contadores de pedidos y gasto total.</p>
+
+      <h2>Ver clientes</h2>
+      <p>Ve a <strong>Admin → Clientes</strong>. La tabla muestra: nombre, teléfono, email, número de pedidos, total gastado y fecha del último pedido.</p>
+
+      <h2>Agregar o editar un cliente manualmente</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Haz clic en <strong>Nuevo cliente</strong> (o en el botón de editar en la fila).</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Completa: nombre, teléfono (obligatorio), email, dirección y notas.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Guarda.</div></div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">Deduplicación</div>
+        El sistema normaliza el teléfono (elimina guiones, espacios y paréntesis) antes de buscar duplicados. Si un cliente llama con "5555-1234" o "55551234", se reconoce como el mismo.
+      </div>
+    </section>
+
+    <!-- ═══ DESCUENTOS ═══════════════════════════════════════════════════ -->
+    <section class="section" id="sec-descuentos">
+      <h1>Códigos de <em>Descuento</em></h1>
+      <p class="section-subtitle">Generación y validación de cupones</p>
+
+      <h2>¿Qué son los códigos de descuento?</h2>
+      <p>Son cupones con un código alfanumérico que los clientes pueden ingresar en el checkout de la tienda o que el cajero puede aplicar en el POS para reducir el total de la venta.</p>
+
+      <h2>Crear un código de descuento</h2>
+      <p>Solo los usuarios con rol <span class="role-badge rb-admin">Admin</span> o <span class="role-badge rb-superuser">Superusuario</span> pueden crear códigos.</p>
+
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Ve a <strong>Admin → Códigos de descuento</strong>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en <strong>Nuevo código</strong>.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Completa el formulario (ver campos abajo).</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Guarda. El código está activo de inmediato.</div></div>
+      </div>
+
+      <h3>Campos del código</h3>
+      <table class="doc-table">
+        <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td>Código</td><td>Texto en mayúsculas, único. Ej: <code>VERANO25</code></td></tr>
+          <tr><td>Descripción</td><td>Texto interno para identificar el propósito del código.</td></tr>
+          <tr><td>Tipo</td><td><strong>Porcentaje</strong> (ej: 15%) o <strong>Monto fijo GTQ</strong> (ej: Q50 de descuento).</td></tr>
+          <tr><td>Valor</td><td>El porcentaje (0–100) o el monto en GTQ.</td></tr>
+          <tr><td>Válido desde / hasta</td><td>Fechas opcionales de vigencia.</td></tr>
+          <tr><td>Límite de usos</td><td>Cantidad máxima de veces que puede usarse. 0 = ilimitado.</td></tr>
+          <tr><td>Activo</td><td>Si está activo, puede aplicarse. Si está inactivo, es rechazado.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Aplicar en la tienda</h2>
+      <p>En el checkout de la tienda (<code>Laurean.html</code>), el cliente verá un campo "¿Tienes un código de descuento?". Al ingresar el código y hacer clic en <strong>Aplicar</strong>, el sistema valida y descuenta automáticamente del total.</p>
+
+      <h2>Aplicar en el POS</h2>
+      <p>En la sección de cobro del POS, el cajero puede ingresar un código en el campo "Código de descuento" y hacer clic en <strong>Aplicar</strong>. El descuento se refleja en el total antes de cobrar.</p>
+
+      <div class="info-box red">
+        <div class="info-box-title">Validaciones</div>
+        Un código es rechazado si: está inactivo, está fuera de su rango de fechas, o ya alcanzó su límite de usos. El contador de usos se incrementa automáticamente al confirmar la venta.
+      </div>
+    </section>
+
+    <!-- ═══ VENDEDORES ═══════════════════════════════════════════════════ -->
+    <section class="section" id="sec-vendedores">
+      <h1>Vendedores <em>y Comisiones</em></h1>
+      <p class="section-subtitle">Códigos de referido y seguimiento de ventas</p>
+
+      <h2>Código de referido</h2>
+      <p>Cada usuario con rol <span class="role-badge rb-vendedor">Vendedor/a</span> tiene un <strong>código de referido único</strong> (formato <code>LAU-XXXX</code>). Este código se aplica en el checkout de la tienda para dar un descuento al cliente y registrar la venta a nombre del vendedor.</p>
+
+      <h2>Panel del vendedor</h2>
+      <p>Los vendedores pueden acceder a su panel desde la tienda (<code>Laurean.html</code>) haciendo clic en el ícono de perfil o en el botón "Mi panel".</p>
+      <p>Desde el panel del vendedor pueden ver:</p>
+      <ul>
+        <li>Sus ventas (pedidos con su código aplicado).</li>
+        <li>Comisiones generadas.</li>
+        <li>Su código de referido con botón de copiar.</li>
+      </ul>
+
+      <h2>Gestión desde admin</h2>
+      <p>Los admins pueden ver todos los vendedores en <strong>Admin → Vendedores</strong>, con estadísticas de ventas y comisiones acumuladas. El porcentaje de comisión se configura en <strong>Admin → Configuración</strong>.</p>
+
+      <h2>Descuento de referido</h2>
+      <p>Cuando un cliente aplica el código de un vendedor, recibe un descuento automático sobre el subtotal. El porcentaje de ese descuento también se configura en <strong>Admin → Configuración → Porcentaje descuento referido</strong>.</p>
+    </section>
+
+    <!-- ═══ USUARIOS ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-usuarios">
+      <h1>Usuarios</h1>
+      <p class="section-subtitle">Creación, edición y control de acceso</p>
+
+      <h2>Lista de usuarios</h2>
+      <p>Ve a <strong>Admin → Usuarios</strong>. La tabla muestra nombre, correo, rol, código (si aplica), estado activo/inactivo y fecha de creación.</p>
+
+      <h2>Crear un usuario</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Haz clic en <strong>Nuevo usuario</strong>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Completa: nombre, correo, contraseña, rol.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Si el rol es <strong>Bodega</strong>, selecciona qué bodegas puede operar (checkboxes).</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Marca o desmarca la casilla <strong>"Puede acceder al POS"</strong> según sea necesario.</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body">Guarda.</div></div>
+      </div>
+
+      <h2>Editar un usuario</h2>
+      <p>Haz clic en el ícono de lápiz en la fila del usuario. Puedes cambiar nombre, contraseña, rol, bodegas asignadas y acceso al POS. El correo no es editable.</p>
+
+      <h2>Activar / Desactivar</h2>
+      <p>Haz clic en el ícono de encendido/apagado en la fila del usuario. Un usuario inactivo no puede iniciar sesión.</p>
+
+      <h2>Eliminar</h2>
+      <p>Solo los <span class="role-badge rb-superuser">Superusuarios</span> pueden eliminar usuarios. Haz clic en el ícono de papelera y confirma.</p>
+
+      <div class="info-box">
+        <div class="info-box-title">Acceso al POS</div>
+        Si un usuario tiene <strong>"Puede acceder al POS"</strong> desmarcado, el sistema rechazará su inicio de sesión en <code>pos.html</code> con un mensaje de error claro. Los agentes de pedidos no tienen acceso al POS por defecto.
+      </div>
+    </section>
+
+    <!-- ═══ PROVEEDORES ═══════════════════════════════════════════════════ -->
+    <section class="section" id="sec-proveedores">
+      <h1>Proveedores</h1>
+      <p class="section-subtitle">Registro de proveedores y solicitudes</p>
+
+      <h2>Lista de proveedores</h2>
+      <p>Ve a <strong>Admin → Proveedores</strong>. Aquí se listan los proveedores registrados con nombre, contacto y estado.</p>
+
+      <h2>Solicitudes de proveedores</h2>
+      <p>Las personas interesadas en ser proveedores de Laurean pueden enviar una solicitud desde la tienda (<code>Laurean.html</code>). Las solicitudes aparecen en <strong>Admin → Solicitudes</strong> para revisión del administrador.</p>
+
+      <h3>Aprobar o rechazar una solicitud</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Ve a <strong>Admin → Solicitudes</strong>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en la fila para ver el detalle.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Aprueba o rechaza la solicitud con los botones correspondientes.</div></div>
+      </div>
+    </section>
+
+    <!-- ═══ CONFIGURACIÓN ════════════════════════════════════════════════ -->
+    <section class="section" id="sec-configuracion">
+      <h1>Configuración</h1>
+      <p class="section-subtitle">Parámetros globales del sistema</p>
+
+      <p>Ve a <strong>Admin → Configuración</strong> (solo visible para <span class="role-badge rb-superuser">Superusuario</span>).</p>
+
+      <h2>Parámetros disponibles</h2>
+      <table class="doc-table">
+        <thead><tr><th>Parámetro</th><th>Descripción</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td>Descuento vendedor (%)</td><td>% de descuento sobre precio público para vendedores.</td><td>20%</td></tr>
+          <tr><td>Descuento bodega (%)</td><td>% de descuento sobre precio público para bodegas.</td><td>30%</td></tr>
+          <tr><td>Descuento referido (%)</td><td>% de descuento al cliente cuando aplica un código de referido.</td><td>5%</td></tr>
+          <tr><td>Comisión vendedor (%)</td><td>% de comisión que gana el vendedor por cada venta con su código.</td><td>10%</td></tr>
+          <tr><td>PIN de descuento especial</td><td>PIN numérico que desbloquea descuentos manuales en POS y checkout.</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <div class="info-box-title">Restaurar datos</div>
+        Desde Configuración también puedes restaurar precios, usuarios, pedidos u otros datos a su estado base (datos de prueba). Úsalo con precaución.
+      </div>
+    </section>
+
+    <!-- ═══ POS ═══════════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-pos">
+      <h1>Punto de Venta <em>(POS)</em></h1>
+      <p class="section-subtitle">Ventas presenciales y cierre de caja</p>
+
+      <h2>Acceder al POS</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Abre <code>pos.html</code>.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Ingresa tu correo y contraseña. Tu usuario debe tener <strong>"Puede acceder al POS"</strong> activado.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">Si tienes asignadas varias bodegas, el sistema te pedirá que elijas una. Si solo tienes una, entra directo.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">La bodega activa aparece en la barra superior del POS.</div></div>
+      </div>
+
+      <h2>Hacer una venta</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">En la pestaña <strong>Venta</strong>, busca o filtra productos por categoría.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en un producto para agregarlo al carrito. Puedes ajustar la cantidad con los botones + y −.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">(Opcional) Ingresa el nombre del cliente.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">(Opcional) Aplica un <strong>código de descuento</strong> en el campo correspondiente.</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body">(Opcional) Aplica un <strong>descuento especial con PIN</strong> para descuentos porcentuales.</div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body">Selecciona el método de pago: Efectivo, Tarjeta o QR.</div></div>
+        <div class="step"><div class="step-num">7</div><div class="step-body">Haz clic en <strong>Cobrar</strong>. La venta queda registrada y aparece en el historial.</div></div>
+      </div>
+
+      <h2>Historial de ventas</h2>
+      <p>La pestaña <strong>Historial</strong> muestra las ventas del día filtradas por la bodega activa. Incluye hora, ID corto, cliente, total, descuento, método de pago y estado.</p>
+
+      <h2>Cierre del día</h2>
+      <p>La pestaña <strong>Cierre</strong> muestra un resumen de las ventas del día para la bodega activa:</p>
+      <ul>
+        <li>Total de ventas del día en GTQ.</li>
+        <li>Número de transacciones.</li>
+        <li>Total de descuentos otorgados.</li>
+        <li>Ventas canceladas.</li>
+        <li>Ticket promedio por transacción.</li>
+      </ul>
+      <p>Haz clic en <strong>Exportar CSV</strong> para descargar el reporte del día con todas las ventas de la bodega activa.</p>
+
+      <h2>Combos en POS</h2>
+      <p>En el catálogo del POS aparece el filtro <strong>Combos</strong>. Al seleccionar un combo, todos sus productos se agregan al carrito con el precio del combo.</p>
+
+      <div class="info-box green">
+        <div class="info-box-title">Precios por bodega</div>
+        Si la bodega activa tiene precios configurados específicamente para ella (en Admin → Productos → Por bodega), el POS mostrará esos precios en lugar de los precios estándar de bodega.
+      </div>
+    </section>
+
+    <!-- ═══ TIENDA ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-tienda">
+      <h1>Tienda <em>Laurean</em></h1>
+      <p class="section-subtitle">La experiencia del cliente en Laurean.html</p>
+
+      <h2>Navegación del catálogo</h2>
+      <p>La tienda pública (<code>Laurean.html</code>) muestra el catálogo completo. Los clientes pueden:</p>
+      <ul>
+        <li>Filtrar por categoría usando los botones de navegación.</li>
+        <li>Hacer clic en un producto para ver el detalle (imagen, descripción, precio).</li>
+        <li>Agregar al carrito desde la vista de detalle o desde el catálogo.</li>
+        <li>Aplicar un código de referido (de vendedora) para obtener descuento.</li>
+        <li>Aplicar un código de descuento para reducir el total.</li>
+      </ul>
+
+      <h2>Proceso de compra</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body">Agrega productos al carrito.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body">Haz clic en el ícono de carrito para abrirlo.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body">(Opcional) Aplica un código de referido o de descuento.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body">Haz clic en <strong>Proceder al pago</strong>.</div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body">Completa: nombre completo, teléfono, dirección de entrega y notas.</div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body">Haz clic en <strong>Confirmar pedido</strong>.</div></div>
+        <div class="step"><div class="step-num">7</div><div class="step-body">Se muestra la confirmación con el número de pedido.</div></div>
+      </div>
+
+      <h2>Solicitudes de proveedores</h2>
+      <p>Desde la tienda también se puede enviar una solicitud para convertirse en proveedor de Laurean. Estas solicitudes llegan al panel de administración para su revisión.</p>
+    </section>
+
+    <!-- ═══ NOTIFICACIONES ═══════════════════════════════════════════════ -->
+    <section class="section" id="sec-notificaciones">
+      <h1>Notificaciones <em>y Alertas</em></h1>
+      <p class="section-subtitle">Alertas en tiempo real para el equipo</p>
+
+      <h2>Pedidos nuevos</h2>
+      <p>El sistema verifica cada 8 segundos si hay pedidos nuevos. Si la cantidad de pedidos aumentó desde la última vez que visitaste el módulo de Pedidos, aparece un <strong>badge ámbar pulsante</strong> con el número de pedidos nuevos junto al ítem "Pedidos" en la barra lateral.</p>
+      <p>El badge desaparece automáticamente cuando navegas a la vista de Pedidos.</p>
+
+      <h3>¿Quién recibe notificaciones de pedidos?</h3>
+      <ul>
+        <li><span class="role-badge rb-admin">Admin</span></li>
+        <li><span class="role-badge rb-superuser">Superusuario</span></li>
+        <li><span class="role-badge rb-agente">Agente de pedidos</span></li>
+      </ul>
+
+      <h2>Stock bajo</h2>
+      <p>Si algún producto tiene stock por debajo de su umbral (configurable por producto, default 5), aparece un <strong>punto rojo pulsante</strong> junto al ítem "Inventario" en la barra lateral.</p>
+      <p>Para resolver la alerta, ajusta el stock del producto afectado en <strong>Admin → Inventario</strong>.</p>
+
+      <h2>Dashboard con anillo dorado</h2>
+      <p>Si hay pedidos nuevos, la tarjeta "Pedidos recientes" en el dashboard también resalta con un anillo ámbar dorado, atrayendo la atención del administrador.</p>
+
+      <div class="info-box">
+        <div class="info-box-title">Alcance de las notificaciones</div>
+        Las notificaciones de pedidos usan <code>sessionStorage</code>: se restablecen al cerrar el navegador o abrir una nueva pestaña. Esto es por diseño — cada sesión empieza desde cero.
+      </div>
+    </section>
+
+    <!-- ═══ GLOSARIO ═══════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-glosario">
+      <h1>Glosario</h1>
+      <p class="section-subtitle">Términos y conceptos del sistema</p>
+
+      <div class="glosario-term">Bodega</div>
+      <div class="glosario-def">Ubicación física donde se almacenan y/o venden productos. Puede ser una tienda, almacén o punto de distribución.</div>
+
+      <div class="glosario-term">Código de referido</div>
+      <div class="glosario-def">Código único de cada vendedora (formato LAU-XXXX) que los clientes aplican en el checkout para obtener un descuento y registrar la venta a nombre del vendedor.</div>
+
+      <div class="glosario-term">Código de descuento</div>
+      <div class="glosario-def">Cupón alfanumérico creado por el administrador que otorga un descuento porcentual o de monto fijo en la compra.</div>
+
+      <div class="glosario-term">Combo</div>
+      <div class="glosario-def">Paquete de productos agrupados que se vende como una unidad a un precio total predeterminado.</div>
+
+      <div class="glosario-term">GTQ</div>
+      <div class="glosario-def">Quetzal guatemalteco. Moneda principal usada en el sistema (símbolo Q).</div>
+
+      <div class="glosario-term">Historial de pedido</div>
+      <div class="glosario-def">Registro cronológico de todos los cambios de estado de un pedido, con fecha, hora y usuario que realizó el cambio.</div>
+
+      <div class="glosario-term">LocalStorage</div>
+      <div class="glosario-def">Almacenamiento del navegador donde el sistema guarda todos sus datos. Los datos persisten entre sesiones pero son locales al dispositivo y navegador.</div>
+
+      <div class="glosario-term">Origen del pedido</div>
+      <div class="glosario-def">Indica si el pedido fue creado desde la tienda en línea ("store") o desde el punto de venta ("pos").</div>
+
+      <div class="glosario-term">PIN de descuento especial</div>
+      <div class="glosario-def">Código numérico que desbloquea la opción de aplicar descuentos porcentuales manuales en el POS y en el checkout de la tienda.</div>
+
+      <div class="glosario-term">POS</div>
+      <div class="glosario-def">Point of Sale (Punto de Venta). Interfaz usada para registrar ventas presenciales en tienda o bodega.</div>
+
+      <div class="glosario-term">Rol</div>
+      <div class="glosario-def">Categoría que define los permisos de un usuario: Superusuario, Admin, Vendedor, Bodega o Agente de pedidos.</div>
+
+      <div class="glosario-term">SessionStorage</div>
+      <div class="glosario-def">Almacenamiento temporal del navegador que se borra al cerrar la pestaña. Se usa para rastrear notificaciones de pedidos nuevos.</div>
+
+      <div class="glosario-term">Stock bajo</div>
+      <div class="glosario-def">Condición de un producto cuando su inventario en alguna bodega es menor al umbral configurado (por defecto: 5 unidades).</div>
+
+      <div class="glosario-term">Umbral de stock</div>
+      <div class="glosario-def">Cantidad mínima de unidades de un producto en una bodega antes de que se active la alerta de stock bajo.</div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    const sec = document.getElementById('sec-' + id);
+    if (sec) sec.classList.add('active');
+    // Find the clicked link
+    document.querySelectorAll('.sidebar-link').forEach(l => {
+      if (l.getAttribute('onclick') === `showSection('${id}')`) l.classList.add('active');
+    });
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>

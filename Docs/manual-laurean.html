@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manual de usuario — Laurean Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crema:     #F5F2ED;
+    --crema-d:   #EDE7DD;
+    --piedra:    #E8E3DC;
+    --carbon:    #1A1916;
+    --carbon-2:  #2A2925;
+    --warm:      #9B8E7F;
+    --warm-d:    #7A6E60;
+    --accent:    #8B6F47;
+    --accent-d:  #6B5535;
+    --gold:      #B89968;
+    --green:     #4A6B3E;
+    --rust:      #A55A3A;
+    --white:     #FFFFFF;
+    --fd: 'Cormorant Garamond', Georgia, serif;
+    --fb: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--crema); color: var(--carbon); font-family: var(--fb); font-size: 14px; line-height: 1.6; scroll-behavior: smooth; }
+  body { padding: 32px 16px; }
+  .doc { max-width: 880px; margin: 0 auto; background: var(--white); border-radius: 4px; overflow: hidden; box-shadow: 0 2px 20px rgba(26,25,22,0.06); }
+
+  .hero { background: var(--carbon); color: var(--crema); padding: 48px 56px 40px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -40%; right: -10%; width: 60%; height: 180%; background: radial-gradient(ellipse, rgba(184,153,104,0.15) 0%, transparent 60%); pointer-events: none; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--fd); font-size: 20px; letter-spacing: 0.18em; font-weight: 500; margin-bottom: 24px; }
+  .brand-mark { width: 28px; height: 28px; border: 1px solid var(--gold); display: inline-flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 14px; color: var(--gold); }
+  .hero .eye { font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; font-weight: 600; }
+  .hero h1 { font-family: var(--fd); font-size: 42px; line-height: 1.05; font-weight: 400; margin-bottom: 14px; max-width: 22ch; }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero p { font-size: 14px; opacity: 0.85; max-width: 64ch; font-weight: 300; }
+  .hero .meta { margin-top: 22px; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.7; display: flex; gap: 24px; flex-wrap: wrap; }
+  .hero .meta b { color: var(--gold); font-weight: 500; }
+
+  .toc { background: var(--crema); padding: 26px 56px; border-bottom: 1px solid var(--piedra); }
+  .toc .eyebrow { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 10px; }
+  .toc ol { padding: 0; list-style: none; counter-reset: tc; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+  .toc ol li { counter-increment: tc; padding-left: 26px; position: relative; font-size: 13px; }
+  .toc ol li::before { content: counter(tc, decimal-leading-zero); position: absolute; left: 0; top: 0; font-family: var(--fd); font-size: 13px; color: var(--gold); font-weight: 600; }
+  .toc a { color: var(--carbon-2); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+
+  .section { padding: 36px 56px; }
+  .section + .section { border-top: 1px solid var(--piedra); }
+  .eyebrow { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+  .section h2 { font-family: var(--fd); font-size: 28px; font-weight: 500; line-height: 1.15; margin-bottom: 6px; color: var(--carbon); }
+  .section h2 em { font-style: italic; color: var(--accent); }
+  .section > p.intro { font-size: 13.5px; color: var(--warm-d); margin-bottom: 18px; max-width: 64ch; }
+
+  .section h3 { font-family: var(--fd); font-size: 19px; font-weight: 500; color: var(--carbon); margin-top: 22px; margin-bottom: 8px; }
+  .section h3 em { font-style: italic; color: var(--accent); }
+  .section h4 { font-family: var(--fb); font-size: 13px; font-weight: 700; color: var(--carbon); margin-top: 14px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .section p { font-size: 13.5px; color: var(--carbon-2); margin-bottom: 8px; }
+  .section p b { color: var(--carbon); font-weight: 600; }
+  .section ul { margin: 8px 0 12px 0; padding-left: 0; list-style: none; }
+  .section ul li { font-size: 13px; color: var(--carbon-2); padding-left: 18px; position: relative; line-height: 1.5; margin-bottom: 5px; }
+  .section ul li::before { content: ''; position: absolute; left: 0; top: 7px; width: 8px; height: 5px; border-left: 1.5px solid var(--accent); border-bottom: 1.5px solid var(--accent); transform: rotate(-45deg); }
+  .section ul li b { color: var(--carbon); font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 16px 0; font-size: 12.5px; }
+  table th, table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--piedra); }
+  table th { background: var(--crema); font-weight: 600; color: var(--carbon); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+  table td b { color: var(--carbon); font-weight: 600; }
+  table code { background: var(--crema-d); padding: 2px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, monospace; font-size: 11.5px; color: var(--accent-d); }
+
+  .callout { background: var(--crema); border-left: 4px solid var(--accent); padding: 16px 20px; margin: 14px 0; border-radius: 4px; }
+  .callout h4 { margin-top: 0; color: var(--carbon); font-family: var(--fd); font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; margin-bottom: 4px; }
+  .callout p { font-size: 12.5px; color: var(--warm-d); margin: 0; }
+  .callout.danger { border-left-color: var(--rust); }
+  .callout.gold { border-left-color: var(--gold); }
+  .callout.green { border-left-color: var(--green); }
+
+  .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+  .role-card { background: var(--crema); border: 1px solid var(--piedra); border-radius: 4px; padding: 14px 16px; }
+  .role-card h5 { font-family: var(--fd); font-size: 15px; font-weight: 500; color: var(--carbon); margin-bottom: 4px; }
+  .role-card .tag { font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; display: block; }
+  .role-card p { font-size: 11.5px; color: var(--warm-d); margin: 0; line-height: 1.5; }
+
+  .modules { display: grid; gap: 12px; margin-top: 10px; }
+  .module { background: var(--white); border: 1px solid var(--piedra); border-radius: 4px; padding: 14px 18px; }
+  .module h4 { font-family: var(--fd); font-size: 16px; font-weight: 500; color: var(--carbon); margin: 0 0 4px 0; text-transform: none; letter-spacing: 0; }
+  .module h4 em { font-style: italic; color: var(--accent); }
+  .module p { font-size: 12.5px; color: var(--warm-d); margin: 0; }
+
+  .footer { background: var(--carbon); color: var(--crema); padding: 28px 56px; }
+  .footer .row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(245,242,237,0.6); flex-wrap: wrap; gap: 12px; }
+  .footer b { color: var(--gold); }
+
+  @media (max-width: 720px) {
+    body { padding: 12px 0; }
+    .doc { border-radius: 0; }
+    .hero, .toc, .section, .footer { padding-left: 24px; padding-right: 24px; }
+    .hero h1 { font-size: 30px; }
+    .toc ol, .role-grid { grid-template-columns: 1fr; }
+    table { font-size: 11.5px; }
+    table th, table td { padding: 6px 8px; }
+  }
+
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    html, body { background: var(--white) !important; padding: 0 !important; font-size: 10.5px; }
+    .doc { box-shadow: none !important; max-width: 100% !important; border-radius: 0 !important; }
+    .hero, .toc, .section, .footer { padding: 22px 28px; }
+    .hero h1 { font-size: 26px; }
+    .section { page-break-inside: auto; }
+    .module, .callout, .role-card, table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <section class="hero">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span>AA&nbsp;PROJECTS</span>
+    </div>
+    <div class="eye">Manual de superusuario · v3 · Mayo 2026</div>
+    <h1>Cómo operar <em>Laurean Shop</em></h1>
+    <p>Guía práctica para el superusuario (propietario de la tienda). Cubre la arquitectura real del sistema, accesos, configuracion, deploy, logos, envíos y el mapa vivo de archivos.</p>
+    <div class="meta">
+      <span>Cliente · <b>Laurean by Seong Woo</b></span>
+      <span>Versión · <b>3.0</b></span>
+      <span>Vigente · <b>Mayo 2026</b></span>
+    </div>
+  </section>
+
+  <nav class="toc">
+    <div class="eyebrow">Contenido</div>
+    <ol>
+      <li><a href="#intro">Arquitectura real del sistema</a></li>
+      <li><a href="#roles">Credenciales y matriz de accesos</a></li>
+      <li><a href="#tienda">Cómo opera la tienda en línea</a></li>
+      <li><a href="#admin">Cómo opera el panel administrativo</a></li>
+      <li><a href="#pos">Cómo opera el POS</a></li>
+      <li><a href="#envios">Envíos — integración Forza Delivery</a></li>
+      <li><a href="#logos">Logos e imágenes — cómo reemplazarlos</a></li>
+      <li><a href="#deploy">Deploy y dominio (Vercel + GoDaddy)</a></li>
+      <li><a href="#config">Configuración global</a></li>
+      <li><a href="#estructura">Mapa de estructura del proyecto</a></li>
+      <li><a href="#soporte">Mantenimiento y soporte</a></li>
+      <li><a href="#glosario">Glosario y contacto</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section class="section" id="intro">
+    <div class="eyebrow">Capítulo 01</div>
+    <h2>Arquitectura <em>real del sistema</em></h2>
+    <p class="intro">Laurean Shop es un sitio estático (HTML, CSS y JavaScript sin framework de frontend) con Supabase como backend en la nube y deploy en Vercel. No requiere instalar nada en el equipo del usuario más allá de un navegador moderno.</p>
+
+    <h3>Las páginas del sistema</h3>
+    <div class="modules">
+      <div class="module"><h4>Tienda pública <em>(Laurean.html)</em></h4><p>Catálogo, carrito y checkout para clientes finales. Accesible desde cualquier dispositivo.</p></div>
+      <div class="module"><h4>Panel administrativo <em>(admin.html)</em></h4><p>Centro de control: productos, pedidos, comisiones, vendedoras, bodegas, envíos, configuración.</p></div>
+      <div class="module"><h4>Punto de venta <em>(pos.html)</em></h4><p>Pantalla táctil para cobrar en tienda física. Lee los mismos datos que la tienda en línea.</p></div>
+      <div class="module"><h4>Login compartido <em>(login.html)</em></h4><p>Inicio de sesión único para todos los roles internos (admin, vendedor, bodega, agente_pedidos, superuser).</p></div>
+      <div class="module"><h4>Reclutamiento <em>(vendedoras.html)</em></h4><p>Landing pública para que candidatas soliciten ser vendedoras. Los formularios llegan a Admin → Solicitudes.</p></div>
+      <div class="module"><h4>Envíos <em>(envios.html)</em></h4><p>Vista de cotización de envíos Forza Delivery. También está embebida dentro de admin.html como pestaña.</p></div>
+      <div class="module"><h4>Redireccionador <em>(index.html)</em></h4><p>Redirige automáticamente a Laurean.html. Punto de entrada cuando alguien visita la raíz del dominio.</p></div>
+    </div>
+
+    <h3>Capas de la arquitectura</h3>
+    <div class="callout">
+      <h4>Backend: Supabase (Postgres en la nube)</h4>
+      <p>Toda la data del negocio vive en <b>Supabase</b>: productos, pedidos, comisiones, perfiles de usuario, inventario. La base de datos es Postgres con RLS (Row Level Security) para que cada rol solo vea lo que le corresponde. El <b>localStorage</b> del navegador funciona únicamente como caché de catálogo con TTL de 5 minutos y como fallback offline, no como fuente de datos principal.</p>
+    </div>
+    <div class="callout green">
+      <h4>PWA — acceso sin conexion</h4>
+      <p>El service worker (<code>sw.js</code>) cachea imágenes, CSS y fuentes por 7 días. La tienda puede mostrar el catálogo sin conexion usando el caché local. Requiere HTTPS (Vercel lo provee automáticamente).</p>
+    </div>
+
+    <h3>Pila tecnológica</h3>
+    <ul>
+      <li><b>Frontend:</b> HTML, CSS, JavaScript vanilla. Sin React, Vue ni bundler.</li>
+      <li><b>Backend:</b> Supabase (Auth + Postgres + Storage + Edge Functions en Deno).</li>
+      <li><b>Deploy:</b> Vercel. El "build" solo ejecuta <code>node scripts/gen-config.js</code> para generar <code>js/config.js</code> con las variables de entorno.</li>
+      <li><b>Estilos de marca:</b> <code>css/brand.css</code> define los tokens de color (<code>:root</code> variables) compartidos entre todas las páginas.</li>
+      <li><b>Envíos:</b> Forza Delivery, vía Edge Function <code>forza-proxy</code> que firma HMAC y protege la SecretKey.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section class="section" id="roles">
+    <div class="eyebrow">Capítulo 02</div>
+    <h2>Credenciales y <em>matriz de accesos</em></h2>
+    <p class="intro">El sistema usa Supabase Auth (email + contraseña). No hay cuentas seed precargadas en producción; el superusuario crea cada cuenta desde admin.html o desde el dashboard de Supabase.</p>
+
+    <h3>Los cinco roles del sistema</h3>
+    <div class="role-grid">
+      <div class="role-card"><span class="tag">superuser</span><h5>Control total</h5><p>Acceso completo incluyendo zona de peligro (reset de pedidos, comisiones, precios).</p></div>
+      <div class="role-card"><span class="tag">admin</span><h5>Gestión completa</h5><p>Productos, pedidos, vendedoras, configuración. No accede a zona de peligro.</p></div>
+      <div class="role-card"><span class="tag">vendedor</span><h5>Venta + comisiones</h5><p>Accede al POS (si tiene los flags activos) y ve su panel de comisiones en la tienda.</p></div>
+      <div class="role-card"><span class="tag">bodega</span><h5>Precio mayorista</h5><p>Ve catálogo con 30% de descuento. Para compras internas o al por mayor.</p></div>
+      <div class="role-card"><span class="tag">agente_pedidos</span><h5>Toma de pedidos</h5><p>Rol para agentes que gestionan pedidos sin acceso a administración completa.</p></div>
+      <div class="role-card"><span class="tag">PIN de descuento</span><h5>Sin login</h5><p>Permite aplicar descuento manual en checkout o POS sin cambiar de sesión. Configurado en Admin → Configuración.</p></div>
+    </div>
+
+    <h3>Matriz de acceso por superficie</h3>
+    <table>
+      <thead><tr><th>Superficie</th><th>Roles que pueden entrar</th><th>Que ven / pueden hacer</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>login.html</code></td>
+          <td><b>Todos los roles internos</b></td>
+          <td>Punto de entrada compartido. Supabase Auth valida email + contraseña y devuelve un JWT con el rol.</td>
+        </tr>
+        <tr>
+          <td><code>admin.html</code></td>
+          <td><b>admin, superuser</b></td>
+          <td>Panel completo de gestión. El superuser adicionalmente ve la "zona de peligro" (acciones destructivas e irreversibles).</td>
+        </tr>
+        <tr>
+          <td><code>pos.html</code></td>
+          <td><b>vendedor, admin, superuser, bodega</b> — con flags activos</td>
+          <td>Requiere que el perfil en Supabase tenga <code>active = true</code> y <code>can_login_pos = true</code>. Ver nota abajo.</td>
+        </tr>
+        <tr>
+          <td><code>Laurean.html</code></td>
+          <td><b>Publico</b> (sin login) + cualquier rol logueado</td>
+          <td>Catálogo y checkout. Vendedoras ven su panel de comisiones al iniciar sesión.</td>
+        </tr>
+        <tr>
+          <td><code>vendedoras.html</code></td>
+          <td><b>Publico</b> (sin login)</td>
+          <td>Landing de reclutamiento. Los formularios llegan a Admin → Solicitudes.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout danger">
+      <h4>Si no puedes entrar al POS</h4>
+      <p>La causa más común es que falte uno de los flags de perfil. Verifica en <b>Supabase Dashboard → Table Editor → tabla <code>profiles</code></b> que tu cuenta tenga <code>active = true</code>, <code>can_login_pos = true</code> y un rol permitido (<code>vendedor</code>, <code>admin</code>, <code>superuser</code> o <code>bodega</code>). Si alguno de esos tres campos es <code>false</code> o <code>null</code>, el POS rechazará el ingreso aunque la contraseña sea correcta.</p>
+    </div>
+
+    <h3>Como crear un usuario por rol</h3>
+    <p><b>Opción 1 — desde admin.html (recomendado):</b> Admin → Vendedoras/Usuarios → "Crear vendedora" o "Nuevo usuario". El sistema llama a la Edge Function <code>create-user</code> que crea la cuenta en Supabase Auth e inserta la fila en <code>profiles</code> con el rol correcto.</p>
+    <p><b>Opcion 2 — desde el dashboard de Supabase:</b> Supabase Dashboard → Authentication → Add user. Luego insertar manualmente una fila en la tabla <code>profiles</code> con el <code>id</code> del usuario, el <code>role</code> correcto, <code>active = true</code> y <code>can_login_pos</code> según corresponda.</p>
+    <p><b>Restablecer contraseña:</b> desde Supabase Dashboard → Authentication → buscar el usuario → "Send password reset" o desde Admin → Usuarios → Reset password.</p>
+
+    <div class="callout gold">
+      <h4>PIN de descuento manual</h4>
+      <p>Existe independientemente de los roles de usuario. Se configura en <b>Admin → Configuración</b>. Se recomienda cambiar el valor default el primer dia de operacion. Permite aplicar un porcentaje de descuento en checkout y POS sin necesidad de iniciar sesion con otra cuenta.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="section" id="tienda">
+    <div class="eyebrow">Capítulo 03</div>
+    <h2>Cómo opera la <em>tienda en línea</em></h2>
+    <p class="intro">La tienda pública es la cara del negocio. Funciona en cualquier dispositivo (móvil, tablet, escritorio). El catálogo se carga desde Supabase; si no hay conexión, usa el caché local del navegador.</p>
+
+    <h3>Navegación del catálogo</h3>
+    <ul>
+      <li>Cuatro categorías padre: <b>Mujer, Hombre, Kids, Ofertas</b>.</li>
+      <li>Cada una abre sus subcategorías (Blusas, T-Shirt, Pijamas, etc.).</li>
+      <li>Etiqueta <b>"Nueva"</b> automática en productos marcados como <code>is_new_arrival</code>.</li>
+      <li>Productos con <b>flash_end</b> entran a sección Ofertas con cuenta regresiva.</li>
+    </ul>
+
+    <h3>Carrito y checkout</h3>
+    <ul>
+      <li>Carrito flotante (drawer lateral) accesible desde cualquier pantalla.</li>
+      <li>Aumentar o reducir cantidad por producto.</li>
+      <li>Resumen de pedido antes de confirmar.</li>
+      <li>Cierre del pedido; el método de pago se coordina fuera de la plataforma por ahora (sin pasarela activa).</li>
+      <li>Cotización de envío Forza Delivery disponible en el checkout.</li>
+    </ul>
+
+    <h3>Multi-moneda</h3>
+    <p>Cada producto puede tener precio en <b>GTQ</b> y <b>USD</b>. La tienda muestra el que corresponda según configuración.</p>
+
+    <h3>Código referral de vendedora</h3>
+    <ul>
+      <li>El cliente puede ingresar un código tipo <code>LAU-XXXX</code> al hacer checkout.</li>
+      <li>Aplica descuento automático y registra la venta para comisión.</li>
+      <li>La vendedora ve su historial y comisiones en su panel personal dentro de la tienda.</li>
+    </ul>
+
+    <h3>Descuento manual con PIN</h3>
+    <p>Para promociones puntuales o ventas especiales: ingresar el PIN configurado en Admin y aplicar el porcentaje en el checkout. Queda registrado en el pedido.</p>
+
+    <h3>Panel del vendedor</h3>
+    <p>Si una vendedora inicia sesión, ve un botón para abrir su panel: historial de ventas referidas, comisión pendiente, comisión pagada y su código referral con botón de copiar.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="section" id="admin">
+    <div class="eyebrow">Capítulo 04</div>
+    <h2>Cómo opera el <em>panel administrativo</em></h2>
+    <p class="intro">El admin es donde sucede toda la gestión. Acceso desde login.html con cuenta admin o superuser. Sidebar con todas las secciones del sistema.</p>
+
+    <div class="modules">
+      <div class="module"><h4>Dashboard</h4><p>KPIs principales del día: ventas, pedidos, ticket promedio, mes. Lista de pedidos recientes, usuarios activos y top vendedores/productos.</p></div>
+      <div class="module"><h4>Pedidos</h4><p>Listado completo con detalles. El superuser puede borrar en bloque desde la zona de peligro (para limpiar entornos de prueba o reiniciar operación).</p></div>
+      <div class="module"><h4>Comisiones</h4><p>Cálculo automático por venta cuando hay código referral. Listado por vendedora con totales pendientes y pagados.</p></div>
+      <div class="module"><h4>Estadísticas</h4><p>Filtros por rango de fechas, top 5 productos. <b>Export CSV</b> con un clic.</p></div>
+      <div class="module"><h4>Productos</h4><p>Crear, editar y ajustar precios en USD/GTQ. Asignar categoría padre, subcategoría y bandera de nuevo ingreso. Las imágenes se suben a Supabase Storage (bucket <code>product-images</code>).</p></div>
+      <div class="module"><h4>Categorías</h4><p>Crear nuevas categorías y gestionar precios por categoría completa.</p></div>
+      <div class="module"><h4>Proveedores</h4><p>Crear, editar y listar proveedores del negocio.</p></div>
+      <div class="module"><h4>Bodegas</h4><p>Gestión de inventario por bodega. La distribución de stock por bodega se está digitalizando (tablas <code>inventory_items</code> + <code>inventory_stock</code>).</p></div>
+      <div class="module"><h4>Envíos</h4><p>Cotizar tarifa Forza Delivery directamente desde el admin. Ver Capítulo 06.</p></div>
+      <div class="module"><h4>Cotizaciones</h4><p>Generar propuestas comerciales para clientes mayoristas con descuento global y total dinámico. Imprimible directo desde el navegador.</p></div>
+      <div class="module"><h4>Vendedoras / Usuarios</h4><p>Crear vendedoras, asignar código referral automático, ver listado. También gestiona los usuarios de todos los roles via Edge Function <code>create-user</code>.</p></div>
+      <div class="module"><h4>Solicitudes</h4><p>Bandeja de solicitudes pendientes (formularios enviados desde vendedoras.html).</p></div>
+      <div class="module"><h4>Configuración</h4><p>Solo superuser/admin. Ver Capítulo 09.</p></div>
+    </div>
+
+    <div class="callout danger">
+      <h4>Zona de peligro</h4>
+      <p>Borrar todos los pedidos · Borrar todas las comisiones · Restaurar precios base. <b>Acciones irreversibles.</b> Solo el superuser tiene acceso. Usar exclusivamente en entornos de prueba o cuando se quiera reiniciar la operación desde cero.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="section" id="pos">
+    <div class="eyebrow">Capítulo 05</div>
+    <h2>Cómo opera el <em>POS</em></h2>
+    <p class="intro">El Punto de Venta es la pantalla para cobrar en tienda física. Roles que pueden acceder: vendedor, admin, superuser, bodega — siempre que el perfil tenga <code>active = true</code> y <code>can_login_pos = true</code>.</p>
+
+    <h3>Tres pestañas, un flujo</h3>
+    <div class="modules">
+      <div class="module"><h4>Venta</h4><p>Catálogo en mosaico, búsqueda y filtro por categoría padre. Toque para agregar al carrito lateral. Nombre del cliente opcional. Botón "Cobrar" muestra el total.</p></div>
+      <div class="module"><h4>Historial</h4><p>Tabla con todas las ventas del día: hora, ID, cliente, items, total, descuento, método de pago y estado.</p></div>
+      <div class="module"><h4>Cierre de caja</h4><p>Cuatro KPIs (total ventas, descuentos otorgados, canceladas, ticket promedio) y <b>Export CSV</b> del día.</p></div>
+    </div>
+
+    <h3>Métodos de pago</h3>
+    <ul><li><b>Efectivo</b></li><li><b>Tarjeta</b></li><li><b>QR</b></li></ul>
+    <p>Se elige al momento de cobrar. Queda registrado para el cierre diario.</p>
+
+    <h3>Descuento autorizado con PIN</h3>
+    <p>Para aplicar un porcentaje (1% a 50%) sobre el subtotal: ingresar el PIN configurado en Admin → Configuración. El descuento queda visible en verde y registrado en el ticket.</p>
+
+    <h3>Precios diferenciados por rol</h3>
+    <p>Si la usuaria es vendedora ve precios con −15%. Si es bodega ve precios con −30%. Admin ve precios completos. Los porcentajes son configurables desde Admin → Configuración.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="section" id="envios">
+    <div class="eyebrow">Capítulo 06</div>
+    <h2>Envíos — integración <em>Forza Delivery</em></h2>
+    <p class="intro">Laurean Shop tiene integración nativa con Forza Delivery para cotizar tarifas de envío en tiempo real. La integración protege la SecretKey de Forza en el servidor (nunca expuesta en el navegador).</p>
+
+    <h3>Como funciona la integración</h3>
+    <ul>
+      <li>El frontend llama al cliente <code>js/forza-client.js</code>, que a su vez invoca la Edge Function <code>forza-proxy</code> en Supabase.</li>
+      <li>La Edge Function firma el HMAC con la SecretKey de Forza (que vive como secret de Supabase, no en el código) y devuelve la tarifa.</li>
+      <li>Solo usuarios con rol <b>admin</b> o <b>superuser</b> pueden cotizar envíos (la Edge Function verifica el JWT).</li>
+    </ul>
+
+    <h3>Donde se usa</h3>
+    <ul>
+      <li><b>envios.html</b> — página independiente para cotizar tarifas.</li>
+      <li><b>admin.html</b> — pestaña de Envíos embebida en el panel.</li>
+      <li><b>Laurean.html</b> — cotización de envío disponible durante el checkout.</li>
+    </ul>
+
+    <h3>Parámetros para cotizar</h3>
+    <p>Se requiere código de origen (<code>HeaderCodeSource</code>), código de destino (<code>HeaderCodeDestiny</code>), peso y dimensiones del paquete. Forza devuelve las opciones de servicio disponibles con su tarifa en GTQ.</p>
+
+    <div class="callout">
+      <h4>Secretos de Forza</h4>
+      <p>La SecretKey y credenciales de Forza <b>nunca</b> van en el código fuente ni en el frontend. Viven exclusivamente como secrets de Edge Functions en Supabase (<code>supabase secrets set</code>). Si hay que rotar las credenciales, se hace desde el dashboard de Supabase sin tocar el código.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="section" id="logos">
+    <div class="eyebrow">Capítulo 07</div>
+    <h2>Logos e imágenes — <em>cómo reemplazarlos</em></h2>
+    <p class="intro">Los archivos de marca tienen nombres semánticos fijos en <code>images/brand/</code>. Para reemplazar un logo, basta subir el nuevo archivo con el mismo nombre: el sistema lo toma automáticamente en todas las páginas que lo usan.</p>
+
+    <h3>Mapa de logos de marca</h3>
+    <table>
+      <thead><tr><th>Archivo</th><th>Donde se usa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>images/brand/favicon.svg</code></td>
+          <td>Favicon (pestaña del navegador) en <b>todas</b> las páginas.</td>
+        </tr>
+        <tr>
+          <td><code>images/brand/loader.svg</code></td>
+          <td>Pantalla de carga inicial (spinner). Aparece en Laurean.html, vendedoras.html, admin.html, login.html. Diseñado para fondo oscuro.</td>
+        </tr>
+        <tr>
+          <td><code>images/brand/logo-navbar.svg</code></td>
+          <td>Logo del navbar y del login. Aparece en Laurean.html, pos.html, vendedoras.html. Diseñado para fondo claro.</td>
+        </tr>
+        <tr>
+          <td><code>images/brand/logo-oscuro.svg</code></td>
+          <td>Logo sobre fondo oscuro. Aparece en el footer de Laurean.html, pos.html, admin.html, login.html.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout green">
+      <h4>Como reemplazar un logo</h4>
+      <p>Para cambiar el logo del navbar, guarda tu archivo SVG con el nombre exacto <code>logo-navbar.svg</code> y súbelo a la carpeta <code>images/brand/</code> reemplazando el existente. El sistema lo tomará automáticamente en todas las páginas que lo usan. Mismo principio para <code>favicon.svg</code>, <code>loader.svg</code> y <code>logo-oscuro.svg</code>. Luego hacer commit y push para que el deploy de Vercel tome el nuevo archivo.</p>
+    </div>
+
+    <h3>Fotos de productos del catálogo</h3>
+    <ul>
+      <li>Las fotos de productos viven en <b>Supabase Storage</b>, bucket <code>product-images</code>.</li>
+      <li>Se suben desde Admin → Productos al crear o editar un producto (componente drag-and-drop con compresión automática).</li>
+      <li>También pueden estar en la carpeta local <code>images/</code> como respaldo o referencia.</li>
+      <li><b>Recomendacion de normalizacion:</b> para mantener armonía visual, las fotos del catálogo deben tener recorte, proporción y fondo consistentes (idealmente fondo neutro, formato 4:5 o 1:1). Fotos heterogéneas hacen que el catálogo se vea desprolijo.</li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section class="section" id="deploy">
+    <div class="eyebrow">Capítulo 08</div>
+    <h2>Deploy y dominio <em>(Vercel + GoDaddy)</em></h2>
+    <p class="intro">El sitio se despliega en Vercel. El único paso de "build" es generar <code>js/config.js</code> con las variables de entorno de Supabase. No hay bundler ni transpilación.</p>
+
+    <h3>Pasos de deploy en Vercel</h3>
+    <ul>
+      <li><b>Paso 1:</b> Conectar el repositorio GitHub a Vercel (Add New → Project → Import).</li>
+      <li><b>Paso 2:</b> Framework Preset: <i>Other</i>. El Build Command y Output ya vienen configurados en <code>vercel.json</code> (<code>node scripts/gen-config.js</code>, output <code>.</code>). No cambiar nada.</li>
+      <li><b>Paso 3:</b> En Project → Settings → Environment Variables agregar para <i>Production</i>:
+        <ul>
+          <li><code>SUPABASE_URL</code> = la URL de tu proyecto Supabase (<code>https://&lt;proyecto&gt;.supabase.co</code>).</li>
+          <li><code>SUPABASE_ANON</code> = la anon/public key (Supabase → Settings → API). Esta clave es pública por diseño; RLS la protege.</li>
+        </ul>
+      </li>
+      <li><b>Paso 4:</b> Deploy. La raíz (<code>/</code>) redirige automáticamente a <code>/Laurean.html</code>.</li>
+    </ul>
+
+    <h3>Dominio GoDaddy</h3>
+    <ul>
+      <li>Vercel → Project → Settings → Domains → agregar tu dominio.</li>
+      <li>En GoDaddy → DNS Management configurar:
+        <ul>
+          <li>Dominio raíz (<code>tudominio.com</code>): registro <b>A</b> apuntando a <code>76.76.21.21</code>.</li>
+          <li>Subdominio (<code>www</code>): registro <b>CNAME</b> apuntando a <code>cname.vercel-dns.com</code>.</li>
+        </ul>
+      </li>
+      <li>Esperar propagación DNS (minutos a ~1 hora). Vercel emite el certificado HTTPS automáticamente.</li>
+    </ul>
+
+    <h3>Restringir CORS tras fijar el dominio</h3>
+    <p>Una vez que el dominio está activo, ejecutar desde la CLI de Supabase:</p>
+    <p><code>supabase secrets set FRONTEND_ORIGIN=https://tu-dominio.com</code></p>
+    <p>Luego re-deployar las Edge Functions para que tomen el nuevo secret. Esto restringe las peticiones CORS solo al dominio de producción y permite que QPayPro acepte POSTs únicamente desde el sitio configurado.</p>
+
+    <h3>Edge Functions requeridas</h3>
+    <ul>
+      <li><code>forza-proxy</code> — cotización de envíos Forza Delivery.</li>
+      <li><code>forza-webhook</code> — webhook de eventos de Forza.</li>
+      <li><code>create-user</code> — creación de usuarios con rol desde admin.html.</li>
+      <li><code>log-visit</code> — contador público de visitas del sitio.</li>
+    </ul>
+
+    <div class="callout">
+      <h4>Service Worker y HTTPS</h4>
+      <p>El service worker (<code>sw.js</code>) requiere HTTPS para activarse. Vercel lo provee automáticamente. Al publicar una nueva versión de assets, actualizar la variable <code>VERSION</code> en <code>sw.js</code> para invalidar el caché viejo en los navegadores de los usuarios.</p>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="section" id="config">
+    <div class="eyebrow">Capítulo 09</div>
+    <h2>Configuración <em>global</em></h2>
+    <p class="intro">Desde Admin → Configuración (solo superuser/admin). Cambios aplican inmediatamente al sistema completo.</p>
+    <table>
+      <thead><tr><th>Campo</th><th>Default</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td>Descuento vendedora</td><td>15%</td><td>Precio que ve una vendedora logueada en la tienda y el POS.</td></tr>
+        <tr><td>Descuento bodega</td><td>30%</td><td>Precio que ve el rol bodega para compras internas o mayorista.</td></tr>
+        <tr><td>Descuento referido</td><td>configurable</td><td>Descuento aplicado al cliente que usa código referral en checkout.</td></tr>
+        <tr><td>Comisión vendedora</td><td>5%</td><td>Porcentaje sobre el total de la venta que se acredita como comisión.</td></tr>
+        <tr><td>PIN descuento manual</td><td>(sin default publicado)</td><td>Hasta 6 dígitos. Cambiar el primer día de operación. Aplica en checkout y POS.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 10 -->
+  <section class="section" id="estructura">
+    <div class="eyebrow">Capítulo 10</div>
+    <h2>Mapa de <em>estructura del proyecto</em></h2>
+    <p class="intro">Esta sección se mantiene viva: cada vez que se crea una página o archivo importante, se documenta aquí su localización y uso (ver <code>CLAUDE.md</code> del proyecto para la regla completa).</p>
+
+    <h3>Páginas HTML</h3>
+    <table>
+      <thead><tr><th>Archivo</th><th>Propósito</th><th>Dependencias clave</th></tr></thead>
+      <tbody>
+        <tr><td><code>Laurean.html</code></td><td>Tienda pública: catálogo, carrito, checkout, panel vendedor. Copy con la <strong>identidad oficial</strong> (ver <code>memory/marca-laurean.md</code> / vault <code>marca-laurean</code>). Incluye la vitrina "Catálogo disponible", la sección <strong>"Las colecciones"</strong> (entradas Women/Men/Kids), el selector del hero <strong>ambientado por color de categoría</strong> (con transición <em>splash</em> que muestra el lockup de la submarca al entrar, y ruteo a las páginas de submarca), barra de rol estilo <em>glass</em>, y la banda "Programa de vendedores" realzada.</td><td>auth.js, catalog-loader.js, forza-client.js, brand.css, images/categorias/</td></tr>
+        <tr><td><code>catalogo.html</code></td><td>Catálogo público completo. Lee sólo productos validados de Supabase, agrupados por criterios <em>customer-facing</em> (Novedades / categoría) — <strong>ya no</strong> agrupa por semana/mes (el período es control interno y nunca se expone al público). CTAs por toggle: "Comprar" / "Contactar a Laurean" / "Ver precio vendedor". Cada tarjeta abre <code>producto.html?id=</code>.</td><td>auth.js, supabase-client.js, catalog-loader.js</td></tr>
+        <tr><td><code>coleccion.html</code></td><td>Página de colección parametrizada por <code>?cat=hombre|mujer|kids|accesorios|ofertas</code>. Una sola plantilla ambientada por categoría vía <code>data-col</code> (paleta propia por colección dentro del marco gráfico Laurean). Filtra <code>data.products</code> por <code>parent</code>, tarjetas con placeholder de marca, cada una abre <code>producto.html?id=</code>. Logos → <code>Laurean.html#inicio</code>.</td><td>auth.js, supabase-client.js, catalog-loader.js, brand.css, brand-img.js</td></tr>
+        <tr><td><code>producto.html</code></td><td>Página de detalle de producto (estilo Dior): galería que scrollea a la izquierda, panel de detalles sticky a la derecha, guía de tallas (size chart). Precio según rol/<code>show_price</code> o CTA "Contactar a Laurean". Lee por <code>?id=</code>.</td><td>auth.js, supabase-client.js, catalog-loader.js</td></tr>
+        <tr><td><code>nosotros.html</code></td><td>Página editorial "Nosotros" con la identidad oficial (historia, tarjetas de insight/propuesta/promesa, valores, visión/misión, firma "Laurean by Seong Woo"). Destino de todos los enlaces "Nosotros" y de "Conoce la marca".</td><td>brand.css, js/site-footer.js</td></tr>
+        <tr><td><code>lookbook.html</code></td><td>Lookbook editorial público tipo revista: recorrido horizontal con slides a pantalla completa, transición firma (cross-fade + desplazamiento/escala), logo fijo, botón "Volver a la tienda" y cierre con Women/Men/Kids ambientado por paleta. Intenta leer <code>site_settings.lookbook</code> vía <code>window.LAUREAN_DB</code>; si no hay config usa un set por defecto con fotos reales de <code>images/lookbook/</code>. El enlace desde la tienda se gestiona aparte.</td><td>css/lookbook.css, js/lookbook.js, supabase-client.js, visit-tracker.js, brand.css, brand-img.js, images/lookbook/</td></tr>
+        <tr><td><code>js/site-footer.js</code></td><td><strong>Footer compartido</strong> (fuente única): inyecta el footer en todas las páginas (placeholder <code>&lt;footer id="site-footer"&gt;</code>), logo 53px, firma "by Seong Woo", y los <strong>Canales</strong> dinámicos (<code>CHANNEL_ICONS</code> + render desde <code>site_settings.social_links</code>). El admin lo usa para el selector de iconos de Canales.</td><td>auth.js (getSiteSettings)</td></tr>
+        <tr><td><code>supabase/functions/create-user/</code></td><td>Edge Function para crear/editar usuarios en la nube (auth.users + profiles) con service_role. La usan el modal de usuario y "aprobar solicitud". Maneja commission_rate, birthday y (futuro) datos de depósito.</td><td>_shared/cors.ts</td></tr>
+        <tr><td><code>laurean-women.html</code><br><code>laurean-men.html</code><br><code>laurean-kids.html</code></td><td>Pantallas editoriales de submarca (estilo Dior: imagen grande → pocas piezas → otra imagen grande). Cada una con su <strong>paleta oficial</strong> (Women rubí/rosa, Men gunmetal, Kids vino/celeste) vía <code>data-seccion</code>, su <strong>lockup</strong> de <code>images/categorias/logo-*.jpg</code> sobre banda del color de la submarca (sin halo), y filas de producto filtradas por <code>parent</code> (mujer/hombre/kids) → <code>producto.html?id=</code>. Enlazadas desde la sección "Las colecciones" de la portada, el footer, y "Ver colección" del selector del hero. CTA "Ver la colección" → <code>coleccion.html?cat=</code>.</td><td>auth.js, supabase-client.js, catalog-loader.js, brand.css, brand-img.js, images/categorias/</td></tr>
+        <tr><td><code>admin.html</code></td><td>Panel administrativo: todos los módulos de gestión. Incluye el modal "Publicar al catálogo" (precio público validado + check "Mostrar precio sin login" + categoría + galería), la curaduría de inventario con período <strong>por mes (default) o por semana (toggle del admin)</strong>, el módulo <strong>"Contenido del sitio"</strong> (editar marquee y redes sociales sin tocar código), comisión <code>%</code> por vendedor en el modal de usuario, reportes de estadísticas <strong>HTML imprimibles con marca</strong> (además de CSV), y la vista <strong>Analítica</strong> para leer visitas de <code>analytics_page_visits</code>.</td><td>auth.js, supabase-client.js, image-upload.js, forza-client.js, inventory-import.js</td></tr>
+        <tr><td><code>pos.html</code></td><td>Punto de venta táctil para tienda física. Badge "New" en posición absoluta sobre la imagen (no descuadra el layout); placeholder de marca en tarjetas sin foto; logo → <code>Laurean.html#inicio</code>.</td><td>auth.js, catalog-loader.js, brand.css, brand-img.js</td></tr>
+        <tr><td><code>login.html</code></td><td>Login compartido con Supabase Auth para todos los roles.</td><td>auth.js, supabase-client.js</td></tr>
+        <tr><td><code>vendedoras.html</code></td><td>Landing de reclutamiento de vendedoras (pública).</td><td>supabase-client.js</td></tr>
+        <tr><td><code>envios.html</code></td><td>Vista independiente de cotización de envíos Forza.</td><td>forza-client.js, auth.js</td></tr>
+        <tr><td><code>index.html</code></td><td>Redireccionador raíz → Laurean.html.</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <h3>JavaScript</h3>
+    <table>
+      <thead><tr><th>Archivo</th><th>Propósito</th><th>Usado en</th></tr></thead>
+      <tbody>
+        <tr><td><code>js/auth.js</code></td><td>Capa de sesión y roles: Supabase Auth, login/logout, createOrder, escapeHtml. Capa híbrida: Supabase + localStorage como compat.</td><td>Todas las páginas autenticadas</td></tr>
+        <tr><td><code>js/supabase-client.js</code></td><td>Inicializa <code>window.LAUREAN_DB</code> (cliente Supabase) a partir de <code>js/config.js</code>. Fallback a null si no hay config.</td><td>Todas las páginas</td></tr>
+        <tr><td><code>js/visit-tracker.js</code></td><td>Tracker público de visitas: crea <code>session_id</code> en sessionStorage, deduplica por página/sesión y llama a <code>log-visit</code>.</td><td>Laurean.html, catalogo.html, coleccion.html, nosotros.html, producto.html, laurean-women.html, laurean-men.html, laurean-kids.html, envios.html, arquitectura-laurean.html</td></tr>
+        <tr><td><code>js/catalog-loader.js</code></td><td>Hidrata <code>window.LAUREAN_DATA</code> desde Supabase (productos <code>active=true</code>, incluye <code>show_price</code>, <code>week_number</code>, <code>gallery</code>). Caché localStorage 5 min, fallback a <code>data/products.js</code>. Emite el evento <code>laurean:catalog-ready</code>.</td><td>Laurean.html, catalogo.html, producto.html, pos.html, coleccion.html</td></tr>
+        <tr><td><code>js/brand-img.js</code></td><td>Sistema de placeholder/loader de marca. Expone <code>window.LAUREAN_BRAND_IMG_SCAN(root)</code>: recorre las <code>.brand-img</code> y muestra el logo Laurean tenue de fondo mientras la imagen (<code>.brand-img-photo</code>) carga o cuando no hay foto; la foto pasa de opacidad 0→1 en <code>onload</code>.</td><td>Laurean.html, catalogo.html, producto.html, pos.html, coleccion.html</td></tr>
+        <tr><td><code>js/cursor.js</code></td><td>Cursor de marca compartido: activa punto + anillo sólo en dispositivos con hover/pointer fino, crea los nodos <code>.cursor-dot</code>/<code>.cursor-ring</code> si no existen y aplica estado hover sobre controles interactivos.</td><td>Todas las páginas públicas/admin/POS listadas en este mapa</td></tr>
+        <tr><td><code>js/lookbook.js</code></td><td>Render y navegación del lookbook: lee configuración <code>lookbook</code> desde <code>site_settings</code> cuando Supabase está disponible, normaliza slides, renderiza fallback editorial, activa IntersectionObserver, rueda/teclado/drag/swipe, progreso y hover ambiental del cierre Women/Men/Kids.</td><td>lookbook.html</td></tr>
+        <tr><td><code>js/forza-client.js</code></td><td>Cliente frontend para la Edge Function <code>forza-proxy</code>. Requiere JWT de admin/superuser.</td><td>Laurean.html, admin.html, envios.html</td></tr>
+        <tr><td><code>js/image-upload.js</code></td><td>Componente drag-and-drop para subir fotos de productos a Supabase Storage con compresión client-side.</td><td>admin.html</td></tr>
+        <tr><td><code>js/inventory-import.js</code></td><td>Inventario de mayoreo: importa el CSV del Sheet, parsea precios ES/US y rangos, UPSERT a <code>inventory_items</code>/<code>inventory_stock</code>. Deriva <strong>ambos</strong> <code>entry_month</code> (1–12) y <code>week_number</code> (ISO) de <code>entry_date</code>. La curaduría agrupa y colorea por período según el setting <code>inventory_period_mode</code> (<code>'month'</code> default / <code>'week'</code> opcional, toggle del admin con <code>window.setInventoryPeriodMode</code>); usa <code>inventory_month_legend</code> o <code>inventory_week_legend</code> según el modo. <strong>El indicador de color es control interno: nunca se renderiza en páginas públicas.</strong> El modal "Publicar al catálogo" valida el precio público antes de enviar a <code>products</code> (nunca copia costo/proveedor/precios crudos). Fallback localStorage <code>laurean_inventory_master</code>.</td><td>admin.html (pestaña Mayoreo)</td></tr>
+        <tr><td><code>js/config.js</code></td><td>Generado en build por <code>scripts/gen-config.js</code>. Contiene SUPABASE_URL y SUPABASE_ANON. En .gitignore.</td><td>supabase-client.js</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Datos y estilos</h3>
+    <table>
+      <thead><tr><th>Archivo</th><th>Propósito</th></tr></thead>
+      <tbody>
+        <tr><td><code>data/products.js</code></td><td>Catálogo estático de respaldo. Se usa cuando Supabase no está disponible o durante desarrollo sin conexión.</td></tr>
+        <tr><td><code>css/brand.css</code></td><td>Tokens de color de marca (<code>:root</code> variables CSS) compartidos por todas las páginas.</td></tr>
+        <tr><td><code>css/cursor.css</code></td><td>Estilos del cursor de marca compartido (oculta cursor nativo y dibuja punto + anillo con <code>mix-blend-mode</code> en hover/pointer fino).</td></tr>
+        <tr><td><code>css/lookbook.css</code></td><td>Estilos específicos de <code>lookbook.html</code>: layout horizontal con scroll-snap, caída vertical móvil, transición editorial, logo fijo, progreso y cierre ambientado por submarca.</td></tr>
+        <tr><td><code>images/brand/</code></td><td>Logos semánticos: favicon.svg, loader.svg, logo-navbar.svg, logo-oscuro.svg. Ver Capítulo 07.</td></tr>
+        <tr><td><code>images/lookbook/</code></td><td>Fotos, mockups y logos copiados con nombres web-safe para el fallback del lookbook editorial.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Backend y deploy</h3>
+    <table>
+      <thead><tr><th>Archivo / Ruta</th><th>Propósito</th></tr></thead>
+      <tbody>
+        <tr><td><code>supabase/schema.sql</code></td><td>Definición de tablas Postgres + políticas RLS. Fuente de verdad del esquema de datos.</td></tr>
+        <tr><td><code>supabase/seed.sql</code></td><td>Datos iniciales de ejemplo para desarrollo local.</td></tr>
+        <tr><td><code>supabase/functions/forza-proxy/</code></td><td>Edge Function que firma HMAC de Forza y cotiza envíos. Protege la SecretKey en el servidor.</td></tr>
+        <tr><td><code>supabase/functions/create-user/</code></td><td>Edge Function para crear usuarios con rol desde admin.html.</td></tr>
+        <tr><td><code>supabase/functions/forza-webhook/</code></td><td>Edge Function que recibe eventos de Forza Delivery.</td></tr>
+        <tr><td><code>supabase/functions/log-visit/</code></td><td>Edge Function pública que inserta visitas en <code>analytics_page_visits</code> con service_role. La usa <code>js/visit-tracker.js</code>.</td></tr>
+        <tr><td><code>supabase/functions/qpaypro-proxy/</code></td><td>Edge Function de pago QPayPro (modo Hosted Page / redirección). En <code>action:'create'</code> <b>crea la orden</b> del lado servidor (service_role, omite RLS) <b>revalidando precios contra <code>products</code></b> (no confía en el monto del navegador), registra el intento en <code>payments</code> y devuelve la URL de pago. <b>Activación diferida</b>: sin secrets responde <code>configured:false</code> y el checkout usa fallback. El relay (GET público) confirma con <code>get_transaction_detail</code>. Ver Capítulo 06 / vault <code>qpaypro</code>.</td></tr>
+        <tr><td><code>supabase/functions/_shared/cors.ts</code></td><td>Helper CORS compartido por todas las Edge Functions. Lee <code>FRONTEND_ORIGIN</code>.</td></tr>
+        <tr><td><code>scripts/gen-config.js</code></td><td>Script de build (Node.js) que genera <code>js/config.js</code> a partir de variables de entorno SUPABASE_URL y SUPABASE_ANON.</td></tr>
+        <tr><td><code>vercel.json</code></td><td>Configuración de Vercel: build command, headers de seguridad, CSP, redirecciones.</td></tr>
+        <tr><td><code>sw.js</code></td><td>Service Worker PWA: cachea assets por 7 días para acceso offline. Requiere HTTPS.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 11 -->
+  <section class="section" id="soporte">
+    <div class="eyebrow">Capítulo 11</div>
+    <h2>Mantenimiento <em>y soporte</em></h2>
+    <p class="intro">Qué cubre la mensualidad, cómo se piden cambios y cómo respondemos.</p>
+
+    <h3>Lo que cubre la mensualidad</h3>
+    <ul>
+      <li><b>4 a 5 cambios menores</b> por mes (textos, imágenes, ajustes de catálogo, pequeños ajustes visuales, configuración).</li>
+      <li>Base de datos y respaldos (Supabase genera respaldos automáticos diarios).</li>
+      <li>Soporte por WhatsApp y correo en horario hábil.</li>
+      <li>Monitoreo y mantenimiento preventivo.</li>
+      <li>Actualizaciones de seguridad.</li>
+    </ul>
+
+    <h3>Cambios grandes</h3>
+    <p>Funcionalidades nuevas, integraciones externas (pasarela de pago, factura electrónica, app nativa), rediseños completos o nuevas integraciones se gestionan aparte:</p>
+    <ul>
+      <li>El cliente envía la solicitud.</li>
+      <li>Evaluamos viabilidad técnica y alcance.</li>
+      <li>Entregamos cotización separada.</li>
+      <li>El cliente aprueba antes de iniciar.</li>
+    </ul>
+
+    <h3>Solicitar respaldo de información</h3>
+    <p>En horario hábil de mañana o tarde (días laborales), con tiempo de respuesta razonable. No se atienden solicitudes fuera de horario ni fines de semana.</p>
+
+    <h3>Qué hacer ante un problema</h3>
+    <ul>
+      <li>WhatsApp <b>+502 3667 2415</b> o <b>+502 5981 1242</b>.</li>
+      <li>Correo <b>ninesubset@gmail.com</b>.</li>
+      <li>Describir qué pasó, en qué pantalla y a qué hora. Si es posible, captura de pantalla.</li>
+    </ul>
+
+    <h3>Funciones en hoja de ruta (no disponibles hoy)</h3>
+    <ul>
+      <li><b>Pasarela de pago real</b> (Visa Cuotas, Recurrente, QPayPro) — en evaluación; requiere KYC y gestiones bancarias.</li>
+      <li><b>App móvil nativa</b> — la tienda y POS son responsive y funcionan como PWA; cubre el caso de uso actual.</li>
+      <li><b>Scanner de código de barras</b> — requiere hardware compatible.</li>
+      <li><b>Apertura/cierre formal de caja con monto inicial</b> — hoy KPIs retrospectivos.</li>
+      <li><b>Devoluciones y anulación de ventas</b> — flujo propio, no implementado.</li>
+      <li><b>Impresión física de ticket</b> — requiere driver de impresora térmica.</li>
+      <li><b>Stock por bodega en tiempo real</b> — las tablas están creadas (<code>inventory_items</code>, <code>inventory_stock</code>); la lógica de descuento automático está en construcción.</li>
+      <li><b>Facturación electrónica FEL</b> — integración con emisor autorizado SAT.</li>
+      <li><b>Multi-idioma</b> — hoy todo en español.</li>
+    </ul>
+
+    <div class="callout gold">
+      <h4>Primera mensualidad</h4>
+      <p>La primera mensualidad se cobra un mes después de la entrega del setup, no al firmar.</p>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="section" id="glosario">
+    <div class="eyebrow">Capítulo 12</div>
+    <h2>Glosario y <em>contacto</em></h2>
+
+    <h3>Glosario rápido</h3>
+    <table>
+      <thead><tr><th>Término</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td><b>Supabase</b></td><td>Plataforma backend en la nube (Postgres + Auth + Storage + Edge Functions). Base de datos real del sistema.</td></tr>
+        <tr><td><b>RLS</b></td><td>Row Level Security. Políticas en Postgres que limitan qué filas puede leer/escribir cada rol.</td></tr>
+        <tr><td><b>Edge Function</b></td><td>Función serverless en Deno ejecutada por Supabase. Maneja lógica de servidor sin exponer secretos.</td></tr>
+        <tr><td><b>anon key</b></td><td>Clave pública de Supabase. Es seguro que esté en el frontend porque RLS controla el acceso a los datos.</td></tr>
+        <tr><td><b>Setup</b></td><td>Pago único inicial: instalación, despliegue, configuración y capacitación.</td></tr>
+        <tr><td><b>Mensualidad</b></td><td>Pago recurrente que cubre operación, soporte y mantenimiento.</td></tr>
+        <tr><td><b>Cambio menor</b></td><td>Ajuste pequeño incluido en la mensualidad (textos, imágenes, configuración).</td></tr>
+        <tr><td><b>Cambio grande</b></td><td>Nuevo módulo o integración. Cotización aparte.</td></tr>
+        <tr><td><b>Código referral</b></td><td>Identificador único de cada vendedora (formato <code>LAU-XXXX</code>) que activa comisión al usarse en checkout.</td></tr>
+        <tr><td><b>PIN de descuento</b></td><td>Clave numérica para autorizar descuento manual en checkout o POS sin cambiar de sesión.</td></tr>
+        <tr><td><b>Zona de peligro</b></td><td>Acciones destructivas e irreversibles (borrar pedidos, reset precios). Solo superuser.</td></tr>
+        <tr><td><b>Cierre de caja</b></td><td>Resumen retrospectivo de las ventas del día en el POS con export CSV.</td></tr>
+        <tr><td><b>PWA</b></td><td>Progressive Web App. El sitio puede instalarse en el teléfono y funcionar parcialmente sin conexión.</td></tr>
+        <tr><td><b>profiles</b></td><td>Tabla en Supabase que extiende los usuarios de Auth con rol, <code>active</code>, <code>can_login_pos</code> y otros campos.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Contacto · AA Projects</h3>
+    <ul>
+      <li>WhatsApp · <b>+502 3667 2415</b></li>
+      <li>WhatsApp · <b>+502 5981 1242</b></li>
+      <li>Correo · <b>ninesubset@gmail.com</b></li>
+      <li>Facebook · <b>AA Projects</b></li>
+    </ul>
+
+    <p style="font-size: 11.5px; color: var(--warm); margin-top: 18px; font-style: italic;">Este manual refleja el estado del sistema a mayo 2026. Se actualiza en cada versión mayor.</p>
+  </section>
+
+  <section class="footer">
+    <div class="row">
+      <span>Manual · <b>MAN-LRN-2026-003</b></span>
+      <span><b>AA Projects</b> · Tecnología para negocios reales</span>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
