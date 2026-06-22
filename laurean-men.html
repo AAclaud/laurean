@@ -220,6 +220,7 @@
   <script src="js/supabase-client.js"></script>
   <script defer src="js/visit-tracker.js"></script>
   <script src="js/catalog-loader.js"></script>
+  <script defer src="js/store-actions.js"></script>
 
   <script>
     var SECCION_PARENT = 'hombre';   // categoría de catálogo de esta submarca
@@ -248,9 +249,21 @@
       var ctaLabel  = hasPrice ? 'Ver producto' : 'Contactar a Laurean';
       var ctaClass  = hasPrice ? 'prod-cta' : 'prod-cta prod-cta-contact';
       var ctaHref   = 'producto.html?id=' + encodeURIComponent(p.id);
-      var sellerBtn = hasPrice ? '' : '<button class="prod-btn-seller" onclick="handleVerPrecioVendedor(event, \'' + esc(p.id) + '\', ' + Number(p.price_gtq || 0) + ', ' + Number(p.price_usd || 0) + ')">Ver precio vendedor</button>';
+      var productUrl = new URL(ctaHref, window.location.href).href;
+      var icons     = window.STORE_ACTION_ICONS || {};
+      var favActive = (typeof storeIsFavorite === 'function' && storeIsFavorite(p.id));
+      var shareData = esc(JSON.stringify({
+        title: p.name || 'Producto Laurean',
+        text: 'Mira este producto en Laurean: ' + (p.name || 'producto'),
+        url: productUrl,
+      }));
+      var actionsHtml = '<div class="store-card-actions">'
+        + '<button type="button" class="store-icon-btn store-fav-btn' + (favActive ? ' active' : '') + '" data-store-fav-id="' + esc(p.id) + '" aria-label="' + (favActive ? 'Quitar de favoritos' : 'Agregar a favoritos') + '" aria-pressed="' + (favActive ? 'true' : 'false') + '" onclick="event.stopPropagation(); storeToggleFavorite(this.getAttribute(\'data-store-fav-id\'), this)">' + (icons.favorite || '♡') + '</button>'
+        + '<button type="button" class="store-icon-btn store-share-btn" data-store-share="' + shareData + '" aria-label="Compartir producto" onclick="event.stopPropagation(); storeShare(JSON.parse(this.getAttribute(\'data-store-share\')), event)">' + (icons.share || '↗') + '</button>'
+        + '</div>';
+      var sellerBtn = '<button class="prod-btn-seller" data-store-seller-id="' + esc(p.id) + '" onclick="handleVerPrecioVendedor(event, this.getAttribute(\'data-store-seller-id\'), ' + Number(p.price_gtq || 0) + ', ' + Number(p.price_usd || 0) + ')">Ver precio vendedor</button>';
       return '<article class="prod" onclick="location.href=\'' + ctaHref + '\'">'
-        + '<div class="prod-img brand-img">' + imgTag + badgeNew + '</div>'
+        + '<div class="prod-img brand-img">' + imgTag + badgeNew + actionsHtml + '</div>'
         + '<div class="prod-body">'
         + '<div class="prod-name">' + esc(p.name) + '</div>'
         + priceHtml
