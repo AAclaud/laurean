@@ -108,6 +108,22 @@
     }
     .main-header-title { font-size: 15px; font-weight: 500; color: var(--carbon); }
     .main-header-right { display: flex; align-items: center; gap: 12px; }
+    .header-store-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--warm-mid);
+      text-decoration: none;
+      letter-spacing: .08em;
+      transition: background 0.2s, color 0.2s;
+    }
+    .header-store-link:hover {
+      background: var(--piedra);
+      color: var(--carbon);
+    }
     .header-badge {
       font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
       padding: 4px 10px; background: var(--piedra); color: var(--warm-mid);
@@ -160,6 +176,20 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: rgba(245,242,237,0.6); }
     .td-muted { color: var(--warm-mid); }
+    .users-table { table-layout: fixed; }
+    .users-table th,
+    .users-table td { padding: 10px 12px; }
+    .users-table .user-main-cell { width: 22%; }
+    .users-table .user-contact-cell { width: 22%; overflow-wrap: anywhere; }
+    .users-table .user-role-cell { width: 14%; }
+    .users-table .user-status-cell { width: 11%; }
+    .users-table .user-metrics-cell { width: 16%; }
+    .users-table .user-gift-cell { width: 11%; }
+    .users-table .user-actions-cell { width: 92px; }
+    .user-compact { font-size: 12px; line-height: 1.4; }
+    .user-compact-line { margin-top: 3px; }
+    .user-actions { display: flex; gap: 5px; align-items: center; justify-content: flex-end; }
+    .user-actions .btn-icon { padding: 6px; }
 
     /* ─── Badges ──────────────────────────────────────────────────────────── */
     .badge {
@@ -594,7 +624,7 @@
       <span class="main-header-title" id="header-title">Dashboard</span>
       <div class="main-header-right">
         <span class="header-badge" id="header-role">—</span>
-        <a href="Laurean.html" style="font-size:12px;color:var(--warm-mid);text-decoration:none;letter-spacing:.08em">
+        <a href="Laurean.html" class="header-store-link">
           Ver tienda →
         </a>
       </div>
@@ -746,9 +776,9 @@
           </button>
         </div>
         <div class="table-wrap">
-          <table>
+          <table class="users-table">
             <thead><tr>
-              <th>Nombre</th><th>Correo</th><th>Rol</th><th>Código</th><th>Estado</th><th>Antigüedad</th><th>Usos</th><th>Comisiones</th><th>Regalo</th><th>Acciones</th>
+              <th class="user-main-cell">Usuario</th><th class="user-contact-cell">Contacto</th><th class="user-role-cell">Rol / Código</th><th class="user-status-cell">Estado</th><th class="user-metrics-cell">Métricas</th><th class="user-gift-cell">Regalo</th><th class="user-actions-cell">Acciones</th>
             </tr></thead>
             <tbody id="users-tbody"></tbody>
           </table>
@@ -778,6 +808,9 @@
           <button class="btn btn-light" onclick="exportOrdersCSV()">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar CSV
+          </button>
+          <button class="btn btn-dark" id="ord-generate-guides" onclick="generatePendingGuidesBatch()">
+            Generar guías pendientes
           </button>
         </div>
         <div class="table-wrap">
@@ -1961,7 +1994,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-light" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-dark" onclick="saveUser()">Guardar</button>
+        <button class="btn btn-dark" id="user-save-btn" onclick="saveUser()">Guardar</button>
       </div>
     </div>
   </div>
@@ -2262,6 +2295,9 @@
       // Configuración general: visible para admin y superuser
       if (SESSION.role === 'superuser' || SESSION.role === 'admin') {
         document.getElementById('btn-config').style.display = '';
+      }
+      // Lookbook: SOLO superuser
+      if (SESSION.role === 'superuser') {
         document.getElementById('btn-lookbook').style.display = '';
       }
       // Zona de Peligro: SOLO superuser
@@ -2327,6 +2363,10 @@
 
     function showView(name) {
       if (SESSION && SESSION.role === 'agente_pedidos' && name !== 'pedidos') return;
+      if (name === 'lookbook' && !lookbookCanManage()) {
+        alert('Solo un superusuario puede gestionar el Lookbook.');
+        return;
+      }
 
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
@@ -2364,7 +2404,7 @@
     let LOOKBOOK_EDIT_INDEX = null;
 
     function lookbookCanManage() {
-      return SESSION && (SESSION.role === 'superuser' || SESSION.role === 'admin');
+      return SESSION && SESSION.role === 'superuser';
     }
     function lookbookSafeUrl(value, opts) {
       if (typeof safeUrl !== 'function') return String(value || '').trim();
@@ -2409,7 +2449,10 @@
       return merged;
     }
     function loadLookbookConfig() {
-      if (!lookbookCanManage()) return;
+      if (!lookbookCanManage()) {
+        alert('Solo un superusuario puede gestionar el Lookbook.');
+        return;
+      }
       const msg = document.getElementById('lookbook-supabase-msg');
       if (msg) msg.style.display = window.LAUREAN_DB ? 'none' : '';
       const settings = (typeof getSiteSettings === 'function') ? getSiteSettings() : {};
@@ -3195,7 +3238,7 @@
 
       const tbody = document.getElementById('users-tbody');
       if (!canSee.length) {
-        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><p>Sin usuarios</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Sin usuarios</p></div></td></tr>`;
         return;
       }
       tbody.innerHTML = canSee.map(u => {
@@ -3210,39 +3253,52 @@
         const pendingCom = comms.filter(c => c.status !== 'pagado').reduce((s, c) => s + (Number(c.commissionAmount) || 0), 0);
         const gift = u.gift || {};
         const giftActive = gift.status === 'disponible';
+        const tenure = formatUserTenure(u.createdAt || u.created_at);
+        const createdDate = (u.createdAt || u.created_at) ? fmtDate(u.createdAt || u.created_at) : '';
         return `
         <tr>
-          <td><strong>${escapeHtml(u.name)}</strong>${lvl ? `<div style="font-size:11px;color:var(--warm-mid);margin-top:2px;">Nivel ${escapeHtml(lvl.level)} · ${Math.round(lvl.rate * 100)}%${(u.dpi && u.bank_account) ? ' · datos de depósito completos' : ''}</div>` : ''}</td>
-          <td class="td-muted">${escapeHtml(u.email)}</td>
-          <td><span class="badge badge-${u.role}">${roleLabel(u.role)}</span></td>
-          <td>${u.code
+          <td class="user-main-cell">
+            <strong>${escapeHtml(u.name)}</strong>
+            ${lvl ? `<div class="td-muted user-compact-line">Nivel ${escapeHtml(lvl.level)} · ${Math.round(lvl.rate * 100)}%${(u.dpi && u.bank_account) ? ' · depósito completo' : ''}</div>` : ''}
+          </td>
+          <td class="td-muted user-contact-cell user-compact">
+            ${escapeHtml(u.email)}
+            ${u.phone ? `<div class="user-compact-line">${escapeHtml(u.phone)}</div>` : ''}
+          </td>
+          <td class="user-role-cell user-compact">
+            <span class="badge badge-${u.role}">${roleLabel(u.role)}</span>
+            <div class="user-compact-line">${u.code
             ? `<span class="code-chip">${escapeHtml(u.code)}<button class="copy-btn" onclick="copyText('${jsAttr(u.code)}')" title="Copiar">
                 <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                </button></span>`
-            : '<span class="td-muted">—</span>'}
+            : '<span class="td-muted">Sin código</span>'}</div>
           </td>
-          <td><span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
-          <td><span class="td-muted">${formatUserTenure(u.createdAt || u.created_at)}</span>${(u.createdAt || u.created_at) ? `<div class="td-muted" style="font-size:11px;margin-top:2px;">${fmtDate(u.createdAt || u.created_at)}</div>` : ''}</td>
-          <td>${isVendor ? codeUses : '<span class="td-muted">—</span>'}</td>
-          <td>${isVendor ? `
-            <div style="font-size:12px;line-height:1.45;">
-              <strong>${fmtQ(totalCom)}</strong>
-              <div class="td-muted">Pagadas: ${fmtQ(paidCom)}</div>
-              <div class="td-muted">Por cobrar: ${fmtQ(pendingCom)}</div>
-            </div>` : '<span class="td-muted">—</span>'}
+          <td class="user-status-cell user-compact">
+            <span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Activo' : 'Inactivo'}</span>
           </td>
-          <td>${isVendor ? `
-            <div style="font-size:12px;line-height:1.45;min-width:150px;">
+          <td class="user-metrics-cell">
+            <div class="user-compact">
+              <strong>${escapeHtml(tenure)}</strong>
+              ${createdDate ? `<div class="td-muted user-compact-line">${escapeHtml(createdDate)}</div>` : ''}
+              ${isVendor ? `
+                <div class="td-muted user-compact-line">Usos: ${codeUses}</div>
+                <div class="user-compact-line">Comisiones: <strong>${fmtQ(totalCom)}</strong></div>
+                <div class="td-muted user-compact-line">Pagadas: ${fmtQ(paidCom)} · Por cobrar: ${fmtQ(pendingCom)}</div>
+              ` : '<div class="td-muted user-compact-line">Sin métricas de vendedor</div>'}
+            </div>
+          </td>
+          <td class="user-gift-cell">${isVendor ? `
+            <div class="user-compact">
               <span class="badge" style="background:${giftActive ? 'rgba(76,175,80,0.12)' : 'rgba(155,142,127,0.15)'};color:${giftActive ? '#388E3C' : '#9B8E7F'}">${giftActive ? 'Disponible' : 'Inactivo'}</span>
-              ${gift.productName ? `<div class="td-muted" style="margin-top:4px;">${escapeHtml(gift.productName)}</div>` : ''}
+              ${gift.productName ? `<div class="td-muted user-compact-line">${escapeHtml(gift.productName)}</div>` : ''}
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;">
                 <button class="btn btn-light" style="padding:6px 10px;font-size:10.5px" onclick="giftProduct('${jsAttr(u.id)}')">${giftActive ? 'Cambiar' : 'Activar'}</button>
                 ${giftActive ? `<button class="btn btn-light" style="padding:6px 10px;font-size:10.5px" onclick="markGiftDelivered('${jsAttr(u.id)}')">Entregado</button>` : ''}
               </div>
             </div>` : '<span class="td-muted">—</span>'}
           </td>
-          <td>
-            <div style="display:flex;gap:6px">
+          <td class="user-actions-cell">
+            <div class="user-actions">
               <button class="btn btn-icon" onclick="openUserModal('${jsAttr(u.id)}')" title="Editar">
                 <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
@@ -3370,90 +3426,108 @@
       if (e.target === document.getElementById('modal-overlay')) closeModal();
     }
 
+    let USER_SAVE_IN_PROGRESS = false;
+    function setUserSaveBusy(isBusy) {
+      const btn = document.getElementById('user-save-btn');
+      if (!btn) return;
+      btn.disabled = isBusy;
+      btn.textContent = isBusy ? 'Guardando…' : 'Guardar';
+    }
+
     async function saveUser() {
+      if (USER_SAVE_IN_PROGRESS) return;
+      USER_SAVE_IN_PROGRESS = true;
+      setUserSaveBusy(true);
       const errEl = document.getElementById('modal-error');
       errEl.classList.remove('show');
 
-      const id          = document.getElementById('modal-user-id').value;
-      const name        = document.getElementById('m-name').value.trim();
-      const email       = document.getElementById('m-email').value.trim();
-      const password    = document.getElementById('m-password').value;
-      const phone       = document.getElementById('m-phone').value.trim();
-      const role        = document.getElementById('m-role').value;
-      const code        = document.getElementById('m-code').value.trim() || null;
-      const notes       = document.getElementById('m-notes').value.trim();
-      const canLoginPOS = document.getElementById('m-can-pos').checked;
-      const bodegaIds   = Array.from(document.querySelectorAll('#m-bodega-checks input[type=checkbox]:checked')).map(c => c.value);
-      const commissionRaw = document.getElementById('m-commission').value.trim();
-      const commissionRate = (role === 'vendedor' && commissionRaw !== '')
-        ? parseFloat(commissionRaw) / 100 : null;
-      const dep = {
-        dpi:               document.getElementById('m-dpi').value.trim() || null,
-        account_holder:    document.getElementById('m-holder').value.trim() || null,
-        bank_name:         document.getElementById('m-bank').value.trim() || null,
-        bank_account_type: document.getElementById('m-acct-type').value.trim() || null,
-        bank_account:      document.getElementById('m-acct').value.trim() || null,
-      };
+      try {
+        const id          = document.getElementById('modal-user-id').value;
+        const name        = document.getElementById('m-name').value.trim();
+        const email       = document.getElementById('m-email').value.trim();
+        const password    = document.getElementById('m-password').value;
+        const phone       = document.getElementById('m-phone').value.trim();
+        const role        = document.getElementById('m-role').value;
+        const code        = document.getElementById('m-code').value.trim() || null;
+        const notes       = document.getElementById('m-notes').value.trim();
+        const canLoginPOS = document.getElementById('m-can-pos').checked;
+        const bodegaIds   = Array.from(document.querySelectorAll('#m-bodega-checks input[type=checkbox]:checked')).map(c => c.value);
+        const commissionRaw = document.getElementById('m-commission').value.trim();
+        const commissionRate = (role === 'vendedor' && commissionRaw !== '')
+          ? parseFloat(commissionRaw) / 100 : null;
+        const dep = {
+          dpi:               document.getElementById('m-dpi').value.trim() || null,
+          account_holder:    document.getElementById('m-holder').value.trim() || null,
+          bank_name:         document.getElementById('m-bank').value.trim() || null,
+          bank_account_type: document.getElementById('m-acct-type').value.trim() || null,
+          bank_account:      document.getElementById('m-acct').value.trim() || null,
+        };
 
-      if (!name || !email) { showModalError('Nombre y correo son obligatorios.'); return; }
-      if (!id && password.length < 8) { showModalError('La contraseña debe tener al menos 8 caracteres.'); return; }
-      if (id && password && password.length < 8) { showModalError('La contraseña debe tener al menos 8 caracteres.'); return; }
-      if (commissionRate != null && (isNaN(commissionRate) || commissionRate < 0 || commissionRate > 0.99)) {
-        showModalError('La comisión debe estar entre 0 y 99%.'); return;
-      }
-
-      const needsCode = role === 'vendedor' || role === 'bodega';
-      const finalCode = needsCode ? (code || genSellerCode(name)) : null;
-      const connected = !!window.LAUREAN_DB;
-
-      if (id) {
-        // ── Editar ── (local-first: siempre persiste en local)
-        const fields = { name, email, phone, notes, role, canLoginPOS, bodegaIds, commissionRate, birthday: document.getElementById('m-birthday').value || null, ...dep };
-        if (needsCode) fields.code = finalCode;
-        if (password) fields.password = password;
-        const res = updateUser(id, fields);
-        if (!res.ok) { showModalError(res.error); return; }
-        if (connected) {
-          const r = await callUserFn({
-            action: 'update', id, name, email, role, phone,
-            code: finalCode, bodega_ids: bodegaIds, can_login_pos: canLoginPOS,
-            commission_rate: commissionRate,
-            birthday: document.getElementById('m-birthday').value || null,
-            ...dep,
-            ...(password ? { password } : {}),
-          });
-          if (!r.ok) { showModalError('Guardado local, pero falló en Supabase: ' + r.error); renderUsers(); return; }
+        if (!name || !email) { showModalError('Nombre y correo son obligatorios.'); return; }
+        if (!id && password.length < 8) { showModalError('La contraseña debe tener al menos 8 caracteres.'); return; }
+        if (id && password && password.length < 8) { showModalError('La contraseña debe tener al menos 8 caracteres.'); return; }
+        if (commissionRate != null && (isNaN(commissionRate) || commissionRate < 0 || commissionRate > 0.99)) {
+          showModalError('La comisión debe estar entre 0 y 99%.'); return;
         }
-      } else {
-        // ── Crear ── (local-first: persiste en local aunque Supabase falle)
-        let newId = genId(role === 'vendedor' ? 'vnd' : role === 'bodega' ? 'bdg' : role === 'agente_pedidos' ? 'agp' : 'adm');
-        let syncWarn = '';
-        if (connected) {
-          // Fuente de verdad en línea: auth.users + profiles vía edge function.
-          const r = await callUserFn({
-            action: 'create', name, email, password, role, phone,
-            code: finalCode, bodega_ids: bodegaIds, can_login_pos: canLoginPOS,
-            commission_rate: commissionRate,
-            birthday: document.getElementById('m-birthday').value || null,
-            ...dep,
-          });
-          if (r.ok && r.data && r.data.id) {
-            newId = r.data.id;
-          } else {
-            syncWarn = 'Guardado en local, pero no se pudo crear en Supabase: ' + (r.error || 'error desconocido');
+
+        const needsCode = role === 'vendedor' || role === 'bodega';
+        const finalCode = needsCode ? (code || genSellerCode(name)) : null;
+        const connected = !!window.LAUREAN_DB;
+
+        if (id) {
+          // ── Editar ── (local-first: siempre persiste en local)
+          const fields = { name, email, phone, notes, role, canLoginPOS, bodegaIds, commissionRate, birthday: document.getElementById('m-birthday').value || null, ...dep };
+          if (needsCode) fields.code = finalCode;
+          if (password) fields.password = password;
+          const res = updateUser(id, fields);
+          if (!res.ok) { showModalError(res.error); return; }
+          if (connected) {
+            const r = await callUserFn({
+              action: 'update', id, name, email, role, phone,
+              code: finalCode, bodega_ids: bodegaIds, can_login_pos: canLoginPOS,
+              commission_rate: commissionRate,
+              birthday: document.getElementById('m-birthday').value || null,
+              ...dep,
+              ...(password ? { password } : {}),
+            });
+            if (!r.ok) { showModalError('Guardado local, pero falló en Supabase: ' + r.error); renderUsers(); return; }
           }
+        } else {
+          // ── Crear ── (local-first: persiste en local aunque Supabase falle)
+          let newId = genId(role === 'vendedor' ? 'vnd' : role === 'bodega' ? 'bdg' : role === 'agente_pedidos' ? 'agp' : 'adm');
+          let syncWarn = '';
+          if (connected) {
+            // Fuente de verdad en línea: auth.users + profiles vía edge function.
+            const r = await callUserFn({
+              action: 'create', name, email, password, role, phone,
+              code: finalCode, bodega_ids: bodegaIds, can_login_pos: canLoginPOS,
+              commission_rate: commissionRate,
+              birthday: document.getElementById('m-birthday').value || null,
+              ...dep,
+            });
+            if (r.ok && r.data && r.data.id) {
+              newId = r.data.id;
+            } else {
+              syncWarn = 'Guardado en local, pero no se pudo crear en Supabase: ' + (r.error || 'error desconocido');
+            }
+          }
+          cacheUserLocal({
+            id: newId, name, email, password: btoa(password), role, phone, notes,
+            code: finalCode, bodegaIds, canLoginPOS, commissionRate, active: true,
+            birthday: document.getElementById('m-birthday').value || null, ...dep,
+            createdAt: new Date().toISOString(),
+          });
+          if (syncWarn) { showModalError(syncWarn); renderUsers(); return; }
         }
-        cacheUserLocal({
-          id: newId, name, email, password: btoa(password), role, phone, notes,
-          code: finalCode, bodegaIds, canLoginPOS, commissionRate, active: true,
-          birthday: document.getElementById('m-birthday').value || null, ...dep,
-          createdAt: new Date().toISOString(),
-        });
-        if (syncWarn) { showModalError(syncWarn); renderUsers(); return; }
-      }
 
-      closeModal();
-      renderUsers();
+        closeModal();
+        renderUsers();
+      } catch (err) {
+        showModalError('No se pudo guardar: ' + (err?.message || err || 'error desconocido'));
+      } finally {
+        USER_SAVE_IN_PROGRESS = false;
+        setUserSaveBusy(false);
+      }
     }
 
     function showModalError(msg) {
@@ -3465,19 +3539,31 @@
     // ─── Pedidos ───────────────────────────────────────────────────────────────
     let _currentOrderId = null;
 
-    function renderOrders() {
+    function getFilteredOrders() {
       let orders = [...getOrders()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       const search  = (document.getElementById('ord-search')?.value  || '').toLowerCase();
       const from    =  document.getElementById('ord-from')?.value    || '';
       const to      =  document.getElementById('ord-to')?.value      || '';
       const status  =  document.getElementById('ord-status-filter')?.value || '';
       const origin  =  document.getElementById('ord-origin-filter')?.value || '';
-      if (search)  orders = orders.filter(o => (o.customerName||o.userName||'').toLowerCase().includes(search) || (o.customerPhone||o.userPhone||'').includes(search) || o.id.toLowerCase().includes(search));
+      if (search)  orders = orders.filter(o =>
+        (o.customerName||o.userName||'').toLowerCase().includes(search) ||
+        (o.customerPhone||o.userPhone||'').includes(search) ||
+        String(o.id || o.order_number || '').toLowerCase().includes(search)
+      );
       if (from)    orders = orders.filter(o => o.createdAt >= from);
       if (to)      orders = orders.filter(o => o.createdAt <= to + 'T23:59:59');
       if (status)  orders = orders.filter(o => o.status === status);
-      if (origin)  orders = orders.filter(o => (o.origin || 'store') === origin);
+      if (origin)  orders = orders.filter(o => origin === 'pos' ? isPosOrder(o) : !isPosOrder(o));
+      return orders;
+    }
 
+    function getPendingGuideOrders() {
+      return getFilteredOrders().filter(o => !isPosOrder(o) && !(o.forza_guide_number || o.forzaGuideNumber));
+    }
+
+    function renderOrders() {
+      const orders = getFilteredOrders();
       const tbody  = document.getElementById('orders-tbody');
       if (!orders.length) {
         tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><p>Sin pedidos</p></div></td></tr>`;
@@ -3532,6 +3618,49 @@
       a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
       a.download = `laurean-pedidos-${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
+    }
+
+    async function generatePendingGuidesBatch() {
+      const pending = getPendingGuideOrders();
+      if (!pending.length) return alert('No hay pedidos filtrados pendientes de guía.');
+      if (!window.Forza) return alert('Cliente Forza no disponible.');
+      if (!confirm(`Se generarán ${pending.length} guía(s) Forza para los pedidos filtrados que no son POS y no tienen guía. ¿Continuar?`)) return;
+
+      const btn = document.getElementById('ord-generate-guides');
+      const prevText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Generando…';
+      }
+
+      const ok = [];
+      const failed = [];
+      try {
+        for (const order of pending) {
+          const orderId = order.supabase_id || order.id;
+          try {
+            const resolved = await envResolveOrderForGuide(orderId);
+            const source = resolved?.dbOrder || resolved?.localOrder || order;
+            const draft = envBuildGuideDraftFromOrder(source, orderId);
+            if (draft.missing.length) throw new Error('Faltan datos: ' + draft.missing.join(', '));
+            const result = await envCreateGuideWithData(draft);
+            ok.push({ order, result });
+          } catch (err) {
+            failed.push({ order, error: err?.message || String(err) });
+          }
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText || 'Generar guías pendientes';
+        }
+      }
+
+      renderOrders();
+      const failDetail = failed.length
+        ? '\n\nFallidos:\n' + failed.map(x => `- ${String(x.order.id || x.order.order_number || '').slice(-10)}: ${x.error}`).join('\n')
+        : '';
+      alert(`Guías generadas: ${ok.length}\nFallidos: ${failed.length}${failDetail}`);
     }
 
     // ─── Modal detalle de pedido ──────────────────────────────────────────────
@@ -6892,12 +7021,140 @@
       envSetMsg('ec-msg','','');
       document.getElementById('ec-result').innerHTML = '';
     }
+
+    async function envGetFromAddress() {
+      let fromBodega = null;
+      if (window.LAUREAN_DB) {
+        const { data } = await window.LAUREAN_DB.from('bodegas').select('*').eq('active', true).limit(1).maybeSingle();
+        fromBodega = data;
+      }
+      return {
+        name:               fromBodega?.name || 'Laurean Shop',
+        phone:              fromBodega?.phone || '00000000',
+        email:              fromBodega?.email || 'envios@laurean.gt',
+        HeaderCodeTownship: fromBodega?.township_code || '0101',
+        address1:           fromBodega?.address || 'Zona 10, Ciudad de Guatemala',
+        address2:           '',
+        city:               fromBodega?.city || 'GUATEMALA',
+      };
+    }
+
+    function envBuildGuideParams(data, fromAddress) {
+      const parcel = {
+        length:      10,
+        width:       10,
+        height:      10,
+        weight:      Math.max(1, Math.round(data.weight || 1)),
+        amount:      String(data.value || 100),
+        currency:    'GTQ',
+        description: data.content || 'Producto Laurean',
+        fragil:      'false',
+      };
+      const orderRefId = data.orderId || ('ORD' + Date.now());
+      const shortNum   = parseInt(String(orderRefId).replace(/\D/g,'').slice(-7)) || Math.floor(Math.random()*9000000)+1000000;
+      const isCod = data.type === 'COD';
+      return {
+        DateOfSale:         (data.dateVal || new Date().toISOString().slice(0,16)).replace('T',' ').slice(0,16),
+        ContentDescription: data.content || 'Producto Laurean',
+        to_address: {
+          name:               data.toName,
+          phone:              data.toPhone,
+          email:              '',
+          contact:            data.toName,
+          HeaderCodeTownship: data.toTownCode,
+          address1:           data.toAddr,
+          address2:           '',
+          city:               String(data.toTownName || '').toUpperCase(),
+        },
+        from_address:        fromAddress,
+        parcels:             [parcel],
+        Ticket_Number:       String(shortNum),
+        Order_Number:        shortNum,
+        IdCountry:           'GT',
+        idDeliveryOption:    '2',
+        descriptionDelivery: 'OFICINA',
+        // NO mandamos CodeOfReference: lo inyecta la edge function desde env (vinculado al CodApp).
+        CountPieces:         1,
+        TotalWeight:         String(parcel.weight),
+        TotalValue:          String(data.value || 100),
+        Currency:            'GTQ',
+        ProductInsuranceAmount: 0,
+        InsuranceCurrency:   'GTQ',
+        Collected:           false,
+        // ATENCIÓN: Forza usa "Ammount" con doble m (typo de su API)
+        // Cuenta de liquidación COD: Banco Industrial — Seong Woo, S.A. — Monetaria Q
+        // BankId "33" = Banco Industrial en el catálogo Forza (verificar con Forza.listBanks() si cambia)
+        COD: isCod ? {
+          CashOnDelivery:         true,
+          AmmountCashOnDelivery:  String(data.codAmt || 0),
+          CashOnDeliveryCurrency: 'GTQ',
+          BankAccountName:        'Seong Woo, S.A.',
+          BankId:                 '33',
+          BankAccountType:        'MONETARIA',
+          BankAccountId:          '013-023321-6',
+        } : {
+          CashOnDelivery: false,
+        },
+        BillAccountNumber:   '',
+        PaymentMethod:       '',
+        Note:                '',
+      };
+    }
+
+    function envParseCreatedGuide(r) {
+      const arr = r?.data?.Response?.ObjectValue;
+      const item = Array.isArray(arr) ? arr[0] : (arr || envInner(r));
+      const tracking = item?.TrackingNumber || item?.GuideNumber || '';
+      const m = String(tracking).match(/^([A-Z]+)(\d+)$/);
+      const serie  = m ? m[1] : (item?.GuideSerie || 'FD');
+      const number = m ? m[2] : (item?.GuideNumber || tracking || '—');
+      return {
+        serie,
+        number: String(number),
+        labelUrl: (Array.isArray(item?.PDF) ? item.PDF[0] : item?.PDF) || item?.LabelUrl || item?.UrlLabel || null,
+        price: item?.Price ? `Q ${item.Price}` : '',
+        deliveryDate: item?.DeliveryDate || '',
+      };
+    }
+
+    async function envApplyGuideToOrder(orderId, guide) {
+      if (orderId && window.LAUREAN_DB) {
+        await window.LAUREAN_DB.from('orders').update({
+          forza_guide_serie:  guide.serie,
+          forza_guide_number: guide.number,
+          forza_label_url:    guide.labelUrl,
+          status:             'en_preparacion',
+        }).eq('id', orderId);
+      }
+      if (orderId) {
+        const localOrders = getOrders();
+        const localIdx = localOrders.findIndex(o => o.id === orderId || o.supabase_id === orderId);
+        if (localIdx !== -1) {
+          localOrders[localIdx].forza_guide_serie = guide.serie;
+          localOrders[localIdx].forza_guide_number = guide.number;
+          localOrders[localIdx].forza_label_url = guide.labelUrl;
+          localOrders[localIdx].status = 'en_preparacion';
+          saveOrders(localOrders);
+        }
+      }
+    }
+
+    async function envCreateGuideWithData(data) {
+      if (!window.Forza) throw new Error('Cliente Forza no disponible.');
+      const fromAddress = await envGetFromAddress();
+      const params = envBuildGuideParams(data, fromAddress);
+      const r = await Forza.createGuide(params);
+      if (!r.ok) throw new Error(r.message || r.error || 'No se pudo crear la guía.');
+      const guide = envParseCreatedGuide(r);
+      await envApplyGuideToOrder(data.orderId, guide);
+      return { ...guide, orderId: data.orderId };
+    }
+
     async function envCreate() {
       envSetMsg('ec-msg','','');
       if (!window.Forza) return envSetMsg('ec-msg','Cliente Forza no disponible.', 'error');
       const isCod   = document.getElementById('ec-type').value === 'COD';
       const dateVal = document.getElementById('ec-date').value || new Date().toISOString().slice(0,16);
-      const fechaForza = dateVal.replace('T',' ').slice(0,16);
       const weight  = parseFloat(document.getElementById('ec-weight').value) || 1;
       const value   = parseFloat(document.getElementById('ec-value').value) || 0;
       const codAmt  = isCod ? (parseFloat(document.getElementById('ec-cod').value) || 0) : 0;
@@ -6911,131 +7168,37 @@
         return envSetMsg('ec-msg','Faltan datos del destinatario (nombre, teléfono, dirección, municipio).', 'error');
       }
 
-      // Forza espera estructura completa con from_address, parcels, COD, etc.
-      // from_address: usar primera bodega activa de Supabase, fallback a hardcoded sandbox.
-      let fromBodega = null;
-      if (window.LAUREAN_DB) {
-        const { data } = await window.LAUREAN_DB.from('bodegas').select('*').eq('active', true).limit(1).maybeSingle();
-        fromBodega = data;
-      }
-      const fromAddress = {
-        name:               fromBodega?.name || 'Laurean Shop',
-        phone:              fromBodega?.phone || '00000000',
-        email:              fromBodega?.email || 'envios@laurean.gt',
-        HeaderCodeTownship: fromBodega?.township_code || '0101',
-        address1:           fromBodega?.address || 'Zona 10, Ciudad de Guatemala',
-        address2:           '',
-        city:               fromBodega?.city || 'GUATEMALA',
-      };
-
-      const parcel = {
-        length:      10,
-        width:       10,
-        height:      10,
-        weight:      Math.max(1, Math.round(weight)),
-        amount:      String(value || 100),
-        currency:    'GTQ',
-        description: document.getElementById('ec-content').value || 'Producto Laurean',
-        fragil:      'false',
-      };
-
-      // Identificadores del pedido: Ticket_Number (string) y Order_Number (int corto)
-      const orderRefId = document.getElementById('ec-order-id').value || ('ORD' + Date.now());
-      const shortNum   = parseInt(orderRefId.replace(/\D/g,'').slice(-7)) || Math.floor(Math.random()*9000000)+1000000;
-      const params = {
-        DateOfSale:         fechaForza,
-        ContentDescription: document.getElementById('ec-content').value || 'Producto Laurean',
-        to_address: {
-          name:               toName,
-          phone:              toPhone,
-          email:              '',
-          contact:            toName,
-          HeaderCodeTownship: toTownCode,
-          address1:           toAddr,
-          address2:           '',
-          city:               toTownName.toUpperCase(),
-        },
-        from_address:        fromAddress,
-        parcels:             [parcel],
-        Ticket_Number:       String(shortNum),
-        Order_Number:        shortNum,
-        IdCountry:           'GT',
-        idDeliveryOption:    '2',
-        descriptionDelivery: 'OFICINA',
-        // NO mandamos CodeOfReference: lo inyecta la edge function desde env (vinculado al CodApp).
-        CountPieces:         1,
-        TotalWeight:         String(parcel.weight),
-        TotalValue:          String(value || 100),
-        Currency:            'GTQ',
-        ProductInsuranceAmount: 0,
-        InsuranceCurrency:   'GTQ',
-        Collected:           false,
-        // ATENCIÓN: Forza usa "Ammount" con doble m (typo de su API)
-        // Cuenta de liquidación COD: Banco Industrial — Seong Woo, S.A. — Monetaria Q
-        // BankId "33" = Banco Industrial en el catálogo Forza (verificar con Forza.listBanks() si cambia)
-        COD: isCod ? {
-          CashOnDelivery:         true,
-          AmmountCashOnDelivery:  String(codAmt),
-          CashOnDeliveryCurrency: 'GTQ',
-          BankAccountName:        'Seong Woo, S.A.',
-          BankId:                 '33',
-          BankAccountType:        'MONETARIA',
-          BankAccountId:          '013-023321-6',
-        } : {
-          CashOnDelivery: false,
-        },
-        BillAccountNumber:   '',
-        PaymentMethod:       '',
-        Note:                '',
-      };
-
       envSetMsg('ec-msg','Generando guía…','info');
-      const r = await Forza.createGuide(params);
-      if (!r.ok) return envSetMsg('ec-msg','Error: ' + escapeHtml(r.message || r.error || ''), 'error');
-      // Forza crear-guía devuelve Response.ObjectValue como ARRAY con la guía
-      const arr = r?.data?.Response?.ObjectValue;
-      const item = Array.isArray(arr) ? arr[0] : (arr || envInner(r));
-      const tracking = item?.TrackingNumber || item?.GuideNumber || '';
-      // TrackingNumber tipo "FD30848956" → separar serie y número
-      const m = String(tracking).match(/^([A-Z]+)(\d+)$/);
-      const serie  = m ? m[1] : (item?.GuideSerie || 'FD');
-      const number = m ? m[2] : (item?.GuideNumber || tracking || '—');
-      const labelUrl = (Array.isArray(item?.PDF) ? item.PDF[0] : item?.PDF)
-                    || item?.LabelUrl || item?.UrlLabel || null;
-      const price = item?.Price ? `Q ${item.Price}` : '';
-      const deliveryDate = item?.DeliveryDate || '';
-
-      // Si vino de un pedido, hacer UPDATE en orders
       const orderId = document.getElementById('ec-order-id').value;
-      if (orderId && window.LAUREAN_DB) {
-        await window.LAUREAN_DB.from('orders').update({
-          forza_guide_serie:  serie,
-          forza_guide_number: String(number),
-          forza_label_url:    labelUrl,
-          status:             'en_preparacion',
-        }).eq('id', orderId);
-      }
-      if (orderId) {
-        const localOrders = getOrders();
-        const localIdx = localOrders.findIndex(o => o.id === orderId || o.supabase_id === orderId);
-        if (localIdx !== -1) {
-          localOrders[localIdx].forza_guide_serie = serie;
-          localOrders[localIdx].forza_guide_number = String(number);
-          localOrders[localIdx].forza_label_url = labelUrl;
-          localOrders[localIdx].status = 'en_preparacion';
-          saveOrders(localOrders);
-        }
+      let guide;
+      try {
+        guide = await envCreateGuideWithData({
+          type: isCod ? 'COD' : 'STD',
+          dateVal,
+          weight,
+          value,
+          codAmt,
+          toName,
+          toPhone,
+          toAddr,
+          toTownCode,
+          toTownName,
+          content: document.getElementById('ec-content').value || 'Producto Laurean',
+          orderId,
+        });
+      } catch (err) {
+        return envSetMsg('ec-msg','Error: ' + escapeHtml(err?.message || err || ''), 'error');
       }
 
       envSetMsg('ec-msg','Guía creada correctamente.', 'success');
       document.getElementById('ec-result').innerHTML = `
         <div class="env-result">
-          <div class="env-result-row"><span class="lbl">Tracking</span><span class="val big">${escapeHtml(serie)}-${escapeHtml(String(number))}</span></div>
-          ${price ? `<div class="env-result-row"><span class="lbl">Precio</span><span class="val">${escapeHtml(price)}</span></div>` : ''}
-          ${deliveryDate ? `<div class="env-result-row"><span class="lbl">Entrega estimada</span><span class="val">${escapeHtml(deliveryDate)}</span></div>` : ''}
-          <div class="env-result-row"><span class="lbl">Etiqueta PDF</span><span class="val">${labelUrl ? `<a href="${escapeAttr(labelUrl)}" target="_blank" style="color:var(--vino);text-decoration:underline">Descargar PDF →</a>` : '—'}</span></div>
+          <div class="env-result-row"><span class="lbl">Tracking</span><span class="val big">${escapeHtml(guide.serie)}-${escapeHtml(guide.number)}</span></div>
+          ${guide.price ? `<div class="env-result-row"><span class="lbl">Precio</span><span class="val">${escapeHtml(guide.price)}</span></div>` : ''}
+          ${guide.deliveryDate ? `<div class="env-result-row"><span class="lbl">Entrega estimada</span><span class="val">${escapeHtml(guide.deliveryDate)}</span></div>` : ''}
+          <div class="env-result-row"><span class="lbl">Etiqueta PDF</span><span class="val">${guide.labelUrl ? `<a href="${escapeAttr(guide.labelUrl)}" target="_blank" style="color:var(--vino);text-decoration:underline">Descargar PDF →</a>` : '—'}</span></div>
           ${orderId ? `<div class="env-result-row"><span class="lbl">Pedido enlazado</span><span class="val">${escapeHtml(orderId.slice(-8))}</span></div>` : ''}
-          ${labelUrl ? `<div style="margin-top:12px"><button class="env-btn primary" onclick="window.open('${jsAttr(labelUrl)}','_blank')">Imprimir guía</button></div>` : ''}
+          ${guide.labelUrl ? `<div style="margin-top:12px"><button class="env-btn primary" onclick="window.open('${jsAttr(guide.labelUrl)}','_blank')">Imprimir guía</button></div>` : ''}
         </div>`;
       renderOrders();
     }
@@ -7264,7 +7427,7 @@
 
     // ─── Hook: abrir envíos desde un pedido (B2) ─────────────
     // Llamada desde la tabla de pedidos. Pre-llena el form de crear guía.
-    async function envCreateGuideFromOrder(orderId) {
+    async function envResolveOrderForGuide(orderId) {
       const localOrder = getOrders().find(o => o.id === orderId || o.supabase_id === orderId);
       let dbOrder = null;
       if (window.LAUREAN_DB) {
@@ -7275,10 +7438,10 @@
           if (!error && data) { dbOrder = data; break; }
         }
       }
-      const o = dbOrder || localOrder;
-      if (!o) return alert('Pedido no encontrado.');
-      if (isPosOrder(o)) return alert('Los pedidos POS no generan guía Forza.');
+      return { localOrder, dbOrder };
+    }
 
+    function envBuildGuideDraftFromOrder(o, orderId) {
       const orderNumber = o.order_number || o.orderNumber || '';
       const customerName = o.customer_name || o.customerName || o.userName || '';
       const customerPhone = o.customer_phone || o.customerPhone || o.userPhone || '';
@@ -7290,30 +7453,61 @@
         ? items.map(it => `${it.name || it.id || 'Producto'} x${it.qty || 1}`).join(', ').slice(0, 50)
         : `Pedido ${orderNumber || String(o.id || orderId).slice(-8)}`.slice(0, 50);
       const total = Math.round(Number(o.total_gtq || o.totalGtq || o.total || 0));
-      const guideOrderId = dbOrder?.id || localOrder?.supabase_id || o.id || orderId;
+      const guideOrderId = orderId || o.supabase_id || o.id;
       const missing = [];
       if (!customerName) missing.push('nombre del cliente');
       if (!customerPhone) missing.push('teléfono');
       if (!customerAddress) missing.push('dirección');
       if (!townshipCode) missing.push('municipio Forza');
       if (!total) missing.push('total/valor declarado');
+      const isCod = (o.payment_method || o.pay_method || '').toLowerCase() === 'cod';
+      return {
+        orderId: guideOrderId,
+        orderNumber,
+        customerName,
+        customerPhone,
+        customerAddress,
+        townshipCode,
+        townshipName,
+        content,
+        total,
+        missing,
+        type: isCod ? 'COD' : 'STD',
+        codAmt: isCod ? total : 0,
+        dateVal: (o.created_at || o.createdAt || new Date().toISOString()).slice(0,16),
+        weight: 1,
+        value: total,
+        toName: customerName,
+        toPhone: customerPhone,
+        toAddr: customerAddress,
+        toTownCode: townshipCode,
+        toTownName: townshipName,
+      };
+    }
+
+    async function envCreateGuideFromOrder(orderId) {
+      const { localOrder, dbOrder } = await envResolveOrderForGuide(orderId);
+      const o = dbOrder || localOrder;
+      if (!o) return alert('Pedido no encontrado.');
+      if (isPosOrder(o)) return alert('Los pedidos POS no generan guía Forza.');
+      const draft = envBuildGuideDraftFromOrder(o, dbOrder?.id || localOrder?.supabase_id || o.id || orderId);
 
       showView('envios');
       // Esperar a que la vista monte
       setTimeout(() => {
         envSwitchTab('create');
-        document.getElementById('ec-order-id').value = guideOrderId;
-        document.getElementById('ec-from-order').textContent = `· Desde pedido ${orderNumber || String(o.id || orderId).slice(-8)}`;
+        document.getElementById('ec-order-id').value = draft.orderId;
+        document.getElementById('ec-from-order').textContent = `· Desde pedido ${draft.orderNumber || String(o.id || orderId).slice(-8)}`;
         document.getElementById('ec-from-order').style.display = '';
-        document.getElementById('ec-name').value    = customerName;
-        document.getElementById('ec-phone').value   = customerPhone;
-        document.getElementById('ec-address').value = customerAddress;
-        document.getElementById('ec-content').value = content;
-        document.getElementById('ec-value').value   = total || '';
-        document.getElementById('ec-date').value    = (o.created_at || o.createdAt || new Date().toISOString()).slice(0,16);
-        if (townshipCode) {
+        document.getElementById('ec-name').value    = draft.customerName;
+        document.getElementById('ec-phone').value   = draft.customerPhone;
+        document.getElementById('ec-address').value = draft.customerAddress;
+        document.getElementById('ec-content').value = draft.content;
+        document.getElementById('ec-value').value   = draft.total || '';
+        document.getElementById('ec-date').value    = draft.dateVal;
+        if (draft.townshipCode) {
           // Si tenemos código de municipio (capturado en el checkout), setearlo directo
-          document.getElementById('ec-town').innerHTML = `<option value="${escapeAttr(townshipCode)}" selected>${escapeHtml(townshipName)}</option>`;
+          document.getElementById('ec-town').innerHTML = `<option value="${escapeAttr(draft.townshipCode)}" selected>${escapeHtml(draft.townshipName)}</option>`;
           document.getElementById('ec-town').disabled = false;
         } else {
           // Pedido sin municipio: avisar para completarlo manualmente antes de generar
@@ -7321,20 +7515,15 @@
           if (fo) fo.textContent += ' · sin municipio Forza';
         }
         // Default tipo: si payment es 'cod' → COD
-        if ((o.payment_method || o.pay_method || '').toLowerCase() === 'cod') {
-          document.getElementById('ec-type').value = 'COD';
-          document.getElementById('ec-cod').value = total || '';
-        } else {
-          document.getElementById('ec-type').value = 'STD';
-          document.getElementById('ec-cod').value = 0;
-        }
+        document.getElementById('ec-type').value = draft.type;
+        document.getElementById('ec-cod').value = draft.codAmt || 0;
         document.getElementById('ec-result').innerHTML = '';
         envSetMsg(
           'ec-msg',
-          missing.length
-            ? 'Faltan datos para generar la guía desde este pedido: ' + missing.join(', ') + '.'
+          draft.missing.length
+            ? 'Faltan datos para generar la guía desde este pedido: ' + draft.missing.join(', ') + '.'
             : 'Datos del pedido cargados. Puedes generar la guía sin recapturar.',
-          missing.length ? 'error' : 'success'
+          draft.missing.length ? 'error' : 'success'
         );
       }, 150);
     }

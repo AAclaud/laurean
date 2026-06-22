@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
 
       const fields: Record<string, unknown> = {};
       ['name', 'phone', 'code', 'role', 'bodega_ids', 'commission_rate', 'birthday',
-       'dpi', 'bank_name', 'bank_account', 'bank_account_type', 'account_holder'].forEach((k) => {
+       'dpi', 'bank_name', 'bank_account', 'bank_account_type', 'account_holder', 'gift'].forEach((k) => {
         if (body[k] !== undefined) fields[k] = body[k];
       });
       if (body.can_login_pos !== undefined) fields.can_login_pos = body.can_login_pos;
