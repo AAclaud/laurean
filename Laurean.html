@@ -192,6 +192,48 @@
     .fav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; }
     .fav-btn.active { color: var(--vino); }
     .fav-btn.active svg { fill: currentColor; }
+    .share-btn {
+      position: absolute;
+      top: 12px; right: 54px;
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(245,242,237,0.92);
+      color: var(--carbon);
+      z-index: 2;
+      transition: color 0.2s, background 0.2s, transform 0.2s;
+    }
+    .share-btn:hover { background: var(--crema); color: var(--vino); transform: scale(1.04); }
+    .share-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+    .share-menu {
+      position: fixed;
+      z-index: 10000;
+      display: none;
+      min-width: 184px;
+      padding: 8px;
+      background: var(--white);
+      border: 1px solid rgba(25,26,24,0.1);
+      border-radius: 10px;
+      box-shadow: 0 18px 40px rgba(25,26,24,0.18);
+    }
+    .share-menu.open { display: block; }
+    .share-menu a,
+    .share-menu button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      color: var(--carbon);
+      font-family: var(--fb);
+      font-size: 12.5px;
+      text-align: left;
+      transition: background 0.18s var(--ease), color 0.18s var(--ease);
+    }
+    .share-menu a:hover,
+    .share-menu button:hover { background: var(--piedra); color: var(--vino); }
+    .share-menu svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; }
     .seller-hook {
       display: inline-flex;
       align-items: center;
@@ -928,7 +970,28 @@
       border-color: rgba(255,255,255,0.4);
       transform: translateY(-2px);
     }
+    .footer-share-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 38px; height: 38px;
+      padding: 0 13px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+    }
+    .footer-share-btn:hover {
+      color: var(--white);
+      border-color: rgba(255,255,255,0.4);
+      transform: translateY(-2px);
+    }
     .footer-social svg { width: 18px; height: 18px; fill: currentColor; }
+    .footer-share-btn svg { fill: none; stroke: currentColor; stroke-width: 1.7; }
     .footer-tagline {
       font-size: 14px;
       color: rgba(255,255,255,0.38);
@@ -3033,6 +3096,123 @@
       tiktok:    '<svg viewBox="0 0 24 24"><path d="M16.6 5.82a4.28 4.28 0 0 1-1.06-2.82h-3.1v12.2a2.45 2.45 0 0 1-2.45 2.36 2.45 2.45 0 0 1 0-4.9c.26 0 .5.04.74.12v-3.16a5.6 5.6 0 0 0-.74-.05 5.56 5.56 0 1 0 5.56 5.56V9.01a7.3 7.3 0 0 0 4.2 1.33V7.24a4.28 4.28 0 0 1-3.15-1.42Z"/></svg>',
       whatsapp:  '<svg viewBox="0 0 24 24"><path d="M12.04 2a9.9 9.9 0 0 0-8.5 14.96L2 22l5.18-1.36A9.9 9.9 0 1 0 12.04 2Zm0 1.8a8.1 8.1 0 0 1 6.86 12.4l-.31.5.66 2.41-2.47-.65-.48.28a8.1 8.1 0 1 1-4.26-15.24Zm-3.1 4.07c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.69 2.7 4.18 3.68 2.08.82 2.5.66 2.95.62.45-.04 1.46-.6 1.66-1.18.2-.58.2-1.08.14-1.18-.06-.1-.22-.16-.46-.28-.24-.12-1.46-.72-1.68-.8-.22-.08-.38-.12-.54.12-.16.24-.62.8-.76.96-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.42-1.34-1.66-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.34-.76-1.82-.18-.4-.36-.4-.52-.4Z"/></svg>',
     };
+
+    const SHARE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4.2M8.6 13.4l6.8 4.2"/></svg>';
+    const COPY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    let _shareMenuPayload = null;
+
+    function getProductShareUrl(id) {
+      return new URL('producto.html?id=' + encodeURIComponent(id), window.location.href).href;
+    }
+
+    function shareButtonHtml(id) {
+      return `<button class="share-btn" aria-label="Compartir producto" title="Compartir" onclick="event.stopPropagation();shareProductById('${jsAttr(id)}', event)">${SHARE_ICON}</button>`;
+    }
+
+    function footerShareButtonHtml() {
+      return '<button class="footer-share-btn" id="footer-share-btn" type="button" onclick="shareCurrentPage(event)" aria-label="Compartir página">' + SHARE_ICON + '<span>Compartir</span></button>';
+    }
+
+    function normalizeSharePayload(payload) {
+      return {
+        title: payload.title || document.title || 'Laurean',
+        text: payload.text || 'Descubre Laurean Shop.',
+        url: payload.url || window.location.href.split('#')[0],
+      };
+    }
+
+    async function shareContent(payload, evt) {
+      const data = normalizeSharePayload(payload || {});
+      const anchor = evt && evt.currentTarget;
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      if (navigator.share) {
+        try {
+          await navigator.share(data);
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+      openShareMenu(data, anchor);
+    }
+
+    function shareCurrentPage(evt) {
+      shareContent({
+        title: document.title || 'Laurean Shop',
+        text: 'Descubre Laurean Shop.',
+        url: window.location.href.split('#')[0],
+      }, evt);
+    }
+
+    function shareProductById(id, evt) {
+      const p = getProductById(String(id));
+      shareContent({
+        title: p ? p.name : 'Producto Laurean',
+        text: p ? 'Mira este producto en Laurean: ' + p.name : 'Mira este producto en Laurean.',
+        url: getProductShareUrl(id),
+      }, evt);
+    }
+
+    function ensureShareMenu() {
+      let menu = document.getElementById('share-menu');
+      if (menu) return menu;
+      menu = document.createElement('div');
+      menu.id = 'share-menu';
+      menu.className = 'share-menu';
+      menu.setAttribute('role', 'menu');
+      document.body.appendChild(menu);
+      return menu;
+    }
+
+    function openShareMenu(payload, anchor) {
+      const menu = ensureShareMenu();
+      _shareMenuPayload = payload;
+      const encodedUrl = encodeURIComponent(payload.url);
+      const encodedText = encodeURIComponent(payload.text + ' ' + payload.url);
+      menu.innerHTML =
+        '<a role="menuitem" href="https://wa.me/?text=' + encodedText + '" target="_blank" rel="noopener" onclick="event.stopPropagation();closeShareMenu()">WhatsApp</a>'
+        + '<a role="menuitem" href="https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation();closeShareMenu()">Facebook</a>'
+        + '<a role="menuitem" href="https://twitter.com/intent/tweet?text=' + encodeURIComponent(payload.text) + '&url=' + encodedUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation();closeShareMenu()">X/Twitter</a>'
+        + '<button role="menuitem" type="button" onclick="event.stopPropagation();copyShareLink()">' + COPY_ICON + '<span>Copiar enlace</span></button>';
+      menu.classList.add('open');
+
+      const rect = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : null;
+      const leftBase = rect ? rect.left : (window.innerWidth / 2);
+      const topBase = rect ? rect.bottom + 8 : (window.innerHeight / 2);
+      const width = menu.offsetWidth || 184;
+      const height = menu.offsetHeight || 164;
+      const left = Math.min(Math.max(12, leftBase), window.innerWidth - width - 12);
+      const top = (topBase + height > window.innerHeight - 12 && rect)
+        ? Math.max(12, rect.top - height - 8)
+        : Math.min(topBase, window.innerHeight - height - 12);
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+
+    function closeShareMenu() {
+      const menu = document.getElementById('share-menu');
+      if (menu) menu.classList.remove('open');
+    }
+
+    function copyShareLink() {
+      const url = _shareMenuPayload ? _shareMenuPayload.url : window.location.href;
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        showToast('No se pudo copiar el enlace');
+        return;
+      }
+      navigator.clipboard.writeText(url).then(function() {
+        showToast('Enlace copiado');
+        closeShareMenu();
+      }).catch(function() {
+        showToast('No se pudo copiar el enlace');
+      });
+    }
+
+    document.addEventListener('click', closeShareMenu);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeShareMenu();
+    });
+
     function renderFooterContent() {
       const settings = (typeof getSiteSettings === 'function') ? getSiteSettings() : {};
       const wa = (settings.whatsapp || '').replace(/[^0-9]/g, '');
@@ -3060,7 +3240,7 @@
         const icon = SOCIAL_ICONS[s.type] || '';
         return '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener" aria-label="' + escapeAttr(s.label || s.type) + '" title="' + escapeAttr(s.label || s.type) + '">' + icon + '</a>';
       }).join('');
-      wrap.innerHTML = html;
+      wrap.innerHTML = html + footerShareButtonHtml();
     }
 
     async function handleLogout() {
@@ -4241,6 +4421,7 @@
                 ${p.is_new_arrival ? '<span class="badge-new">New</span>' : ''}
                 ${isFlash ? '<span class="badge-flash">Flash</span>' : ''}
                 ${favoriteButtonHtml(p.id)}
+                ${shareButtonHtml(p.id)}
                 ${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}
                 ${cta}
               </div>
@@ -4265,6 +4446,7 @@
           <article class="sw-card" onclick="goProducto('${jsAttr(p.id)}')" role="button" tabindex="0"
                    onkeydown="if(event.key==='Enter')goProducto('${jsAttr(p.id)}')">
             ${favoriteButtonHtml(p.id)}
+            ${shareButtonHtml(p.id)}
             ${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}
             ${cta}
             <div class="sw-info">
@@ -4292,6 +4474,7 @@
                onkeydown="if(event.key==='Enter')goProducto('${jsAttr(p.id)}')">
             <div class="prod-img-wrap brand-img">
               ${favoriteButtonHtml(p.id)}
+              ${shareButtonHtml(p.id)}
               ${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}
               ${cta}
             </div>
@@ -4451,7 +4634,7 @@
           : `<button class="${ctaClass}" onclick="event.stopPropagation();contactMayoreo('${jsAttr(p.id)}')">Contactar a Laurean</button>`;
 
         return `<article class="vitrina-card reveal" onclick="location.href='${href}'">
-          <div class="vitrina-card-img brand-img">${imgTag}${badge}${favoriteButtonHtml(p.id)}</div>
+          <div class="vitrina-card-img brand-img">${imgTag}${badge}${favoriteButtonHtml(p.id)}${shareButtonHtml(p.id)}</div>
           <div class="vitrina-card-body">
             <div class="vitrina-card-name">${escV(p.name)}</div>
             ${priceHtml}

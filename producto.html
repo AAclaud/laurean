@@ -194,6 +194,7 @@
     }
     .btn-secondary:hover { border-color: var(--carbon); background: rgba(25,26,24,0.04); }
     .btn-secondary.active { border-color: var(--vino); color: var(--vino); background: rgba(142,56,51,0.05); }
+    .btn-secondary svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.7; }
     .seller-hook {
       display: flex; align-items: center; justify-content: center;
       color: var(--vino);
@@ -204,6 +205,36 @@
       text-underline-offset: 3px;
       padding: 4px 10px 0;
     }
+
+    .share-menu {
+      position: fixed;
+      z-index: 10000;
+      display: none;
+      min-width: 184px;
+      padding: 8px;
+      background: var(--white);
+      border: 1px solid rgba(25,26,24,0.1);
+      border-radius: 10px;
+      box-shadow: 0 18px 40px rgba(25,26,24,0.18);
+    }
+    .share-menu.open { display: block; }
+    .share-menu a,
+    .share-menu button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      color: var(--carbon);
+      font-family: var(--fb);
+      font-size: 12.5px;
+      text-align: left;
+      transition: background 0.18s var(--ease), color 0.18s var(--ease);
+    }
+    .share-menu a:hover,
+    .share-menu button:hover { background: var(--piedra); color: var(--vino); }
+    .share-menu svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; }
 
     /* ─── Panel: precio vendedor inline ─── */
     .seller-price-row {
@@ -303,6 +334,28 @@
     .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
     .footer-links a { font-size: 13.5px; color: rgba(255,255,255,0.7); transition: color 0.2s; }
     .footer-links a:hover { color: rgba(255,255,255,0.95); }
+    .footer-social { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
+    .footer-share-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 38px; height: 38px;
+      padding: 0 13px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+    }
+    .footer-share-btn:hover {
+      color: var(--white);
+      border-color: rgba(255,255,255,0.4);
+      transform: translateY(-2px);
+    }
+    .footer-share-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; }
     .footer-bottom { max-width: 1280px; margin: 28px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
     .footer-copy { font-size: 12px; color: rgba(255,255,255,0.5); }
     .footer-copy a { color: inherit; text-decoration: underline; opacity: 0.7; }
@@ -482,6 +535,132 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
     }
+
+    var SHARE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4.2M8.6 13.4l6.8 4.2"/></svg>';
+    var COPY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    var _shareMenuPayload = null;
+
+    function getProductShareUrl(id) {
+      return new URL('producto.html?id=' + encodeURIComponent(id), window.location.href).href;
+    }
+
+    function productShareButtonHtml() {
+      return '<button class="btn-secondary" type="button" onclick="shareCurrentProduct(event)" aria-label="Compartir producto">' + SHARE_ICON + '<span>Compartir</span></button>';
+    }
+
+    function footerShareButtonHtml() {
+      return '<button class="footer-share-btn" id="footer-share-btn" type="button" onclick="shareCurrentPage(event)" aria-label="Compartir página">' + SHARE_ICON + '<span>Compartir</span></button>';
+    }
+
+    function normalizeSharePayload(payload) {
+      return {
+        title: payload.title || document.title || 'Laurean',
+        text: payload.text || 'Descubre Laurean Shop.',
+        url: payload.url || window.location.href.split('#')[0],
+      };
+    }
+
+    async function shareContent(payload, evt) {
+      var data = normalizeSharePayload(payload || {});
+      var anchor = evt && evt.currentTarget;
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      if (navigator.share) {
+        try {
+          await navigator.share(data);
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+      openShareMenu(data, anchor);
+    }
+
+    function shareCurrentPage(evt) {
+      shareContent({
+        title: document.title || 'Laurean Shop',
+        text: 'Descubre Laurean Shop.',
+        url: window.location.href.split('#')[0],
+      }, evt);
+    }
+
+    function shareCurrentProduct(evt) {
+      if (!_product) return shareCurrentPage(evt);
+      shareContent({
+        title: _product.name,
+        text: 'Mira este producto en Laurean: ' + _product.name,
+        url: getProductShareUrl(_product.id),
+      }, evt);
+    }
+
+    function ensureShareMenu() {
+      var menu = document.getElementById('share-menu');
+      if (menu) return menu;
+      menu = document.createElement('div');
+      menu.id = 'share-menu';
+      menu.className = 'share-menu';
+      menu.setAttribute('role', 'menu');
+      document.body.appendChild(menu);
+      return menu;
+    }
+
+    function openShareMenu(payload, anchor) {
+      var menu = ensureShareMenu();
+      _shareMenuPayload = payload;
+      var encodedUrl = encodeURIComponent(payload.url);
+      var encodedText = encodeURIComponent(payload.text + ' ' + payload.url);
+      menu.innerHTML =
+        '<a role="menuitem" href="https://wa.me/?text=' + encodedText + '" target="_blank" rel="noopener" onclick="event.stopPropagation();closeShareMenu()">WhatsApp</a>'
+        + '<a role="menuitem" href="https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation();closeShareMenu()">Facebook</a>'
+        + '<a role="menuitem" href="https://twitter.com/intent/tweet?text=' + encodeURIComponent(payload.text) + '&url=' + encodedUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation();closeShareMenu()">X/Twitter</a>'
+        + '<button role="menuitem" type="button" onclick="event.stopPropagation();copyShareLink()">' + COPY_ICON + '<span>Copiar enlace</span></button>';
+      menu.classList.add('open');
+
+      var rect = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : null;
+      var leftBase = rect ? rect.left : (window.innerWidth / 2);
+      var topBase = rect ? rect.bottom + 8 : (window.innerHeight / 2);
+      var width = menu.offsetWidth || 184;
+      var height = menu.offsetHeight || 164;
+      var left = Math.min(Math.max(12, leftBase), window.innerWidth - width - 12);
+      var top = (topBase + height > window.innerHeight - 12 && rect)
+        ? Math.max(12, rect.top - height - 8)
+        : Math.min(topBase, window.innerHeight - height - 12);
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+
+    function closeShareMenu() {
+      var menu = document.getElementById('share-menu');
+      if (menu) menu.classList.remove('open');
+    }
+
+    function copyShareLink() {
+      var url = _shareMenuPayload ? _shareMenuPayload.url : window.location.href;
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        showToast('No se pudo copiar el enlace');
+        return;
+      }
+      navigator.clipboard.writeText(url).then(function() {
+        showToast('Enlace copiado');
+        closeShareMenu();
+      }).catch(function() {
+        showToast('No se pudo copiar el enlace');
+      });
+    }
+
+    function installFooterShareButton() {
+      var wrap = document.getElementById('footer-social') || document.querySelector('#site-footer .footer-social');
+      if (!wrap || document.getElementById('footer-share-btn')) return;
+      wrap.insertAdjacentHTML('beforeend', footerShareButtonHtml());
+    }
+
+    document.addEventListener('click', closeShareMenu);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeShareMenu();
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+      installFooterShareButton();
+      setTimeout(installFooterShareButton, 250);
+    });
 
     function shouldShowPublicPrice(p) {
       return p && p.show_price !== false && Number(p.price_gtq || p.base_gtq || 0) > 0;
@@ -767,13 +946,15 @@
         ctasEl.innerHTML =
           '<button class="btn-primary" onclick="handleComprar()">Comprar</button>'
           + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>'
+          + productShareButtonHtml()
           + '<a class="btn-secondary" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>'
           + '<a class="seller-hook" href="vendedoras.html">Precio vendedor Q' + Number(priceObj.seller_gtq).toLocaleString() + ' — regístrate como vendedora</a>';
       } else {
         /* Solo WhatsApp + favorito */
         ctasEl.innerHTML =
           '<a class="btn-primary contact" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>'
-          + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>';
+          + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>'
+          + productShareButtonHtml();
       }
       updateFavoriteUi();
 
@@ -781,6 +962,7 @@
       document.getElementById('prod-loading').style.display  = 'none';
       document.getElementById('prod-main').style.display     = '';
       document.getElementById('site-footer').style.display   = '';
+      installFooterShareButton();
     }
 
     /* ─── Selección de talla ─────────────────────────────────────────────────── */
