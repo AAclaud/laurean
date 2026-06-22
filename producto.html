@@ -553,23 +553,38 @@
     }
 
     function normalizeSharePayload(payload) {
+      var rawUrl = payload.url || window.location.href.split('#')[0];
       return {
         title: payload.title || document.title || 'Laurean',
         text: payload.text || 'Descubre Laurean Shop.',
-        url: payload.url || window.location.href.split('#')[0],
+        url: new URL(rawUrl, window.location.href).href,
       };
+    }
+
+    function canUseNativeShare(data) {
+      try {
+        if (window.isSecureContext !== true) return false;
+        if (typeof navigator.share !== 'function') return false;
+        if (window.self !== window.top) return false;
+        if (typeof navigator.canShare === 'function' && navigator.canShare(data) !== true) return false;
+        return true;
+      } catch (err) {
+        return false;
+      }
     }
 
     async function shareContent(payload, evt) {
       var data = normalizeSharePayload(payload || {});
       var anchor = evt && evt.currentTarget;
       if (evt && evt.stopPropagation) evt.stopPropagation();
-      if (navigator.share) {
+      if (canUseNativeShare(data)) {
         try {
           await navigator.share(data);
           return;
         } catch (err) {
           if (err && err.name === 'AbortError') return;
+          openShareMenu(data, anchor);
+          return;
         }
       }
       openShareMenu(data, anchor);
