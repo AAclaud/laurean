@@ -22,10 +22,11 @@ type VisitBody = {
   user_agent?: unknown;
 };
 
-function nullableString(value: unknown): string | null {
+function nullableString(value: unknown, maxLength?: number): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
-  return trimmed ? trimmed : null;
+  const truncated = typeof maxLength === 'number' ? trimmed.slice(0, maxLength) : trimmed;
+  return truncated ? truncated : null;
 }
 
 Deno.serve(async (req) => {
@@ -42,16 +43,16 @@ Deno.serve(async (req) => {
     try { body = await req.json(); }
     catch { return json({ error: 'invalid_json' }, 400); }
 
-    const pagePath = nullableString(body.page_path);
+    const pagePath = nullableString(body.page_path, 512);
     if (!pagePath) return json({ error: 'missing_page_path' }, 400);
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { error } = await supabase.from('analytics_page_visits').insert({
-      site_key: nullableString(body.site_key) || 'laurean',
+      site_key: nullableString(body.site_key, 64) || 'laurean',
       page_path: pagePath,
-      session_id: nullableString(body.session_id),
-      referer: nullableString(body.referer),
-      user_agent: nullableString(body.user_agent) || req.headers.get('user-agent'),
+      session_id: nullableString(body.session_id, 128),
+      referer: nullableString(body.referer, 1024),
+      user_agent: nullableString(body.user_agent, 512) || nullableString(req.headers.get('user-agent'), 512),
     });
 
     if (error) {
