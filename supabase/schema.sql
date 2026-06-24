@@ -156,7 +156,9 @@ create table if not exists public.orders (
   notes                   text,
   -- estado
   status                  text default 'pendiente' check (status in (
-    'pendiente','confirmado','en_preparacion','enviado','entregado','cancelado','devuelto'
+    -- estados del frontend (admin/POS) + legado, en unión para no romper datos existentes
+    'pendiente','procesando','enviado','completado','cancelado',
+    'confirmado','en_preparacion','entregado','devuelto'
   )),
   payment_method          text,                  -- 'transfer','cod','card','qr','cash'
   payment_status          text default 'pendiente',
@@ -176,6 +178,12 @@ create table if not exists public.orders (
 alter table public.orders add column if not exists origin text default 'store';      -- 'store' | 'pos'
 alter table public.orders add column if not exists channel text;                      -- 'web' | 'pos'
 alter table public.orders add column if not exists shipping_method text;              -- 'forza' | 'cargo_expreso' | 'sobrex'
+-- Alinear el constraint de status con los estados del frontend (idempotente, actualiza tablas ya creadas)
+alter table public.orders drop constraint if exists orders_status_check;
+alter table public.orders add constraint orders_status_check check (status in (
+  'pendiente','procesando','enviado','completado','cancelado',
+  'confirmado','en_preparacion','entregado','devuelto'
+));
 create index if not exists idx_order_status      on public.orders(status);
 create index if not exists idx_order_created     on public.orders(created_at desc);
 create index if not exists idx_order_forza_guide on public.orders(forza_guide_number);

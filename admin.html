@@ -175,6 +175,10 @@
     td { padding: 14px 24px; font-size: 13.5px; border-bottom: 1px solid rgba(232,227,220,0.5); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: rgba(245,242,237,0.6); }
+    /* Tinte de fila de pedido por estado (semáforo sutil) */
+    #orders-tbody tr.ord-row { background: color-mix(in srgb, var(--st) 12%, transparent); }
+    #orders-tbody tr.ord-row td:first-child { box-shadow: inset 4px 0 0 var(--st); }
+    #orders-tbody tr.ord-row:hover td { background: color-mix(in srgb, var(--st) 18%, transparent); }
     .td-muted { color: var(--warm-mid); }
     .users-table { table-layout: fixed; }
     .users-table th,
@@ -3570,7 +3574,7 @@
         return;
       }
       tbody.innerHTML = orders.map(o => `
-        <tr style="cursor:pointer" onclick="openOrderDetail('${jsAttr(o.id)}')">
+        <tr class="ord-row" style="cursor:pointer;--st:${statusColor(isPosOrder(o) ? 'completado' : o.status)}" onclick="openOrderDetail('${jsAttr(o.id)}')">
           <td class="td-muted" style="font-size:11px">${escapeHtml(o.id.slice(-10))}</td>
           <td class="td-muted">${escapeHtml(fmtDate(o.createdAt))}</td>
           <td>
@@ -3584,11 +3588,13 @@
           <td><strong>${fmtQ(o.total_gtq || 0)}</strong></td>
           <td>${o.referral_code ? `<span class="code-chip">${escapeHtml(o.referral_code)}</span>` : '—'}</td>
           <td onclick="event.stopPropagation()" style="white-space:nowrap">
-            <select class="status-select" onchange="changeOrderStatus('${jsAttr(o.id)}', this.value)" style="margin-bottom:4px">
+            ${isPosOrder(o)
+              ? `<span class="badge" style="background:${statusColor('completado')}22;color:${statusColor('completado')}">${escapeHtml(statusLabel('completado'))}</span>`
+              : `<select class="status-select" onchange="changeOrderStatus('${jsAttr(o.id)}', this.value)" style="margin-bottom:4px">
               ${['pendiente','procesando','enviado','completado','cancelado'].map(s =>
                 `<option value="${s}" ${o.status === s ? 'selected' : ''}>${escapeHtml(statusLabel(s))}</option>`
               ).join('')}
-            </select>
+            </select>`}
             ${o.forza_guide_number
               ? `<button class="btn btn-light" style="padding:3px 8px;font-size:10px;display:block;margin-top:3px" onclick="envTrackInline('${jsAttr(o.forza_guide_serie || 'FD')}','${jsAttr(o.forza_guide_number)}')" title="Rastrear ${escapeAttr(o.forza_guide_serie || 'FD')}-${escapeAttr(o.forza_guide_number)}">📦 ${escapeHtml(o.forza_guide_number)}</button>`
               : (isPosOrder(o) ? '' : `<button class="btn btn-light" style="padding:3px 8px;font-size:10px;display:block;margin-top:3px;color:var(--vino);border-color:var(--vino)" onclick="envCreateGuideFromOrder('${jsAttr(o.supabase_id || o.id)}')" title="Crear guía Forza con datos de este pedido">+ Guía Forza</button>`)
@@ -3599,6 +3605,7 @@
 
     function changeOrderStatus(id, status) {
       updateOrderStatus(id, status);
+      renderOrders();
       renderDashboard();
     }
 

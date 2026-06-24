@@ -663,7 +663,7 @@ function createOrder(data) {
     bodegaName:   data.bodegaName || null,
     history:      [],
     ...data,
-    status:    'pendiente',
+    status:    (data.origin === 'pos' || data.channel === 'pos') ? 'completado' : (data.status || 'pendiente'),
     createdAt: new Date().toISOString(),
   };
   orders.push(order);
@@ -701,9 +701,9 @@ function createOrder(data) {
       total_gtq:              data.total_gtq || 0,
       items:                  items,
       notes:                  data.notes || null,
-      status:                 'pendiente',
+      status:                 (data.origin === 'pos' || data.channel === 'pos') ? 'completado' : 'pendiente',
       payment_method:         data.pay_method || data.payment_method || null,
-      payment_status:         'pendiente',
+      payment_status:         (data.origin === 'pos' || data.channel === 'pos') ? 'pagado' : 'pendiente',
       origin:                 data.origin || 'store',
       channel:                data.channel || (data.origin === 'pos' ? 'pos' : 'web'),
       shipping_method:        data.shipping_method || null,
@@ -1009,8 +1009,8 @@ function statusLabel(s) {
 }
 function statusColor(s) {
   return {
-    pendiente: '#9B8E7F', procesando: '#D4A017',
-    enviado: '#4A90D9', completado: '#4CAF50', cancelado: '#E53935',
+    pendiente: '#C9A227', procesando: '#5FB0C9',
+    enviado: '#3F77B5', completado: '#4E9A57', cancelado: '#C24A41',
   }[s] || '#9B8E7F';
 }
 
