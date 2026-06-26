@@ -61,6 +61,28 @@
 
     html { scroll-behavior: smooth; }
 
+    .skip-link {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      transform: translateY(-140%);
+      background: var(--carbon);
+      color: var(--crema);
+      padding: 10px 14px;
+      z-index: 9999;
+      transition: transform 0.2s ease;
+    }
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+    :focus-visible {
+      outline: 2px solid var(--vino, #8F3833);
+      outline-offset: 2px;
+    }
+    :focus:not(:focus-visible) {
+      outline: none;
+    }
+
     body {
       font-family: var(--fb);
       font-size: 15px;
@@ -2410,6 +2432,7 @@
   </style>
 </head>
 <body>
+  <a href="#main" class="skip-link">Saltar al contenido</a>
 
   <!-- Splash de transición a submarca (pinta la pantalla del color de la categoría) -->
   <div class="page-splash" id="page-splash" aria-hidden="true"><img id="page-splash-logo" src="" alt="" /></div>
@@ -2424,7 +2447,7 @@
   <div class="cart-overlay" id="cart-overlay" onclick="closeDrawers()"></div>
 
   <!-- Cart drawer -->
-  <aside class="cart-drawer" id="cart-drawer">
+  <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-label="Tu carrito">
     <div class="cart-head">
       <span class="cart-head-title">Mi Carrito</span>
       <button class="cart-close-btn" onclick="closeCart()" aria-label="Cerrar carrito">
@@ -2466,7 +2489,7 @@
   </aside>
 
   <!-- Favorites drawer -->
-  <aside class="cart-drawer" id="favorites-drawer">
+  <aside class="cart-drawer" id="favorites-drawer" role="dialog" aria-modal="true" aria-label="Tus favoritos">
     <div class="cart-head">
       <span class="cart-head-title">Mis favoritos</span>
       <button class="cart-close-btn" onclick="closeFavorites()" aria-label="Cerrar favoritos">
@@ -2546,7 +2569,7 @@
     </ul>
   </div>
 
-  <main>
+  <main id="main">
 
     <!-- 1. Hero -->
     <section class="hero" id="inicio">
@@ -2812,11 +2835,11 @@
   <button class="role-banner-tab" id="role-banner-tab" onclick="toggleRoleBanner()" aria-label="Mostrar indicador de precios" title="Mostrar indicador">Tu precio</button>
 
   <!-- Checkout modal -->
-  <div class="checkout-overlay" id="checkout-overlay">
+  <div class="checkout-overlay" id="checkout-overlay" role="dialog" aria-modal="true" aria-labelledby="co-head-title">
     <div class="checkout-modal">
       <div class="co-head">
-        <span class="co-head-title">Confirmar pedido</span>
-        <button class="co-close" onclick="closeCheckout()">
+        <span class="co-head-title" id="co-head-title">Confirmar pedido</span>
+        <button class="co-close" onclick="closeCheckout()" aria-label="Cerrar checkout">
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -2849,10 +2872,10 @@
           <div class="co-dsc-section">
             <div class="co-discount-toggle" style="font-size:12px;color:var(--warm-mid);letter-spacing:0.08em">¿Tienes un código de descuento?</div>
             <div class="co-dsc-row">
-              <input class="co-dsc-input" id="co-dsc-code" placeholder="Ej: PROMO20" />
+              <input class="co-dsc-input" id="co-dsc-code" placeholder="Ej: PROMO20" aria-label="Código de descuento" />
               <button class="co-dsc-btn" onclick="applyStoreDscCode()">Aplicar</button>
             </div>
-            <div class="co-dsc-msg" id="co-dsc-msg"></div>
+            <div class="co-dsc-msg" id="co-dsc-msg" aria-live="polite"></div>
           </div>
 
           <!-- PIN de descuento especial -->
@@ -2860,48 +2883,48 @@
             <button class="co-discount-toggle" onclick="toggleDiscountPinBox()">¿Aplicar descuento especial?</button>
             <div class="co-discount-pin-box" id="co-discount-pin-box">
               <div class="co-discount-pin-row">
-                <input class="co-pin-input" id="co-pin-input" type="password" maxlength="6" placeholder="PIN" />
+                <input class="co-pin-input" id="co-pin-input" type="password" maxlength="6" placeholder="PIN" aria-label="PIN de descuento especial" />
                 <button class="co-pin-btn" onclick="checkDiscountPin()">Verificar</button>
               </div>
-              <span class="co-pin-msg" id="co-pin-msg"></span>
+              <span class="co-pin-msg" id="co-pin-msg" aria-live="polite"></span>
               <div class="co-pct-row" id="co-pct-row">
                 <span class="co-pct-label">Descuento %</span>
-                <input class="co-pct-input" id="co-pct-input" type="number" min="1" max="50" placeholder="10" />
+                <input class="co-pct-input" id="co-pct-input" type="number" min="1" max="50" placeholder="10" aria-label="Porcentaje de descuento" />
                 <button class="co-pct-apply" onclick="applyManualDiscount()">Aplicar</button>
               </div>
             </div>
           </div>
           <div class="co-field">
-            <label class="co-label">Nombre completo</label>
-            <input class="co-input" id="co-name" placeholder="Tu nombre" />
+            <label class="co-label" for="co-name">Nombre completo</label>
+            <input class="co-input" id="co-name" placeholder="Tu nombre" aria-required="true" />
           </div>
           <div class="co-field">
-            <label class="co-label">Teléfono</label>
-            <input class="co-input" id="co-phone" placeholder="5555-1234" type="tel" />
+            <label class="co-label" for="co-phone">Teléfono</label>
+            <input class="co-input" id="co-phone" placeholder="5555-1234" type="tel" aria-required="true" />
           </div>
           <div class="co-field">
-            <label class="co-label">Departamento</label>
-            <select class="co-input" id="co-department" onchange="onDepartmentChange()">
+            <label class="co-label" for="co-department">Departamento</label>
+            <select class="co-input" id="co-department" onchange="onDepartmentChange()" aria-required="true">
               <option value="">Selecciona…</option>
             </select>
           </div>
           <div class="co-field">
-            <label class="co-label">Municipio</label>
-            <select class="co-input" id="co-township" disabled>
+            <label class="co-label" for="co-township">Municipio</label>
+            <select class="co-input" id="co-township" disabled aria-required="true">
               <option value="">Selecciona departamento primero</option>
             </select>
           </div>
           <div class="co-field">
-            <label class="co-label">Dirección de entrega</label>
-            <input class="co-input" id="co-address" placeholder="Calle, zona, referencias" />
+            <label class="co-label" for="co-address">Dirección de entrega</label>
+            <input class="co-input" id="co-address" placeholder="Calle, zona, referencias" aria-required="true" />
           </div>
           <div class="co-field">
-            <label class="co-label">Notas (opcional)</label>
+            <label class="co-label" for="co-notes">Notas (opcional)</label>
             <input class="co-input" id="co-notes" placeholder="Instrucciones especiales…" />
           </div>
 
           <div class="co-field">
-            <label class="co-label">Método de envío</label>
+            <label class="co-label" for="co-shipping-method">Método de envío</label>
             <select class="co-input" id="co-shipping-method" onchange="refreshCheckoutSummary()">
               <option value="forza">Forza</option>
               <option value="cargo_expreso">Cargo Expreso</option>
@@ -2913,7 +2936,7 @@
           <!-- Método de pago -->
           <div class="co-field">
             <label class="co-label">Método de pago</label>
-            <div class="co-pay-options" id="co-pay-method-group">
+            <div class="co-pay-options" id="co-pay-method-group" role="radiogroup" aria-label="Método de pago">
               <label class="co-pay-opt">
                 <input type="radio" name="co-pay-method" value="transfer" checked />
                 <span class="co-pay-label">Transferencia</span>
@@ -2935,7 +2958,7 @@
           </div>
         </div>
         <div class="co-foot">
-          <div class="co-error" id="co-error"></div>
+          <div class="co-error" id="co-error" role="alert" aria-live="assertive"></div>
           <div class="co-total-row">
             <span class="co-total-label">Total a pagar</span>
             <span class="co-total-val" id="co-total-val"></span>
@@ -2960,11 +2983,11 @@
   </div>
 
   <!-- QPayPro "ventanita" modal (pago con tarjeta — activación diferida) -->
-  <div class="qpp-overlay" id="qpp-overlay">
+  <div class="qpp-overlay" id="qpp-overlay" role="dialog" aria-modal="true" aria-label="Pago con tarjeta">
     <div class="qpp-modal">
       <div class="qpp-head">
         <span class="qpp-head-title">Pago con tarjeta</span>
-        <button class="qpp-close" onclick="closeQppModal()">
+        <button class="qpp-close" onclick="closeQppModal()" aria-label="Cerrar pago con tarjeta">
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -3274,6 +3297,52 @@
     document.addEventListener('click', closeShareMenu);
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeShareMenu();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      const overlays = [
+        {
+          id: 'checkout-overlay',
+          close: function(el) {
+            if (typeof closeCheckout === 'function') closeCheckout();
+            else el.classList.remove('open');
+          }
+        },
+        {
+          id: 'qpp-overlay',
+          close: function(el) {
+            if (typeof closeQppModal === 'function') closeQppModal();
+            else el.classList.remove('open');
+          }
+        },
+        {
+          id: 'cart-drawer',
+          close: function(el) {
+            if (typeof closeCart === 'function') closeCart();
+            else el.classList.remove('open');
+          }
+        },
+        {
+          id: 'favorites-drawer',
+          close: function(el) {
+            if (typeof closeFavorites === 'function') closeFavorites();
+            else el.classList.remove('open');
+          }
+        },
+        {
+          id: 'mobile-menu',
+          close: function(el) {
+            if (typeof closeMobileMenu === 'function') closeMobileMenu();
+            else el.classList.remove('open');
+          }
+        }
+      ];
+      for (const item of overlays) {
+        const el = document.getElementById(item.id);
+        if (!el || !el.classList.contains('open')) continue;
+        item.close(el);
+        break;
+      }
     });
 
     function renderFooterContent() {
@@ -3611,6 +3680,12 @@
       document.getElementById('cart-drawer').classList.add('open');
       document.getElementById('cart-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
+      setTimeout(function() {
+        try {
+          const closeBtn = document.querySelector('#cart-drawer .cart-close-btn');
+          if (closeBtn) closeBtn.focus();
+        } catch (_) {}
+      }, 0);
       // Show referral box only when there are items and no session or if guest
       const refEl = document.getElementById('cart-referral');
       if (refEl) refEl.style.display = cart.length > 0 ? '' : 'none';
@@ -3820,6 +3895,13 @@
       document.getElementById('co-success').style.display   = 'none';
       document.getElementById('checkout-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
+      setTimeout(function() {
+        try {
+          const firstField = document.getElementById('co-name');
+          const closeBtn = document.querySelector('#checkout-overlay .co-close');
+          (firstField || closeBtn)?.focus();
+        } catch (_) {}
+      }, 0);
 
       populateDepartments();
     }
