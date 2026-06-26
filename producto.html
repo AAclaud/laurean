@@ -552,6 +552,130 @@
         .replace(/>/g, '&gt;');
     }
 
+    function upsertMeta(attr, key, content) {
+      try {
+        if (!attr || !key || content == null) return null;
+        var metas = document.head.getElementsByTagName('meta');
+        var el = null;
+        for (var i = 0; i < metas.length; i++) {
+          if (metas[i].getAttribute(attr) === key) {
+            el = metas[i];
+            break;
+          }
+        }
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute(attr, key);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', String(content));
+        return el;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function upsertCanonical(href) {
+      try {
+        if (!href) return null;
+        var links = document.head.getElementsByTagName('link');
+        var el = null;
+        for (var i = 0; i < links.length; i++) {
+          if ((links[i].getAttribute('rel') || '').toLowerCase() === 'canonical') {
+            el = links[i];
+            break;
+          }
+        }
+        if (!el) {
+          el = document.createElement('link');
+          el.setAttribute('rel', 'canonical');
+          document.head.appendChild(el);
+        }
+        el.setAttribute('href', href);
+        return el;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function setLdJson(id, obj) {
+      try {
+        if (!id) return;
+        var prev = document.getElementById(id);
+        if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+        if (!obj) return;
+        var el = document.createElement('script');
+        el.id = id;
+        el.type = 'application/ld+json';
+        el.textContent = JSON.stringify(obj);
+        document.head.appendChild(el);
+      } catch (err) {}
+    }
+
+    function seoText(s) {
+      return String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    }
+
+    function truncateSeo(s, max) {
+      var text = seoText(s);
+      if (text.length <= max) return text;
+      return text.slice(0, Math.max(0, max - 1)).replace(/\s+\S*$/, '') + '…';
+    }
+
+    function absoluteLaureanUrl(url) {
+      try {
+        return url ? new URL(url, 'https://laureans.com/').href : '';
+      } catch (err) {
+        return '';
+      }
+    }
+
+    function updateProductSeo(p, priceObj) {
+      try {
+        if (!p || !p.name || !p.id) return;
+        var name = seoText(p.name);
+        var title = name + ' — LAUREAN';
+        var canonical = 'https://laureans.com/producto?id=' + encodeURIComponent(p.id);
+        var publicPrice = priceObj && Number(priceObj.laurean_gtq) > 0 ? Number(priceObj.laurean_gtq) : null;
+        var shortDesc = truncateSeo(p.description || 'moda premium', 72);
+        var desc = name + ' — ' + shortDesc + (publicPrice ? '. Precio desde Q' + publicPrice.toLocaleString('es-GT') : '. Moda premium') + '. Envío a toda Guatemala con Laurean.';
+        desc = truncateSeo(desc, 160);
+        var fallbackImage = 'https://laureans.com/images/laurean_home_hero.jpg';
+        var image = absoluteLaureanUrl(p.image) || fallbackImage;
+
+        document.title = title;
+        var titleEl = document.getElementById('page-title');
+        if (titleEl) titleEl.textContent = title;
+        upsertMeta('name', 'description', desc);
+        upsertCanonical(canonical);
+        upsertMeta('property', 'og:title', title);
+        upsertMeta('property', 'og:description', desc);
+        upsertMeta('property', 'og:url', canonical);
+        upsertMeta('property', 'og:image', image);
+
+        var ld = {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: name,
+          image: image,
+          description: desc,
+          brand: { '@type': 'Brand', name: 'Laurean' },
+          sku: String(p.sku || p.id),
+          productID: String(p.id)
+        };
+        if (publicPrice) {
+          ld.offers = {
+            '@type': 'Offer',
+            priceCurrency: 'GTQ',
+            price: publicPrice,
+            availability: 'https://schema.org/InStock',
+            url: canonical
+          };
+        }
+        setLdJson('ld-product', ld);
+      } catch (err) {}
+    }
+
     var SHARE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.6l6.8-4.2M8.6 13.4l6.8 4.2"/></svg>';
     var COPY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
     var _shareMenuPayload = null;
@@ -920,8 +1044,8 @@
     /* ─── Renderizar producto ────────────────────────────────────────────────── */
     function renderProduct(p) {
       _product = p;
-      document.title = 'LAUREAN — ' + p.name;
-      document.getElementById('page-title').textContent = 'LAUREAN — ' + esc(p.name);
+      document.title = p.name + ' — LAUREAN';
+      document.getElementById('page-title').textContent = p.name + ' — LAUREAN';
 
       /* Galería */
       var images = (Array.isArray(p.gallery) && p.gallery.length) ? p.gallery : (p.image ? [p.image] : []);
@@ -949,6 +1073,7 @@
       /* Panel: precio */
       var showPrice = shouldShowPublicPrice(p);
       var priceObj  = showPrice ? getVisiblePrices(p) : null;
+      updateProductSeo(p, priceObj);
 
       var priceBlock = document.getElementById('panel-price-block');
       if (showPrice && priceObj) {

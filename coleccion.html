@@ -213,6 +213,106 @@
       });
     }
 
+    function upsertMeta(attr, key, content) {
+      try {
+        if (!attr || !key || content == null) return null;
+        var metas = document.head.getElementsByTagName('meta');
+        var el = null;
+        for (var i = 0; i < metas.length; i++) {
+          if (metas[i].getAttribute(attr) === key) {
+            el = metas[i];
+            break;
+          }
+        }
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute(attr, key);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', String(content));
+        return el;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function upsertCanonical(href) {
+      try {
+        if (!href) return null;
+        var links = document.head.getElementsByTagName('link');
+        var el = null;
+        for (var i = 0; i < links.length; i++) {
+          if ((links[i].getAttribute('rel') || '').toLowerCase() === 'canonical') {
+            el = links[i];
+            break;
+          }
+        }
+        if (!el) {
+          el = document.createElement('link');
+          el.setAttribute('rel', 'canonical');
+          document.head.appendChild(el);
+        }
+        el.setAttribute('href', href);
+        return el;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function setLdJson(id, obj) {
+      try {
+        if (!id) return;
+        var prev = document.getElementById(id);
+        if (prev && prev.parentNode) prev.parentNode.removeChild(prev);
+        if (!obj) return;
+        var el = document.createElement('script');
+        el.id = id;
+        el.type = 'application/ld+json';
+        el.textContent = JSON.stringify(obj);
+        document.head.appendChild(el);
+      } catch (err) {}
+    }
+
+    function seoText(s) {
+      return String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    }
+
+    function updateCollectionSeo(cat, products) {
+      try {
+        if (!cat || !cat.name) return;
+        var name = seoText(cat.name);
+        var title = name + ' — LAUREAN';
+        var canonical = 'https://laureans.com/coleccion?cat=' + encodeURIComponent(catId);
+        var desc = 'Explora ' + name + ' de Laurean: moda premium con envío a toda Guatemala.';
+
+        document.title = title;
+        upsertMeta('name', 'description', desc);
+        upsertCanonical(canonical);
+        upsertMeta('property', 'og:title', title);
+        upsertMeta('property', 'og:description', desc);
+        upsertMeta('property', 'og:url', canonical);
+
+        var items = Array.isArray(products) ? products.slice(0, 20).filter(function(p) { return p && p.id && p.name; }) : [];
+        if (!items.length) {
+          setLdJson('ld-collection', null);
+          return;
+        }
+        setLdJson('ld-collection', {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: title,
+          itemListElement: items.map(function(p, idx) {
+            return {
+              '@type': 'ListItem',
+              position: idx + 1,
+              name: seoText(p.name),
+              url: 'https://laureans.com/producto?id=' + encodeURIComponent(p.id)
+            };
+          })
+        });
+      } catch (err) {}
+    }
+
     // ─── Parámetro de categoría ────────────────────────────────────────────────
     var catId = (new URLSearchParams(window.location.search)).get('cat') || '';
 
@@ -323,7 +423,7 @@
         : '<em>' + esc(cat.name) + '</em>';
       document.getElementById('col-sub').textContent     = copy.sub;
       document.getElementById('bc-cat').textContent      = cat.name;
-      document.title = 'LAUREAN — ' + cat.name;
+      document.title = cat.name + ' — LAUREAN';
 
       // Filtrar productos de esta categoría (incluye productos creados en el dashboard)
       var allProds = (data.products || []).slice();
@@ -333,6 +433,7 @@
         allProds = Object.keys(_byId).map(function(k){ return _byId[k]; });
       }
       var products = allProds.filter(function(p) { return p.parent === catId; });
+      updateCollectionSeo(cat, products);
 
       if (!products.length) {
         count.style.display = 'none';
