@@ -333,12 +333,14 @@
     .hero-cta {
       display: flex;
       align-items: center;
-      gap: 36px;
+      flex-wrap: wrap;
+      gap: 16px 22px;
     }
     .btn-outline {
       display: inline-flex;
       align-items: center;
       gap: 10px;
+      white-space: nowrap;
       padding: 14px 30px;
       border: 1px solid var(--carbon);
       border-radius: 4px;
@@ -369,6 +371,7 @@
       font-size: 19px;
       font-weight: 300;
       color: var(--warm-mid);
+      white-space: nowrap;
     }
     .scroll-hint {
       position: absolute;
@@ -2768,7 +2771,7 @@
         </div>
         <div class="trust-item reveal reveal-delay-2">
           <div class="trust-icon">
-            <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 101.85-4.03L1 10"/></svg>
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
           </div>
           <span class="trust-label">Garantía en productos</span>
           <span class="trust-sub">Compra con confianza</span>
