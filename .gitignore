@@ -19,3 +19,4 @@ js/config.js
 # Supabase CLI
 .supabase/
 supabase/.temp/
+sitemap.xml

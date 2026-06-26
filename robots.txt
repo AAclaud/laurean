@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /pos
+Disallow: /pos.html
+Disallow: /login
+Disallow: /login.html
+Disallow: /revision-cliente
+Disallow: /revision-cliente.html
+Disallow: /arquitectura-laurean
+Disallow: /arquitectura-laurean.html
+Sitemap: https://laureans.com/sitemap.xml
