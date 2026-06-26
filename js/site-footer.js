@@ -21,6 +21,8 @@
   window.CHANNEL_ICONS = CHANNEL_ICONS;
 
   var YEAR = new Date().getFullYear();
+  var DEFAULT_WHATSAPP = '50236672415';
+  var FAB_BLOCKED_PATHS = ['admin', 'pos', 'login', 'revision-cliente', 'arquitectura-laurean'];
 
   function css() {
     return ''
@@ -40,9 +42,13 @@
       + '#site-footer .footer-links a{font-size:13.5px;color:rgba(255,255,255,.7);transition:color .2s var(--ease);}#site-footer .footer-links a:hover{color:rgba(255,255,255,.95);}'
       + '#site-footer .footer-bottom{max-width:1280px;margin:22px auto 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}'
       + '#site-footer .footer-copy{font-size:12px;color:rgba(255,255,255,.5);}#site-footer .footer-copy a{color:inherit;text-decoration:underline;opacity:.7;}'
+      + '#site-footer .footer-legal{display:inline-flex;align-items:center;gap:10px;}'
       + '#site-footer .pay-badges{display:flex;align-items:center;gap:10px;}'
       + '#site-footer .pay-badge{font-size:10px;letter-spacing:.08em;color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.2);padding:4px 9px;border-radius:5px;}'
-      + '@media(max-width:720px){footer#site-footer{padding:46px 20px 24px;}#site-footer .footer-top{grid-template-columns:1fr 1fr;gap:26px;}#site-footer .footer-bottom{flex-direction:column;align-items:flex-start;}}';
+      + '#laurean-wa-fab{position:fixed;right:22px;bottom:22px;z-index:9000;width:54px;height:54px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--vino,#8F3833);color:#fff;box-shadow:0 14px 30px rgba(0,0,0,.22);transition:transform .2s var(--ease),background-color .2s var(--ease),box-shadow .2s var(--ease);}'
+      + '#laurean-wa-fab:hover{background:#7f2f2b;transform:translateY(-2px) scale(1.04);box-shadow:0 18px 36px rgba(0,0,0,.28);}'
+      + '#laurean-wa-fab svg{width:26px;height:26px;display:block;fill:#fff;}'
+      + '@media(max-width:720px){footer#site-footer{padding:46px 20px 24px;}#site-footer .footer-top{grid-template-columns:1fr 1fr;gap:26px;}#site-footer .footer-bottom{flex-direction:column;align-items:flex-start;}#laurean-wa-fab{width:50px;height:50px;right:16px;bottom:16px;}#laurean-wa-fab svg{width:25px;height:25px;}}';
   }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -91,6 +97,9 @@
       + '    <ul class="footer-links">'
       + '      <li><a href="nosotros.html">Nosotros</a></li>'
       + '      <li><a href="envios.html">Envíos</a></li>'
+      + '      <li><a href="cambios-devoluciones.html">Cambios y devoluciones</a></li>'
+      + '      <li><a href="faq.html">Preguntas frecuentes</a></li>'
+      + '      <li><a href="contacto.html">Contacto</a></li>'
       + '      <li><a href="https://wa.me/50236672415" target="_blank" rel="noopener">WhatsApp</a></li>'
       + '    </ul>'
       + '  </div>'
@@ -104,6 +113,7 @@
       + '</div>'
       + '<div class="footer-bottom">'
       + '  <span class="footer-copy">© Laurean ' + YEAR + ' · Guatemala · Desarrollado por <a href="#">AA Projects</a></span>'
+      + '  <span class="footer-copy footer-legal"><a href="privacidad.html">Privacidad</a><a href="terminos.html">Términos</a></span>'
       + '  <div class="pay-badges"><span class="pay-badge">VISA</span><span class="pay-badge">Mastercard</span><span class="pay-badge">QR</span></div>'
       + '</div>';
   }
@@ -113,6 +123,35 @@
     if (wrap) wrap.innerHTML = channelsHTML();
   }
   window.renderFooterChannels = renderChannels;
+
+  function whatsappNumber() {
+    var settings = (typeof getSiteSettings === 'function') ? getSiteSettings() : {};
+    var number = (settings.whatsapp || '').replace(/[^0-9]/g, '');
+    return number || DEFAULT_WHATSAPP;
+  }
+
+  function shouldShowWhatsappFab() {
+    var path = String(location.pathname || '').toLowerCase();
+    return !FAB_BLOCKED_PATHS.some(function (blocked) {
+      return path.indexOf(blocked) !== -1;
+    });
+  }
+
+  function renderWhatsappFab() {
+    if (!shouldShowWhatsappFab()) return;
+    var href = 'https://wa.me/' + whatsappNumber();
+    var fab = document.getElementById('laurean-wa-fab');
+    if (!fab) {
+      fab = document.createElement('a');
+      fab.id = 'laurean-wa-fab';
+      fab.target = '_blank';
+      fab.rel = 'noopener';
+      fab.setAttribute('aria-label', 'Escríbenos por WhatsApp');
+      fab.innerHTML = CHANNEL_ICONS.whatsapp;
+      document.body.appendChild(fab);
+    }
+    fab.href = href;
+  }
 
   function mount() {
     var host = document.getElementById('site-footer');
@@ -125,6 +164,7 @@
     }
     host.innerHTML = footerHTML();
     renderChannels();
+    renderWhatsappFab();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
@@ -132,4 +172,6 @@
   // Re-render channels cuando los settings llegan de Supabase
   document.addEventListener('laurean:site-settings-ready', renderChannels);
   document.addEventListener('laurean:site-settings-changed', renderChannels);
+  document.addEventListener('laurean:site-settings-ready', renderWhatsappFab);
+  document.addEventListener('laurean:site-settings-changed', renderWhatsappFab);
 })();
