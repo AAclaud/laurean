@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="css/brand.css" />
   <link rel="stylesheet" href="css/cursor.css" />
   <script defer src="js/brand-img.js"></script>
+  <script defer src="js/analytics.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --nav-h: 80px; }
@@ -1074,6 +1075,20 @@
       var showPrice = shouldShowPublicPrice(p);
       var priceObj  = showPrice ? getVisiblePrices(p) : null;
       updateProductSeo(p, priceObj);
+      try {
+        if (window.track) {
+          var analyticsPrice = priceObj
+            ? (priceObj.laurean_gtq != null ? priceObj.laurean_gtq : priceObj.gtq)
+            : (p.price_gtq != null ? p.price_gtq : p.base_gtq);
+          var analyticsParams = {
+            item_id: p.id,
+            item_name: p.name,
+            currency: 'GTQ'
+          };
+          if (analyticsPrice != null && analyticsPrice !== '') analyticsParams.price = Number(analyticsPrice);
+          window.track('view_item', analyticsParams);
+        }
+      } catch (e) {}
 
       var priceBlock = document.getElementById('panel-price-block');
       if (showPrice && priceObj) {

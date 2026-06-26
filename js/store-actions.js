@@ -50,6 +50,7 @@
     var active = ids.indexOf(sid) !== -1;
     ids = active ? ids.filter(function (item) { return item !== sid; }) : ids.concat(sid);
     saveFavorites(ids);
+    if (!active && window.track) window.track('favorite_add', { item_id: id });
     reflectFavoriteButton(btn, !active);
     updateFavoriteButtons(sid);
     return !active;
@@ -80,6 +81,7 @@
     var data = normalizeSharePayload(payload);
     var anchor = evt && (evt.currentTarget || evt.target);
     if (evt && evt.stopPropagation) evt.stopPropagation();
+    if (window.track) window.track('share_product', { item: (payload && (payload.title || payload.url)) || '' });
 
     if (canUseNativeShare(data)) {
       try {

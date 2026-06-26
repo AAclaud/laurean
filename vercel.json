@@ -15,7 +15,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://esm.sh https://*.qpaypro.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self' https://*.qpaypro.com"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://esm.sh https://*.qpaypro.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.facebook.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self' https://*.qpaypro.com"
         }
       ]
     },

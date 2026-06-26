@@ -151,6 +151,12 @@
       fab.innerHTML = CHANNEL_ICONS.whatsapp;
       document.body.appendChild(fab);
     }
+    if (!fab.dataset.trackWhatsappClick) {
+      fab.addEventListener('click', function () {
+        if (window.track) window.track('whatsapp_click', { location: 'fab' });
+      });
+      fab.dataset.trackWhatsappClick = 'true';
+    }
     fab.href = href;
   }
 
