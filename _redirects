@@ -1,0 +1,8 @@
+# Cloudflare Pages sirve URLs limpias nativamente (/pagina en vez de /pagina.html)
+# y la raíz "/" sirve index.html, que redirige a Laurean.html.
+#
+# Ocultar carpetas internas (no son parte de la tienda pública):
+/Docs/*        /404.html   404
+/supabase/*    /404.html   404
+/scripts/*     /404.html   404
+/.claude/*     /404.html   404

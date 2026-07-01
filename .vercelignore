@@ -1,5 +1,0 @@
-# No publicar al hosting estático (no son parte de la tienda):
-Docs/
-supabase/
-.claude/
-*.md

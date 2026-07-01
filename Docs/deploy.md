@@ -13,46 +13,52 @@ generar `js/config.js` desde variables de entorno.
 > `scripts/gen-config.js` a partir de `SUPABASE_URL` y `SUPABASE_ANON`
 > (la anon key es pública por diseño; los secretos reales viven en Supabase).
 
-## 2. Opción RECOMENDADA — Vercel + GoDaddy
+## 2. Opción RECOMENDADA — Cloudflare Pages + GoDaddy
 
-Ya está todo configurado en `vercel.json` (URLs limpias, headers de seguridad,
-CSP) y `.vercelignore` (no publica `Docs/`, `supabase/`, `.claude/`).
+Cloudflare Pages es **gratis y permite uso comercial**, con CDN global y ancho de
+banda ilimitado. Los headers de seguridad + CSP van en `_headers`, el bloqueo de
+carpetas internas (`Docs/`, `supabase/`, `scripts/`, `.claude/`) en `_redirects`, y
+el 404 de marca en `404.html` — todo ya en el repo.
 
-1. **GitHub → Vercel**: Vercel → *Add New… → Project → Import* el repo `laurean`.
-2. **Framework Preset**: *Other*. Build Command y Output ya vienen de `vercel.json`
-   (`node scripts/gen-config.js`, output `.`). No cambiar nada.
-3. **Environment Variables** (Project → Settings → Environment Variables), para
-   *Production* (y *Preview* si quieres):
+1. **Subir el repo a GitHub.**
+2. Cloudflare → **Workers & Pages → Create → Pages → Connect to Git** → elige el repo.
+3. **Build settings**:
+   - Framework preset: **None**
+   - Build command: `node scripts/gen-config.js && node scripts/gen-sitemap.js`
+   - Build output directory: `/` (raíz del repo)
+4. **Environment variables** (Settings → Variables):
    - `SUPABASE_URL` = `https://<tu-proyecto>.supabase.co`
    - `SUPABASE_ANON` = tu anon/public key (Supabase → Settings → API)
-4. **Deploy**. La home (`/`) redirige a `/Laurean.html`.
-5. **Dominio GoDaddy**: Vercel → Project → Settings → *Domains* → agrega tu
-   dominio. Vercel te dará registros DNS. En GoDaddy → *DNS Management*:
-   - Dominio raíz (`tudominio.com`): registro **A** → `76.76.21.21`.
-   - Subdominio (`www` o `tienda`): registro **CNAME** → `cname.vercel-dns.com`.
-   - Espera propagación (minutos a ~1 h). Vercel emite HTTPS automático.
+   - `NODE_VERSION` = `18` (o superior; `gen-sitemap.js` usa `fetch` nativo)
+5. **Deploy**. Cloudflare sirve URLs limpias nativamente (`/catalogo` en vez de
+   `/catalogo.html`) y la raíz `/` sirve `index.html`, que redirige a `Laurean.html`.
+   Los `_headers` / `_redirects` / `404.html` se aplican solos.
+
+### Dominio GoDaddy → Cloudflare (nameservers, recomendado)
+1. En Cloudflare: **Add a site** → escribe tu dominio → plan **Free**.
+2. Cloudflare te da **2 nameservers** (`xxx.ns.cloudflare.com`).
+3. En **GoDaddy → tu dominio → Nameservers → Change** → pon esos 2. (Propaga en
+   minutos a ~24 h.)
+4. En **Pages → Custom domains** → agrega tu dominio y `www` → Cloudflare crea los
+   registros DNS solo. Raíz y `www` abren Laurean con **HTTPS automático**.
+
+> Si prefieres NO mover nameservers: en Pages te dan un target `*.pages.dev`; agrega
+> un **CNAME** `www` → ese target en GoDaddy. El dominio raíz (apex) da problemas por
+> CNAME en GoDaddy, por eso se recomienda el cambio de nameservers.
+
 6. **Restringir CORS** (tras fijar el dominio): en Supabase
    `supabase secrets set FRONTEND_ORIGIN=https://<tu-dominio>` y re-deploya las
    edge functions. En producción QPayPro rechaza POSTs si este secret no coincide
    con el origen del sitio.
 
-## 3a. Alternativa — Cloudflare Pages
+## 3a. Alternativa — Vercel
 
-1. Subir el repo a GitHub.
-2. Cloudflare Dashboard → **Workers & Pages → Create → Pages → Connect to Git**.
-3. Build settings:
-   - **Framework preset**: None
-   - **Build command**: *(vacío)*
-   - **Build output directory**: `/` (raíz del repo)
-4. Deploy. Cloudflare sirve los `.html` directamente.
-5. **Importante**: el sitio entra por `Laurean.html`, no `index.html`.
-   Crear un `index.html` que redirija, o configurar la home a `/Laurean.html`.
-
-### DNS (Cloudflare)
-- Dominio gestionado en Cloudflare → la asignación a Pages es automática
-  (`tu-dominio.com` → proyecto Pages).
-- Si el dominio está fuera, agregar registro **CNAME** `@`/`www` →
-  `<proyecto>.pages.dev`.
+El repo ya **no** trae `vercel.json` (se migró a Cloudflare). Vercel funciona, pero
+su plan **Hobby es solo no-comercial** → para una tienda que lucra necesitas
+**Vercel Pro (~$20/mes)**. Si lo usas: Framework *Other*, build command
+`node scripts/gen-config.js && node scripts/gen-sitemap.js`, output `.`, las mismas
+env vars, y portar los headers/CSP de `_headers` a un `vercel.json`. DNS en GoDaddy:
+**A** `@` → `76.76.21.21`, **CNAME** `www` → `cname.vercel-dns.com`.
 
 ## 3b. Alternativa — Netlify
 
