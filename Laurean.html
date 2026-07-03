@@ -3440,7 +3440,7 @@
 
     function shouldShowPublicPrice(p) {
       const baseGtq = p.price_gtq ?? p.base_gtq ?? 0;
-      return p.show_price !== false && Number(baseGtq) > 0;
+      return Number(baseGtq) > 0;
     }
 
     function getProductPrices(p) {

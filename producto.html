@@ -819,7 +819,7 @@
     });
 
     function shouldShowPublicPrice(p) {
-      return p && p.show_price !== false && Number(p.price_gtq || p.base_gtq || 0) > 0;
+      return p && Number(p.price_gtq || p.base_gtq || 0) > 0;
     }
 
     function getVisiblePrices(p) {

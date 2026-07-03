@@ -193,7 +193,7 @@
 
     // ─── Precio visible según sesión ─────────────────────────────────────────
     function getPriceDisplay(p) {
-      if (!p.show_price || !(p.price_gtq > 0)) return null;
+      if (!(p.price_gtq > 0)) return null;
       var session = (typeof getSession === 'function') ? getSession() : null;
       var role    = session ? session.role : null;
       if (typeof getProductPrice === 'function' && role) {
