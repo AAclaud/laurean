@@ -328,6 +328,7 @@
       '  <div class="category-grid">',
       cards,
       '  </div>',
+      '  <p class="category-signature">Laurean <em>by Seong Woo</em></p>',
       '</section>'
     ].join('');
   }
