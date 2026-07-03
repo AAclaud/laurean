@@ -100,8 +100,8 @@
     /* ─── Scroll reveal ────────────────────────────────────────────────────── */
     .reveal {
       opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.85s var(--ease), transform 0.85s var(--ease);
+      transform: translateY(26px);
+      transition: opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1), transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     .reveal-delay-1 { transition-delay: 0.1s; }
@@ -755,17 +755,6 @@
     .sw-add:hover { background: var(--crema); }
     .sw-card .seller-hook { color: rgba(255,255,255,0.86); }
 
-    /* ─── Accessories ──────────────────────────────────────────────────────── */
-    .accessories-wrap {
-      background: var(--crema);
-      padding: 88px 64px;
-    }
-    .accessories-header { margin-bottom: 52px; }
-    .accessories-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 28px;
-    }
     .prod-card { cursor: pointer; }
     .prod-img-wrap {
       aspect-ratio: 1 / 1;
@@ -1939,11 +1928,9 @@
       .sec-header        { padding: 72px 40px 44px; }
       .editorial-content { padding: 60px 56px; }
       .sweaters-header   { padding: 0 40px 44px; }
-      .accessories-wrap  { padding: 72px 40px; }
       .trust-bar         { padding: 52px 40px; }
       footer             { padding: 64px 40px 36px; }
       .cat-name          { font-size: 30px; }
-      .accessories-grid  { grid-template-columns: repeat(3, 1fr); }
     }
 
     /* ─── ≤ 768px ─────────────────────────────────────────────────────────── */
@@ -1990,10 +1977,6 @@
       .sweaters-grid   { grid-template-columns: 1fr; }
       .sw-card         { height: 300px; aspect-ratio: auto; }
 
-      /* Accesorios */
-      .accessories-wrap { padding: 56px 20px; }
-      .accessories-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-
       /* Full bleed */
       .full-bleed       { height: 55vh; min-height: 300px; }
       .full-bleed-title { font-size: clamp(26px, 7vw, 46px); margin-bottom: 28px; }
@@ -2019,7 +2002,6 @@
     @media (max-width: 480px) {
       .hero-cta          { flex-direction: column; align-items: flex-start; gap: 16px; }
       .footer-top        { grid-template-columns: 1fr; }
-      .accessories-grid  { grid-template-columns: 1fr; }
       .pay-badges        { flex-wrap: wrap; gap: 8px; }
     }
 
@@ -2724,7 +2706,8 @@
     <!-- 5. Sweaters -->
     <section class="sweaters-wrap">
       <div class="sweaters-header reveal">
-        <h2 class="sec-title">Punto fino para<br><em>toda la familia</em></h2>
+        <h2 class="sec-title">Suéteres que abrigan<br><em>a toda la familia</em></h2>
+        <p class="sec-sub" style="color:var(--warm-mid);font-size:14px;margin-top:10px;font-weight:300">Tejidos suaves para mujer, hombre y niños — moda guatemalteca pensada para el día a día.</p>
       </div>
       <div class="sweaters-grid" id="sweaters-grid">
         <!-- Rendered from products.js -->
@@ -2738,19 +2721,6 @@
         <p style="color:var(--warm-mid);font-size:14px;margin-top:8px;">Paquetes con precio especial, armados con lo mejor de la colección.</p>
       </div>
       <div id="combos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;"></div>
-    </section>
-
-    <!-- 7. Accesorios y Calzado -->
-    <section class="accessories-wrap">
-      <div class="accessories-header reveal">
-        <div class="sec-header" style="padding:0 0 0 0">
-          <h2 class="sec-title">Completa el look —<br><em>Accesorios y Calzado</em></h2>
-          <a href="coleccion.html?cat=accesorios" class="sec-link">Ver accesorios</a>
-        </div>
-      </div>
-      <div class="accessories-grid" id="accessories-grid">
-        <!-- Rendered from products.js -->
-      </div>
     </section>
 
     <!-- 8. Vitrina catálogo disponible -->
@@ -4634,30 +4604,6 @@
               <div class="sw-price">${showPrice ? 'Q' + Number(prices.laurean_gtq).toLocaleString() : 'Precio por asesoría'}</div>
             </div>
           </article>`;
-        }).join('');
-      }
-
-      // ── Accessories ──────────────────────────────────────────────────────────
-      const accGrid = document.getElementById('accessories-grid');
-      if (accGrid && data.accessories) {
-        accGrid.innerHTML = data.accessories.map(p => {
-          const showPrice = shouldShowPublicPrice(p);
-          const prices = showPrice ? getProductPrices(p) : null;
-          const cta = showPrice
-            ? `<button class="prod-add-btn" onclick="event.stopPropagation();addToCartById('${jsAttr(p.id)}')">+ Agregar al carrito</button>`
-            : `<button class="prod-add-btn" onclick="event.stopPropagation();contactMayoreo('${jsAttr(p.id)}')">Contactar a Laurean</button>`;
-          return `
-          <div class="prod-card" onclick="goProducto('${jsAttr(p.id)}')" role="button" tabindex="0"
-               onkeydown="if(event.key==='Enter')goProducto('${jsAttr(p.id)}')">
-            <div class="prod-img-wrap brand-img">
-              ${favoriteButtonHtml(p.id)}
-              ${shareButtonHtml(p.id)}
-              ${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}
-              ${cta}
-            </div>
-            <div class="prod-name">${escapeHtml(p.name)}</div>
-            ${showPrice ? `<div class="prod-price">Q${Number(prices.laurean_gtq).toLocaleString()}</div>${sellerHookHtml(p)}` : '<div class="prod-price">Precio disponible por asesoría</div>'}
-          </div>`;
         }).join('');
       }
 
