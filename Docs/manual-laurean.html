@@ -509,7 +509,13 @@
         <tr><td><code>pos.html</code></td><td>Punto de venta táctil para tienda física. Badge "New" en posición absoluta sobre la imagen (no descuadra el layout); placeholder de marca en tarjetas sin foto; logo → <code>Laurean.html#inicio</code>.</td><td>auth.js, catalog-loader.js, brand.css, brand-img.js</td></tr>
         <tr><td><code>login.html</code></td><td>Login compartido con Supabase Auth para todos los roles.</td><td>auth.js, supabase-client.js</td></tr>
         <tr><td><code>vendedoras.html</code></td><td>Landing de reclutamiento de vendedoras (pública).</td><td>supabase-client.js</td></tr>
-        <tr><td><code>envios.html</code></td><td>Vista independiente de cotización de envíos Forza.</td><td>forza-client.js, auth.js</td></tr>
+        <tr><td><code>envios.html</code></td><td>Página pública de información de envíos; ya no redirige al admin. Enlazada desde footer.</td><td>site-footer.js, cursor.js, analytics.js</td></tr>
+        <tr><td><code>cambios-devoluciones.html</code></td><td>Página legal/información pública con SEO propio. Enlazada desde footer.</td><td>site-footer.js, cursor.js, analytics.js</td></tr>
+        <tr><td><code>faq.html</code></td><td>Página legal/información pública con SEO propio. Enlazada desde footer.</td><td>site-footer.js, cursor.js, analytics.js</td></tr>
+        <tr><td><code>contacto.html</code></td><td>Página legal/información pública con SEO propio. Enlazada desde footer.</td><td>site-footer.js, cursor.js, analytics.js</td></tr>
+        <tr><td><code>privacidad.html</code></td><td>Página legal/información pública con SEO propio. Enlazada desde footer.</td><td>site-footer.js, cursor.js, analytics.js</td></tr>
+        <tr><td><code>terminos.html</code></td><td>Página legal/información pública con SEO propio. Enlazada desde footer.</td><td>site-footer.js, cursor.js, analytics.js</td></tr>
+        <tr><td><code>404.html</code></td><td>Página de error de marca. Cloudflare Pages la sirve en rutas inexistentes y carpetas bloqueadas.</td><td>brand.css, site-footer.js, cursor.js, analytics.js</td></tr>
         <tr><td><code>index.html</code></td><td>Redireccionador raíz → Laurean.html.</td><td>—</td></tr>
       </tbody>
     </table>
@@ -521,6 +527,7 @@
         <tr><td><code>js/auth.js</code></td><td>Capa de sesión y roles: Supabase Auth, login/logout, createOrder, escapeHtml. Capa híbrida: Supabase + localStorage como compat.</td><td>Todas las páginas autenticadas</td></tr>
         <tr><td><code>js/supabase-client.js</code></td><td>Inicializa <code>window.LAUREAN_DB</code> (cliente Supabase) a partir de <code>js/config.js</code>. Fallback a null si no hay config.</td><td>Todas las páginas</td></tr>
         <tr><td><code>js/visit-tracker.js</code></td><td>Tracker público de visitas: crea <code>session_id</code> en sessionStorage, deduplica por página/sesión y llama a <code>log-visit</code>.</td><td>Laurean.html, catalogo.html, coleccion.html, nosotros.html, producto.html, laurean-women.html, laurean-men.html, laurean-kids.html, envios.html, arquitectura-laurean.html</td></tr>
+        <tr><td><code>js/analytics.js</code></td><td>GA4 + Meta Pixel con IDs placeholder y helper <code>window.track()</code>.</td><td>Todas las páginas públicas</td></tr>
         <tr><td><code>js/catalog-loader.js</code></td><td>Hidrata <code>window.LAUREAN_DATA</code> desde Supabase (productos <code>active=true</code>, incluye <code>show_price</code>, <code>week_number</code>, <code>gallery</code>). Caché localStorage 5 min, fallback a <code>data/products.js</code>. Emite el evento <code>laurean:catalog-ready</code>.</td><td>Laurean.html, catalogo.html, producto.html, pos.html, coleccion.html</td></tr>
         <tr><td><code>js/brand-img.js</code></td><td>Sistema de placeholder/loader de marca. Expone <code>window.LAUREAN_BRAND_IMG_SCAN(root)</code>: recorre las <code>.brand-img</code> y muestra el logo Laurean tenue de fondo mientras la imagen (<code>.brand-img-photo</code>) carga o cuando no hay foto; la foto pasa de opacidad 0→1 en <code>onload</code>.</td><td>Laurean.html, catalogo.html, producto.html, pos.html, coleccion.html</td></tr>
         <tr><td><code>js/cursor.js</code></td><td>Cursor de marca compartido: activa punto + anillo sólo en dispositivos con hover/pointer fino, crea los nodos <code>.cursor-dot</code>/<code>.cursor-ring</code> si no existen y aplica estado hover sobre controles interactivos.</td><td>Todas las páginas públicas/admin/POS listadas en este mapa</td></tr>
@@ -558,7 +565,11 @@
         <tr><td><code>supabase/functions/qpaypro-proxy/</code></td><td>Edge Function de pago QPayPro (modo Hosted Page / redirección). En <code>action:'create'</code> <b>crea la orden</b> del lado servidor (service_role, omite RLS) <b>revalidando precios contra <code>products</code></b> (no confía en el monto del navegador), registra el intento en <code>payments</code> y devuelve la URL de pago. <b>Activación diferida</b>: sin secrets responde <code>configured:false</code> y el checkout usa fallback. El relay (GET público) confirma con <code>get_transaction_detail</code>. Ver Capítulo 06 / vault <code>qpaypro</code>.</td></tr>
         <tr><td><code>supabase/functions/_shared/cors.ts</code></td><td>Helper CORS compartido por todas las Edge Functions. Lee <code>FRONTEND_ORIGIN</code>.</td></tr>
         <tr><td><code>scripts/gen-config.js</code></td><td>Script de build (Node.js) que genera <code>js/config.js</code> a partir de variables de entorno SUPABASE_URL y SUPABASE_ANON.</td></tr>
-        <tr><td><code>vercel.json</code></td><td>Configuración de Vercel: build command, headers de seguridad, CSP, redirecciones.</td></tr>
+        <tr><td><code>scripts/gen-sitemap.js</code></td><td>Genera <code>sitemap.xml</code> en build: páginas estáticas + productos de Supabase. Se encadena en el build command de Cloudflare Pages.</td></tr>
+        <tr><td><code>_headers</code></td><td>Headers de seguridad + CSP para Cloudflare Pages; reemplaza lo que hacía <code>vercel.json</code>.</td></tr>
+        <tr><td><code>_redirects</code></td><td>Bloquea <code>Docs/</code>, <code>supabase/</code>, <code>scripts/</code> y <code>.claude/</code> en el hosting.</td></tr>
+        <tr><td><code>robots.txt</code></td><td>Permite el sitio público, bloquea <code>admin/</code>, <code>pos/</code>, <code>login/</code>, <code>revision/</code> y <code>arquitectura/</code>, y apunta al sitemap.</td></tr>
+        <tr><td><code>vercel.json</code></td><td>Eliminado: deploy migrado a Cloudflare Pages. Ver <code>Docs/deploy.md</code>.</td></tr>
         <tr><td><code>sw.js</code></td><td>Service Worker PWA: cachea assets por 7 días para acceso offline. Requiere HTTPS.</td></tr>
       </tbody>
     </table>

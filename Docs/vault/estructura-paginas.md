@@ -28,7 +28,20 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 | `pos.html` | Punto de venta: venta presencial, historial POS, cierre de caja | Roles POS + flags activos |
 | `login.html` | Autenticacion via Supabase Auth; redirige segun rol tras login | Publico |
 | `vendedoras.html` | Landing de reclutamiento; formulario de solicitud para ser vendedora | Publico |
+| `envios.html` | Pagina publica de informacion de envios; ya no redirige al admin; enlazada desde footer; usa [[site-footer.js]], [[cursor.js]] y [[analytics.js]] | Publico |
+| `cambios-devoluciones.html` | Pagina legal/informacion publica con SEO propio; enlazada desde footer; usa [[site-footer.js]], [[cursor.js]] y [[analytics.js]] | Publico |
+| `faq.html` | Pagina legal/informacion publica con SEO propio; enlazada desde footer; usa [[site-footer.js]], [[cursor.js]] y [[analytics.js]] | Publico |
+| `contacto.html` | Pagina legal/informacion publica con SEO propio; enlazada desde footer; usa [[site-footer.js]], [[cursor.js]] y [[analytics.js]] | Publico |
+| `privacidad.html` | Pagina legal/informacion publica con SEO propio; enlazada desde footer; usa [[site-footer.js]], [[cursor.js]] y [[analytics.js]] | Publico |
+| `terminos.html` | Pagina legal/informacion publica con SEO propio; enlazada desde footer; usa [[site-footer.js]], [[cursor.js]] y [[analytics.js]] | Publico |
+| `404.html` | Pagina de error de marca; [[Cloudflare Pages]] la sirve en rutas inexistentes y carpetas bloqueadas | Publico |
 | `index.html` | Redirect inmediato a `Laurean.html` | Publico |
+| `js/analytics.js` | GA4 + Meta Pixel con IDs placeholder y helper `window.track()`; incluido en todas las publicas | Publico |
+| `_headers` | Headers de seguridad + CSP para [[Cloudflare Pages]]; reemplaza lo que hacia `vercel.json` | Deploy |
+| `_redirects` | Bloquea `Docs/`, `supabase/`, `scripts/` y `.claude/` en el hosting | Deploy |
+| `robots.txt` | Allow publico, Disallow `admin/`, `pos/`, `login/`, `revision/` y `arquitectura/`; apunta al sitemap | Publico |
+| `scripts/gen-sitemap.js` | Genera `sitemap.xml` en build: estaticas + productos de [[modelo-datos-supabase|Supabase]]; encadenado en el build command de [[Cloudflare Pages]] | Build |
+| `vercel.json` | Eliminado: deploy migrado a [[Cloudflare Pages]]; ver [[deploy-dominio]] | Eliminado |
 
 ## Laurean.html — Tienda publica
 
