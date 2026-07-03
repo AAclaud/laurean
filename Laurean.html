@@ -3486,7 +3486,23 @@
       if (!shouldShowPublicPrice(p)) return '';
       const prices = getProductPrices(p);
       if (!prices || prices.seller_gtq == null) return '';
-      return `<a class="${className || 'seller-hook'}" href="vendedoras.html" onclick="event.stopPropagation()">Precio vendedor Q${Number(prices.seller_gtq).toLocaleString()} — regístrate como vendedora</a>`;
+      const cls = className || 'seller-hook';
+      const session = (typeof getSession === 'function') ? getSession() : null;
+      // Con sesión (vendedora/admin) sí se muestra el precio real; al público solo el % de ahorro.
+      if (session) {
+        return `<a class="${cls}" href="vendedoras.html" onclick="event.stopPropagation()">Precio vendedor Q${Number(prices.seller_gtq).toLocaleString()}</a>`;
+      }
+      return `<a class="${cls}" href="vendedoras.html" onclick="event.stopPropagation()">${sellerHookLabel(prices.laurean_gtq, prices.seller_gtq)}</a>`;
+    }
+
+    // Etiqueta estándar del gancho de vendedoras (sin exponer el precio):
+    // "Vendedoras: −X% · Ver programa" o genérica si no se puede calcular.
+    function sellerHookLabel(publicGtq, sellerGtq) {
+      const pub = Number(publicGtq), sel = Number(sellerGtq);
+      if (pub > 0 && sel > 0 && sel < pub) {
+        return `Vendedoras: −${Math.round((1 - sel / pub) * 100)}% de descuento · Ver programa`;
+      }
+      return 'Precio especial para vendedoras · Ver programa';
     }
 
     function renderFavorites() {

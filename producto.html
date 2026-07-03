@@ -1042,6 +1042,21 @@
       row.classList.add('visible');
     }
 
+    /* Etiqueta estándar del gancho de vendedoras: sin sesión NO expone el precio,
+       solo el % de ahorro ("Vendedoras: −X% · Ver programa"). Con sesión, precio real. */
+    function sellerHookText(priceObj) {
+      var session = (typeof getSession === 'function') ? getSession() : null;
+      if (session && priceObj && priceObj.seller_gtq != null) {
+        return 'Precio vendedor Q' + Number(priceObj.seller_gtq).toLocaleString();
+      }
+      var pub = priceObj ? Number(priceObj.laurean_gtq) : 0;
+      var sel = priceObj ? Number(priceObj.seller_gtq) : 0;
+      if (pub > 0 && sel > 0 && sel < pub) {
+        return 'Vendedoras: −' + Math.round((1 - sel / pub) * 100) + '% de descuento · Ver programa';
+      }
+      return 'Precio especial para vendedoras · Ver programa';
+    }
+
     /* ─── Renderizar producto ────────────────────────────────────────────────── */
     function renderProduct(p) {
       _product = p;
@@ -1119,7 +1134,7 @@
           + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>'
           + productShareButtonHtml()
           + '<a class="btn-secondary" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>'
-          + '<a class="seller-hook" href="vendedoras.html">Precio vendedor Q' + Number(priceObj.seller_gtq).toLocaleString() + ' — regístrate como vendedora</a>';
+          + '<a class="seller-hook" href="vendedoras.html">' + sellerHookText(priceObj) + '</a>';
       } else {
         /* Solo WhatsApp + favorito */
         ctasEl.innerHTML =
