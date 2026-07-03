@@ -20,3 +20,7 @@ js/config.js
 .supabase/
 supabase/.temp/
 sitemap.xml
+
+# Fuente de marca e inventario pesado: viven en disco/Drive, NO en el repo (Cloudflare limita 25MB/archivo)
+images/LAUREAN_CARPETAFINAL-2/
+Docs/*.xlsx

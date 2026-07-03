@@ -355,7 +355,16 @@
 
       var sellerBtn = '';
       if (!hasPrice) {
-        sellerBtn = '<button class="prod-btn-seller" onclick="handleVerPrecioVendedor(event, \'' + esc(p.id) + '\', ' + Number(p.price_gtq || 0) + ', ' + Number(p.price_usd || 0) + ')">Ver precio vendedor</button>';
+        // Gancho estándar: no expone el precio de vendedora; muestra el % de ahorro.
+        var sellerLbl = 'Precio especial para vendedoras · Ver programa';
+        try {
+          var spr = (typeof getProductPrice === 'function') ? getProductPrice(p.id, Number(p.price_gtq || 0), Number(p.price_usd || 0), 'vendedor') : null;
+          var pubP = Number(p.price_gtq || 0);
+          if (spr && pubP > 0 && Number(spr.gtq) > 0 && Number(spr.gtq) < pubP) {
+            sellerLbl = 'Vendedoras: −' + Math.round((1 - Number(spr.gtq) / pubP) * 100) + '% de descuento · Ver programa';
+          }
+        } catch (e) {}
+        sellerBtn = '<button class="prod-btn-seller" onclick="handleVerPrecioVendedor(event, \'' + esc(p.id) + '\', ' + Number(p.price_gtq || 0) + ', ' + Number(p.price_usd || 0) + ')">' + sellerLbl + '</button>';
       }
 
       return '<article class="prod" onclick="location.href=\'' + ctaHref + '\'">'
