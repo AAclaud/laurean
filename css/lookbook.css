@@ -217,10 +217,10 @@ button { font: inherit; }
   min-height: 430px;
   border-radius: 0;
   opacity: 0;
-  transform: translate3d(26px, 0, 0) scale(1.045);
+  transform: scale(1.045);
   transition:
     opacity 1.25s var(--ease),
-    transform 1.7s cubic-bezier(.2, .7, .16, 1);
+    transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .lookbook-slide[data-align="bleed"] .slide-media {
@@ -229,7 +229,7 @@ button { font: inherit; }
   z-index: -2;
   height: 100%;
   min-height: 100%;
-  transform: scale(1.055);
+  transform: scale(1.045);
 }
 
 .lookbook-slide[data-align="bleed"] .slide-media::after {
@@ -254,10 +254,10 @@ button { font: inherit; }
 .slide-copy {
   max-width: 620px;
   opacity: 0;
-  transform: translate3d(0, 34px, 0);
+  transform: translate3d(0, 18px, 0);
   transition:
-    opacity 1s var(--ease) .28s,
-    transform 1.18s cubic-bezier(.2, .7, .16, 1) .28s;
+    opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1) .25s,
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1) .25s;
 }
 
 .lookbook-slide[data-align="bleed"] .slide-copy {
@@ -272,6 +272,16 @@ button { font: inherit; }
   object-position: left center;
   margin-bottom: clamp(24px, 4vh, 42px);
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, .18));
+}
+
+.lookbook-slide[data-theme="dark"] .slide-logo {
+  filter: brightness(0) invert(1);
+  opacity: .92;
+}
+
+.lookbook-slide[data-theme="light"] .slide-logo {
+  filter: brightness(0);
+  opacity: .78;
 }
 
 .slide-eyebrow {
@@ -304,6 +314,11 @@ button { font: inherit; }
   color: var(--slide-muted, var(--lookbook-muted));
   font-size: clamp(14px, 1.2vw, 17px);
   line-height: 1.8;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1) .45s,
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1) .45s;
 }
 
 .slide-rule {
@@ -328,7 +343,16 @@ button { font: inherit; }
   transform: scaleX(1);
 }
 
+.lookbook-slide.is-active .slide-kicker {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
 .lookbook-slide:not(.is-active) .slide-copy {
+  transition-delay: 0s;
+}
+
+.lookbook-slide:not(.is-active) .slide-kicker {
   transition-delay: 0s;
 }
 
@@ -421,6 +445,7 @@ button { font: inherit; }
   --cat-ink: #FCFBFC;
   --cat-muted: rgba(252, 251, 252, .72);
   --cat-line: rgba(252, 251, 252, .18);
+  --cat-shade: rgba(25, 26, 24, .18);
   --cat-hover-wash: rgba(143, 56, 51, .24);
   --cat-hover-line: rgba(235, 195, 114, .58);
   min-height: min(44vh, 460px);
@@ -430,7 +455,7 @@ button { font: inherit; }
   padding: clamp(22px, 3vw, 42px);
   background:
     linear-gradient(145deg, rgba(252, 251, 252, .09), transparent 46%),
-    linear-gradient(0deg, rgba(25, 26, 24, .18), rgba(25, 26, 24, .18)),
+    linear-gradient(0deg, var(--cat-shade), var(--cat-shade)),
     var(--cat-base);
   color: var(--cat-ink);
   box-shadow: inset 0 0 0 1px var(--cat-line);
@@ -439,35 +464,38 @@ button { font: inherit; }
 
 .category-card[data-ambient-target="women"] {
   --cat-base: #531F23;
-  --cat-deep: #A23646;
+  --cat-deep: #531F23;
   --cat-accent: #E6BAC2;
-  --cat-ink: #FCFBFC;
-  --cat-muted: rgba(230, 186, 194, .78);
+  --cat-ink: #E6BAC2;
+  --cat-muted: #E6BAC2;
   --cat-line: rgba(230, 186, 194, .22);
-  --cat-hover-wash: rgba(162, 54, 70, .30);
+  --cat-shade: transparent;
+  --cat-hover-wash: rgba(230, 186, 194, .16);
   --cat-hover-line: rgba(230, 186, 194, .68);
 }
 
 .category-card[data-ambient-target="men"] {
   --cat-base: #191A18;
-  --cat-deep: #192729;
+  --cat-deep: #314043;
   --cat-accent: #314043;
-  --cat-ink: #F2F2F2;
-  --cat-muted: rgba(242, 242, 242, .68);
-  --cat-line: rgba(242, 242, 242, .16);
+  --cat-ink: #F1ECE8;
+  --cat-muted: #F1ECE8;
+  --cat-line: rgba(241, 236, 232, .16);
+  --cat-shade: transparent;
   --cat-hover-wash: rgba(49, 64, 67, .42);
-  --cat-hover-line: rgba(242, 242, 242, .34);
+  --cat-hover-line: rgba(241, 236, 232, .34);
 }
 
 .category-card[data-ambient-target="kids"] {
   --cat-base: #A5CAD6;
-  --cat-deep: #8F3833;
-  --cat-accent: #EBC372;
-  --cat-ink: #192729;
-  --cat-muted: rgba(25, 39, 41, .70);
-  --cat-line: rgba(143, 56, 51, .18);
-  --cat-hover-wash: rgba(235, 195, 114, .26);
-  --cat-hover-line: rgba(143, 56, 51, .32);
+  --cat-deep: #A5CAD6;
+  --cat-accent: #191A18;
+  --cat-ink: #191A18;
+  --cat-muted: #191A18;
+  --cat-line: rgba(25, 26, 24, .18);
+  --cat-shade: transparent;
+  --cat-hover-wash: rgba(25, 26, 24, .08);
+  --cat-hover-line: rgba(25, 26, 24, .32);
 }
 
 .category-card:hover,
@@ -487,8 +515,13 @@ button { font: inherit; }
   height: 76px;
   object-fit: contain;
   object-position: left center;
-  filter: none;
-  opacity: .96;
+  filter: brightness(0) invert(1);
+  opacity: .95;
+}
+
+.category-card[data-ambient-target="kids"] .category-logo {
+  filter: brightness(0);
+  opacity: .8;
 }
 
 .category-card h2 {
@@ -637,8 +670,17 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;
-    transition-duration: .001ms !important;
+    transition: none !important;
     animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .slide-media,
+  .slide-copy,
+  .slide-kicker,
+  .quote-inner,
+  .slide-rule,
+  .category-card {
+    transform: none !important;
   }
 }

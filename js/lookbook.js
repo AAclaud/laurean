@@ -9,10 +9,10 @@
         align: 'bleed',
         logo: 'images/lookbook/logo-principal.svg',
         image: 'images/lookbook/familia-hero.jpg',
-        alt: 'Familia Laurean en una escena editorial',
+        alt: 'Familia vistiendo prendas Laurean en una escena editorial',
         eyebrow: 'LAUREAN',
         title: 'El arte de vestir bien',
-        kicker: 'La elegancia está en lo simple.',
+        kicker: 'La elegancia está en lo simple. Moda guatemalteca para toda la familia.',
         loading: 'eager'
       },
       {
@@ -22,7 +22,7 @@
         alt: 'Familia con prendas Laurean en exterior',
         eyebrow: 'Familia',
         title: 'Moda para la vida real',
-        kicker: 'Comodidad, estética y practicidad conviven en equilibrio.'
+        kicker: 'Ropa para la vida real: comodidad, estética y practicidad en equilibrio.'
       },
       {
         type: 'image',
@@ -42,7 +42,7 @@
         alt: 'Hombre caminando en ciudad con estilo sobrio',
         eyebrow: 'Laurean Men',
         title: 'Solidez sobria',
-        kicker: 'Masculinidad elegante, moderna y auténtica.'
+        kicker: 'Ropa para hombre: masculinidad elegante, moderna y auténtica.'
       },
       {
         type: 'image',
@@ -68,7 +68,7 @@
         alt: 'Mujer trabajando desde casa con niños',
         eyebrow: 'Laurean Women',
         title: 'Feminidad contemporánea',
-        kicker: 'Delicada, editorial, emocional; un lifestyle natural.'
+        kicker: 'Ropa para mujer: delicada, editorial y natural.'
       },
       {
         type: 'image',
@@ -88,7 +88,7 @@
         alt: 'Niño jugando con gafas de aviador',
         eyebrow: 'Laurean Kids',
         title: 'Exploración espontánea',
-        kicker: 'Dinámica, creativa y auténtica.'
+        kicker: 'Ropa para niños: dinámica, creativa y auténtica.'
       },
       {
         type: 'image',
@@ -120,7 +120,7 @@
         theme: 'dark',
         eyebrow: 'Colecciones',
         title: 'Tres formas de vestir bien',
-        kicker: 'Women, Men y Kids: submarcas con identidad propia dentro del mismo universo Laurean.',
+        kicker: 'Women, Men y Kids: tres colecciones con identidad propia, envío a toda Guatemala.',
         categories: [
           {
             name: 'Women',
@@ -159,6 +159,12 @@
     wheelLock: false,
     drag: null,
     observer: null
+  };
+
+  const CATEGORY_HREFS = {
+    women: 'laurean-women.html',
+    men: 'laurean-men.html',
+    kids: 'laurean-kids.html'
   };
 
   function escapeHtml(value) {
@@ -299,8 +305,11 @@
   function renderCategoriesSlide(slide, index) {
     const categories = Array.isArray(slide.categories) ? slide.categories : DEFAULT_LOOKBOOK.slides[12].categories;
     const cards = categories.map(function (cat) {
+      const key = String(cat.ambient || cat.name || '').trim().toLowerCase();
+      const savedHref = String(cat.href || '').trim();
+      const href = savedHref && savedHref !== '#' ? savedHref : CATEGORY_HREFS[key] || '#';
       return [
-        '<a class="category-card" href="' + escapeHtml(cat.href || '#') + '" data-ambient-target="' + escapeHtml(cat.ambient || '') + '">',
+        '<a class="category-card" href="' + escapeHtml(href) + '" data-ambient-target="' + escapeHtml(cat.ambient || '') + '">',
         '  <img class="category-logo" src="' + escapeHtml(cat.logo || '') + '" alt="' + escapeHtml('Laurean ' + (cat.name || '')) + '" loading="lazy" decoding="async">',
         '  <div>',
         '    <h2>' + escapeHtml(cat.name || '') + '</h2>',
@@ -457,14 +466,20 @@
         scrollLeft: state.track.scrollLeft,
         moved: false
       };
-      state.track.classList.add('is-dragging');
-      state.track.setPointerCapture(event.pointerId);
     });
 
     state.track.addEventListener('pointermove', function (event) {
       if (!state.drag || state.drag.pointerId !== event.pointerId) return;
       const delta = event.clientX - state.drag.startX;
-      if (Math.abs(delta) > 6) state.drag.moved = true;
+      if (Math.abs(delta) > 6 && !state.drag.moved) {
+        state.drag.moved = true;
+        state.track.classList.add('is-dragging');
+        try {
+          state.track.setPointerCapture(event.pointerId);
+        } catch (error) {
+          // Pointer capture can fail if the pointer is already released.
+        }
+      }
       state.track.scrollLeft = state.drag.scrollLeft - delta;
     });
 
