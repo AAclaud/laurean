@@ -89,7 +89,6 @@
       + '      <li><a href="laurean-women.html">Laurean Women</a></li>'
       + '      <li><a href="laurean-men.html">Laurean Men</a></li>'
       + '      <li><a href="laurean-kids.html">Laurean Kids</a></li>'
-      + '      <li><a href="coleccion.html?cat=accesorios">Accesorios</a></li>'
       + '      <li><a href="catalogo.html">Catálogo</a></li>'
       + '    </ul>'
       + '  </div>'
