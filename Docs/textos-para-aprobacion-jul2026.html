@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laurean — Textos para su aprobación · AA Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+<style>
+  :root { --crema:#F1ECE8; --carbon:#191A18; --vino:#8F3833; --vino-dk:#531F23; --dorado:#C89B3C; --piedra:#E8E3DC; --warm:#6d6259;
+    --fd:'Cormorant Garamond',Georgia,serif; --fb:'DM Sans',-apple-system,sans-serif; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:var(--fb); background:var(--crema); color:var(--carbon); font-size:15px; line-height:1.65; }
+  .wrap { max-width:820px; margin:0 auto; padding:0 24px; }
+  .cover { background:var(--carbon); color:#fff; padding:74px 0 60px; text-align:center; }
+  .cover .brand { font-family:var(--fd); font-style:italic; font-size:46px; color:var(--crema); }
+  .cover .brand small { display:block; font-family:var(--fb); font-style:normal; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--dorado); margin-top:8px; }
+  .cover h1 { font-family:var(--fd); font-weight:300; font-size:clamp(26px,4vw,38px); margin:34px 0 12px; }
+  .cover h1 em { font-style:italic; }
+  .cover p { max-width:540px; margin:0 auto; color:rgba(255,255,255,.75); font-weight:300; font-size:14.5px; }
+  .cover .meta { margin-top:30px; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.5); }
+  .intro { padding:44px 0 8px; }
+  .intro p { color:var(--warm); font-weight:300; }
+  .lt-doc { background:#fff; border:1px solid rgba(25,26,24,.08); border-radius:14px; padding:34px 38px; margin:22px 0; box-shadow:0 16px 40px rgba(83,31,35,.07); }
+  .lt-docnum { font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--vino); margin-bottom:10px; }
+  .lt-body { border-bottom:1px solid var(--piedra); padding-bottom:24px; margin-bottom:22px; }
+  .lt-h { font-family:var(--fd); font-weight:500; font-size:30px; line-height:1.1; margin-bottom:14px; }
+  .lt-sub { font-family:var(--fd); font-weight:500; font-size:19px; margin:20px 0 6px; color:var(--vino-dk); }
+  .lt-eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--warm); margin-bottom:6px; }
+  .lt-body p { margin-bottom:9px; color:#3a352f; font-size:14.5px; }
+  .lt-ul { list-style:none; margin:6px 0 10px; }
+  .lt-ul li { padding-left:20px; position:relative; margin-bottom:6px; color:#3a352f; font-size:14.5px; }
+  .lt-ul li::before { content:'—'; position:absolute; left:0; color:var(--vino); }
+  .pend { background:rgba(200,155,60,.16); color:#8a6620; border:1px solid rgba(200,155,60,.4); border-radius:4px; padding:1px 6px; font-size:12.5px; font-weight:500; }
+  .lt-approve { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:620px){ .lt-approve{grid-template-columns:1fr;} .lt-doc{padding:24px;} }
+  .lt-field { display:flex; flex-direction:column; gap:5px; }
+  .lt-field.full { grid-column:1/-1; }
+  .vf-label { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--vino); }
+  .vf-sel, .vf-ta { font-family:var(--fb); font-size:14px; color:var(--carbon); background:var(--crema); border:1px solid rgba(25,26,24,.16); border-radius:8px; padding:10px 12px; width:100%; }
+  .vf-sel:focus, .vf-ta:focus { outline:none; border-color:var(--vino); box-shadow:0 0 0 3px rgba(143,56,51,.12); }
+  .vf-ta { resize:vertical; min-height:56px; }
+  .actions { position:sticky; bottom:0; background:linear-gradient(to top, var(--crema) 70%, transparent); padding:22px 0 30px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  .btn { font-family:var(--fb); font-size:12px; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; border:1px solid var(--vino); background:var(--vino); color:#fff; padding:13px 26px; border-radius:6px; }
+  .btn:hover { opacity:.9; }
+  .btn.ghost { background:transparent; color:var(--vino); }
+  .msg { font-size:13px; color:#2e7d32; font-weight:500; }
+  footer { background:var(--carbon); color:rgba(255,255,255,.6); text-align:center; padding:44px 24px; }
+  footer .sig { font-family:var(--fd); font-style:italic; font-size:20px; color:var(--dorado); }
+  footer .sig small { display:block; font-family:var(--fb); font-style:normal; font-size:10px; letter-spacing:.26em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:6px; }
+  footer p { font-size:12px; margin-top:14px; }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="wrap">
+    <div class="brand">laurean<small>El arte de vestir bien</small></div>
+    <h1>Textos para su <em>visto bueno</em></h1>
+    <p>Estos son los textos actualmente publicados en su tienda (páginas legales y de información). Revíselos y apruébelos, o indíquenos los cambios que desee.</p>
+    <div class="meta">AA Projects · para Laurean · Julio 2026</div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="intro">
+    <p>Las partes marcadas como <span class="pend">[POR COMPLETAR / CONFIRMAR]</span> son datos que aún esperamos de su parte (los recogemos en el formulario de la presentación). Aquí solo necesitamos su aprobación de la <strong>redacción</strong>. Al terminar, use <strong>Exportar</strong> y envíenoslo.</p>
+  </div>
+  
+    <section class="lt-doc" data-group="Términos y condiciones">
+      <div class="lt-docnum">Documento 1 de 6</div>
+      <div class="lt-body"><p class="lt-eyebrow">Condiciones · Laurean</p><h3 class="lt-h">Términos y condiciones</h3><p>Estas condiciones ordenan el uso de la tienda en línea de Laurean y la relación de compra con nuestros clientes en Guatemala.</p><h4 class="lt-sub">Precios</h4><p>Los precios se muestran en quetzales guatemaltecos (GTQ). Pueden cambiar sin previo aviso y las promociones aplican según su vigencia, disponibilidad y condiciones comunicadas al momento de la compra.</p><h4 class="lt-sub">Disponibilidad</h4><p>Los productos publicados están sujetos a existencias. Si una prenda o talla no está disponible después de recibir tu pedido, te contactaremos para confirmar una alternativa o proceder según corresponda.</p><h4 class="lt-sub">Pagos</h4><p>Aceptamos pagos con tarjeta, transferencia, QR y contra entrega. La confirmación de cada método puede depender de la validación de la pasarela de pago, banco o proceso interno de Laurean.</p><h4 class="lt-sub">Pedidos</h4><p>Confirmamos el pedido por WhatsApp. Nos reservamos el derecho de cancelar pedidos con datos incompletos, inconsistentes o sospechosos, especialmente cuando no sea posible validar la información necesaria para procesar la entrega.</p><h4 class="lt-sub">Propiedad intelectual</h4><p>La marca Laurean, su logo, fotografías, textos, diseños y demás contenidos de la tienda son de su propiedad o se utilizan con autorización. No pueden copiarse, distribuirse o usarse comercialmente sin permiso previo.</p><h4 class="lt-sub">Ley aplicable</h4><p>Estos términos se rigen por las leyes de la República de Guatemala.</p><h4 class="lt-sub">Responsable</h4><p>El responsable de la tienda en línea es <span class="pend">[POR COMPLETAR: razón social y NIT]</span>.</p><p>Última revisión: <span class="pend">[POR COMPLETAR: fecha de aprobación legal]</span></p></div>
+      <div class="lt-approve">
+        <div class="lt-field">
+          <span class="vf-label">Su decisión sobre este texto</span>
+          <select class="vf-sel" data-field="Estado">
+            <option value="">Seleccione…</option>
+            <option>Aprobado sin cambios</option>
+            <option>Aprobado con los cambios indicados</option>
+            <option>Requiere revisión</option>
+          </select>
+        </div>
+        <div class="lt-field full">
+          <span class="vf-label">Cambios solicitados / comentarios (opcional)</span>
+          <textarea class="vf-ta" data-field="Comentarios" placeholder="Escriba aquí cualquier ajuste al texto de Términos y condiciones."></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="lt-doc" data-group="Política de privacidad">
+      <div class="lt-docnum">Documento 2 de 6</div>
+      <div class="lt-body"><p class="lt-eyebrow">Privacidad · Laurean</p><h3 class="lt-h">Política de privacidad</h3><p>Tratamos tus datos con criterio, cuidado y transparencia para que tu experiencia de compra sea clara desde el primer mensaje hasta la entrega.</p><h4 class="lt-sub">Datos que recopilamos</h4><p>Al hacer un pedido podemos recopilar tu nombre, teléfono, dirección de envío y correo electrónico, cuando decidas compartirlo. También registramos datos básicos de navegación mediante un contador de visitas propio, sin cookies de terceros.</p><h4 class="lt-sub">Para qué los usamos</h4><p>Usamos tus datos para procesar y enviar pedidos, brindar atención al cliente y mejorar la tienda. La información se utiliza únicamente para operar la relación comercial y cuidar la experiencia de compra.</p><h4 class="lt-sub">Con quién los compartimos</h4><p>Compartimos solo lo necesario con la empresa de mensajería, para entregar tu pedido, y con la pasarela de pago, para completar el cobro. No vendemos tus datos personales.</p><h4 class="lt-sub">Tus derechos</h4><p>Puedes pedir acceso, corrección o eliminación de tus datos escribiendo a <span class="pend">[POR COMPLETAR: correo de contacto]</span> o por WhatsApp al +502 3667 2415.</p><h4 class="lt-sub">Responsable</h4><p>El responsable del tratamiento de datos es <span class="pend">[POR COMPLETAR: razón social y NIT]</span>.</p><p>Última revisión: <span class="pend">[POR COMPLETAR: fecha de aprobación legal]</span></p></div>
+      <div class="lt-approve">
+        <div class="lt-field">
+          <span class="vf-label">Su decisión sobre este texto</span>
+          <select class="vf-sel" data-field="Estado">
+            <option value="">Seleccione…</option>
+            <option>Aprobado sin cambios</option>
+            <option>Aprobado con los cambios indicados</option>
+            <option>Requiere revisión</option>
+          </select>
+        </div>
+        <div class="lt-field full">
+          <span class="vf-label">Cambios solicitados / comentarios (opcional)</span>
+          <textarea class="vf-ta" data-field="Comentarios" placeholder="Escriba aquí cualquier ajuste al texto de Política de privacidad."></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="lt-doc" data-group="Cambios y devoluciones">
+      <div class="lt-docnum">Documento 3 de 6</div>
+      <div class="lt-body"><p class="lt-eyebrow">Atención postcompra</p><h3 class="lt-h">Cambios y devoluciones</h3><p>Queremos que tu compra se sienta clara antes y después de recibirla. Estas son las condiciones para solicitar cambios, ajustes de talla y devoluciones en Laurean.</p><h4 class="lt-sub">Plazo</h4><p>Dispones de <span class="pend">[POR CONFIRMAR: X]</span> días desde que recibes el pedido para solicitar un cambio. La solicitud debe realizarse dentro de ese plazo para que podamos revisar disponibilidad, estado de la prenda y ruta de envío.</p><h4 class="lt-sub">Condiciones</h4><p>La prenda debe estar sin uso, con su etiqueta y en su empaque original. No se aceptan cambios de productos con señales de uso, lavado, alteraciones, manchas, aromas o daños no reportados al momento de recibir el pedido.</p><h4 class="lt-sub">Cómo solicitar</h4><p>Escríbenos por WhatsApp al +502 3667 2415 con tu número de pedido, nombre completo, prenda que deseas cambiar y motivo de la solicitud.</p><p>Solicitar por WhatsApp</p><h4 class="lt-sub">Cambios de talla</h4><p>Si la talla no fue la adecuada, revisaremos la disponibilidad de la talla solicitada y te indicaremos el procedimiento para coordinar el cambio. El proceso puede incluir una nueva guía de envío o una coordinación directa según tu ubicación y el método de entrega original.</p><h4 class="lt-sub">Reembolsos</h4><p><span class="pend">[POR CONFIRMAR: método y plazos de reembolso]</span></p></div>
+      <div class="lt-approve">
+        <div class="lt-field">
+          <span class="vf-label">Su decisión sobre este texto</span>
+          <select class="vf-sel" data-field="Estado">
+            <option value="">Seleccione…</option>
+            <option>Aprobado sin cambios</option>
+            <option>Aprobado con los cambios indicados</option>
+            <option>Requiere revisión</option>
+          </select>
+        </div>
+        <div class="lt-field full">
+          <span class="vf-label">Cambios solicitados / comentarios (opcional)</span>
+          <textarea class="vf-ta" data-field="Comentarios" placeholder="Escriba aquí cualquier ajuste al texto de Cambios y devoluciones."></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="lt-doc" data-group="Envíos">
+      <div class="lt-docnum">Documento 4 de 6</div>
+      <div class="lt-body"><p class="lt-eyebrow">Cobertura nacional</p><h3 class="lt-h">Envíos</h3><p>En Laurean enviamos a todos los departamentos de Guatemala, cuidando que cada pedido llegue con una experiencia clara, acompañada y fácil de seguir.</p><h4 class="lt-sub">Métodos de envío</h4><p>Trabajamos con Forza Delivery, Cargo Expreso y Sobrex para cubrir distintas rutas dentro del país. El costo se calcula y se muestra en el checkout según el método elegido para tu dirección.</p><ul class="lt-ul"><li>Forza Delivery para entregas con guía y seguimiento.</li></ul><ul class="lt-ul"><li>Cargo Expreso para cobertura nacional según disponibilidad de ruta.</li></ul><ul class="lt-ul"><li>Sobrex como alternativa de envío en zonas seleccionadas.</li></ul><h4 class="lt-sub">Tiempos estimados</h4><p>Para ciudad capital, el tiempo estimado es de 1-3 días hábiles. Para el interior del país, el tiempo estimado es de 2-5 días hábiles. <span class="pend">[POR CONFIRMAR plazos exactos]</span></p><p>Los tiempos pueden variar según dirección, temporada, disponibilidad del operador logístico y confirmación del pago.</p><h4 class="lt-sub">Seguimiento</h4><p>Los envíos por Forza incluyen número de guía para rastrear el pedido. Cuando tu compra avance en el proceso de despacho, te compartiremos la información disponible para que puedas darle seguimiento.</p><h4 class="lt-sub">Cambio de talla</h4><p>Si necesitas ajustar la talla después de recibir tu pedido, Laurean facilita el cambio de talla bajo las condiciones vigentes. Puedes revisar el proceso en Cambios y devoluciones .</p><h4 class="lt-sub">¿Dudas sobre tu envío?</h4><p>Escríbenos por WhatsApp y con gusto revisamos tu caso, método disponible o estado de pedido.</p><p>Escribir por WhatsApp</p></div>
+      <div class="lt-approve">
+        <div class="lt-field">
+          <span class="vf-label">Su decisión sobre este texto</span>
+          <select class="vf-sel" data-field="Estado">
+            <option value="">Seleccione…</option>
+            <option>Aprobado sin cambios</option>
+            <option>Aprobado con los cambios indicados</option>
+            <option>Requiere revisión</option>
+          </select>
+        </div>
+        <div class="lt-field full">
+          <span class="vf-label">Cambios solicitados / comentarios (opcional)</span>
+          <textarea class="vf-ta" data-field="Comentarios" placeholder="Escriba aquí cualquier ajuste al texto de Envíos."></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="lt-doc" data-group="Preguntas frecuentes">
+      <div class="lt-docnum">Documento 5 de 6</div>
+      <div class="lt-body"><p class="lt-eyebrow">Guía rápida</p><h3 class="lt-h">Preguntas frecuentes</h3><p>Resolvemos las dudas más comunes sobre compras, pagos, envíos, cambios y el programa de mayoreo para vendedoras Laurean.</p><h4 class="lt-sub">Compras y pagos</h4><h4 class="lt-sub">¿Qué es Laurean?</h4><p>Laurean es una marca guatemalteca de moda para mujer, hombre y niños. Trabajamos una estética premium, sobria y cercana, con prendas pensadas para vestir bien sin complicar la experiencia de compra.</p><h4 class="lt-sub">¿Qué métodos de pago aceptan?</h4><p>Aceptamos tarjeta, transferencia bancaria, pago con QR y contra entrega. Las opciones disponibles pueden variar según el pedido, la dirección y el método de envío seleccionado.</p><h4 class="lt-sub">¿Cómo compro?</h4><p>Puedes agregar tus productos al carrito y completar el checkout en la tienda. Si prefieres asesoría antes de confirmar, también puedes escribirnos por WhatsApp al +502 3667 2415 .</p><h4 class="lt-sub">Envíos y cambios</h4><h4 class="lt-sub">¿Hacen envíos a toda Guatemala?</h4><p>Sí. Enviamos a todos los departamentos de Guatemala. El costo y el tiempo de entrega dependen del método de envío seleccionado en el checkout y de la cobertura disponible para tu dirección.</p><h4 class="lt-sub">¿Puedo cambiar la talla?</h4><p>Sí. Si la talla no fue la adecuada, puedes solicitar un cambio bajo las condiciones vigentes. Revisa el proceso completo en Cambios y devoluciones .</p><h4 class="lt-sub">Mayoreo / Vendedoras</h4><h4 class="lt-sub">¿Puedo revender Laurean?</h4><p>Sí. Laurean cuenta con un programa de mayoreo y reventa para vendedoras, sin inversión inicial ni manejo de stock, con comisiones por venta. Puedes conocer más en Vende Laurean .</p></div>
+      <div class="lt-approve">
+        <div class="lt-field">
+          <span class="vf-label">Su decisión sobre este texto</span>
+          <select class="vf-sel" data-field="Estado">
+            <option value="">Seleccione…</option>
+            <option>Aprobado sin cambios</option>
+            <option>Aprobado con los cambios indicados</option>
+            <option>Requiere revisión</option>
+          </select>
+        </div>
+        <div class="lt-field full">
+          <span class="vf-label">Cambios solicitados / comentarios (opcional)</span>
+          <textarea class="vf-ta" data-field="Comentarios" placeholder="Escriba aquí cualquier ajuste al texto de Preguntas frecuentes."></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="lt-doc" data-group="Contacto">
+      <div class="lt-docnum">Documento 6 de 6</div>
+      <div class="lt-body"><p class="lt-eyebrow">Atención · Laurean</p><h3 class="lt-h">Contacto</h3><p>Estamos para acompañarte con atención cercana, clara y sin complicaciones antes, durante y después de tu compra.</p><h4 class="lt-sub">Escríbenos por WhatsApp</h4><p>Para consultas sobre tallas, disponibilidad, pedidos o seguimiento de entrega, puedes escribirnos directamente a nuestro WhatsApp de atención.</p><p>+502 3667 2415</p><h4 class="lt-sub">Correo</h4><p><span class="pend">[POR COMPLETAR: correo de contacto]</span></p><h4 class="lt-sub">Redes sociales</h4><p><span class="pend">[POR COMPLETAR: enlaces de Instagram / Facebook / TikTok]</span></p><h4 class="lt-sub">Horario de atención</h4><p><span class="pend">[POR CONFIRMAR]</span></p><p>Cuéntanos qué necesitas. En Laurean cuidamos cada detalle para que elegir, comprar y recibir tus prendas se sienta simple y seguro.</p></div>
+      <div class="lt-approve">
+        <div class="lt-field">
+          <span class="vf-label">Su decisión sobre este texto</span>
+          <select class="vf-sel" data-field="Estado">
+            <option value="">Seleccione…</option>
+            <option>Aprobado sin cambios</option>
+            <option>Aprobado con los cambios indicados</option>
+            <option>Requiere revisión</option>
+          </select>
+        </div>
+        <div class="lt-field full">
+          <span class="vf-label">Cambios solicitados / comentarios (opcional)</span>
+          <textarea class="vf-ta" data-field="Comentarios" placeholder="Escriba aquí cualquier ajuste al texto de Contacto."></textarea>
+        </div>
+      </div>
+    </section>
+  <div class="actions">
+    <button type="button" class="btn" onclick="ltExport('txt')">Exportar (.txt)</button>
+    <button type="button" class="btn ghost" onclick="ltExport('copy')">Copiar todo</button>
+    <span class="msg" id="ltMsg"></span>
+  </div>
+</div>
+<footer>
+  <div class="sig">AA Projects<small>Desarrollo · Diseño · Tecnología</small></div>
+  <p>Preparado para Laurean · Julio 2026 · Su aprobación nos permite dejar los textos en firme.</p>
+</footer>
+<script>
+  function ltCollect(){
+    var L=['LAUREAN — Aprobación de textos','Para: AA Projects'];
+    try{L.push('Fecha: '+new Date().toLocaleDateString('es-GT'));}catch(e){L.push('Fecha: '+new Date().toDateString());}
+    L.push('======================================','');
+    document.querySelectorAll('.lt-doc').forEach(function(d){
+      L.push(d.getAttribute('data-group').toUpperCase());
+      d.querySelectorAll('[data-field]').forEach(function(f){
+        var val=(f.value||'').trim();
+        L.push('   '+f.getAttribute('data-field')+': '+(val||'(pendiente)'));
+      });
+      L.push('');
+    });
+    L.push('— Enviado desde el documento de aprobación de AA Projects —');
+    return L.join('\n');
+  }
+  function ltMsg(t){var m=document.getElementById('ltMsg');if(m){m.textContent=t;setTimeout(function(){m.textContent='';},4000);}}
+  function ltExport(mode){
+    var text=ltCollect();
+    if(mode==='copy'){
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){ltMsg('Copiado ✓ — péguelo en su correo o WhatsApp');},function(){ltLegacy(text);});}
+      else ltLegacy(text);
+      return;
+    }
+    try{
+      var b=new Blob([text],{type:'text/plain;charset=utf-8'});
+      var a=document.createElement('a');a.href=URL.createObjectURL(b);
+      a.download='Laurean-aprobacion-textos-'+new Date().toISOString().slice(0,10)+'.txt';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+      ltMsg('Descargado ✓');
+    }catch(e){ltLegacy(text);}
+  }
+  function ltLegacy(text){
+    try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ltMsg('Copiado ✓');}
+    catch(e){ltMsg('Copie manualmente el contenido.');}
+  }
+</script>
+</body>
+</html>

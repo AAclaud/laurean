@@ -1103,23 +1103,6 @@
           </div>
         </div>
 
-        <!-- Modal Kardex de producto -->
-        <div class="modal-overlay" id="kardex-modal" onclick="if(event.target===this)closeKardex()" style="display:none">
-          <div class="modal" style="max-width:760px">
-            <h2 class="modal-title" id="kardex-title">Kardex</h2>
-            <div id="kardex-summary" style="font-size:13px;color:var(--warm-mid);margin-bottom:12px"></div>
-            <div style="max-height:50vh;overflow-y:auto">
-              <table class="tbl">
-                <thead><tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Bodega</th><th style="text-align:right">Entrada</th><th style="text-align:right">Salida</th><th style="text-align:right">Saldo</th></tr></thead>
-                <tbody id="kardex-tbody"></tbody>
-              </table>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-light" onclick="closeKardex()">Cerrar</button>
-              <button class="btn btn-dark" id="kardex-print-btn" onclick="printKardex()">Imprimir kardex</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- ── VISTA: BODEGAS ─────────────────────────────────────────────────── -->
@@ -7558,5 +7541,22 @@
     </div>
   </div>
   <script defer src="js/cursor.js"></script>
+  <!-- Modal Kardex (global: se abre desde Productos y Proveedores) -->
+  <div class="modal-overlay" id="kardex-modal" onclick="if(event.target===this)closeKardex()" style="display:none">
+    <div class="modal" style="max-width:760px">
+      <h2 class="modal-title" id="kardex-title">Kardex</h2>
+      <div id="kardex-summary" style="font-size:13px;color:var(--warm-mid);margin-bottom:12px"></div>
+      <div style="max-height:50vh;overflow-y:auto">
+        <table class="tbl">
+          <thead><tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Bodega</th><th style="text-align:right">Entrada</th><th style="text-align:right">Salida</th><th style="text-align:right">Saldo</th></tr></thead>
+          <tbody id="kardex-tbody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeKardex()">Cerrar</button>
+        <button class="btn btn-dark" id="kardex-print-btn" onclick="printKardex()">Imprimir kardex</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
