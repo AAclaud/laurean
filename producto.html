@@ -1248,6 +1248,11 @@
       // Incluye productos creados localmente en el dashboard (normaliza category→parent)
       var allProds = allProducts();
       if (!allProds.length) {
+        if (!window.__catalogReady) {
+          document.getElementById('prod-loading').style.display  = '';
+          document.getElementById('prod-not-found').style.display = 'none';
+          return;
+        }
         document.getElementById('prod-loading').style.display  = 'none';
         document.getElementById('prod-not-found').style.display = '';
         return;
@@ -1255,11 +1260,17 @@
 
       var product = allProds.find(function(p) { return String(p.id) === String(id); });
       if (!product) {
+        if (!window.__catalogReady) {
+          document.getElementById('prod-loading').style.display  = '';
+          document.getElementById('prod-not-found').style.display = 'none';
+          return;
+        }
         document.getElementById('prod-loading').style.display  = 'none';
         document.getElementById('prod-not-found').style.display = '';
         return;
       }
 
+      document.getElementById('prod-not-found').style.display = 'none';
       renderProduct(product);
     }
 
@@ -1268,15 +1279,27 @@
        intentamos leer window.LAUREAN_DATA directamente (caso: carga rápida desde cache). */
     updateFavoriteUi();
     renderFavorites();
-    if ((window.LAUREAN_DATA && (window.LAUREAN_DATA.products || window.LAUREAN_DATA.sweaters || window.LAUREAN_DATA.accessories)) ||
-        (typeof getCustomProducts === 'function' && getCustomProducts().length)) {
+    window.__catalogReady = false;
+    document.addEventListener('laurean:catalog-ready', function(e) {
+      var source = e && e.detail ? e.detail.source : null;
+      window.__catalogReady = source !== 'cache';
       findAndRender();
-    } else {
-      document.addEventListener('laurean:catalog-ready', function() {
-        findAndRender();
-        renderFavorites();
-      });
+      renderFavorites();
+    });
+
+    if (document.readyState !== 'loading' &&
+        ((window.LAUREAN_DATA && (window.LAUREAN_DATA.products || window.LAUREAN_DATA.sweaters || window.LAUREAN_DATA.accessories)) ||
+        (typeof getCustomProducts === 'function' && getCustomProducts().length))) {
+      window.__catalogReady = true;
     }
+    findAndRender();
+
+    setTimeout(function() {
+      if (!window.__catalogReady) {
+        window.__catalogReady = true;
+        findAndRender();
+      }
+    }, 6000);
   </script>
   <script src="js/site-footer.js"></script>
   <script defer src="js/cursor.js"></script>

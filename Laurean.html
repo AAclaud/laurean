@@ -2483,7 +2483,7 @@
       </button>
       <div class="referral-body" id="referral-body">
         <div class="referral-input-row">
-          <input type="text" id="referral-input" placeholder="LAU-XXXX" maxlength="12" />
+          <input type="text" id="referral-input" placeholder="LAU-XXXX" maxlength="12" aria-label="Código de referido" />
           <button class="referral-apply-btn" onclick="applyReferral()">Aplicar</button>
         </div>
         <div class="referral-status" id="referral-status"></div>
@@ -2997,7 +2997,7 @@
   <div class="seller-panel" id="seller-panel">
     <div class="sp-head">
       <span class="sp-title">Mi Panel</span>
-      <button class="sp-close" onclick="closeSellerPanel()">
+      <button class="sp-close" onclick="closeSellerPanel()" aria-label="Cerrar panel de vendedora">
         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
