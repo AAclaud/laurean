@@ -1,7 +1,7 @@
 /* Reemplazar GA4_ID y PIXEL_ID por los IDs reales para activar la analítica. */
 (function() {
   var GA4_ID = 'G-XXXXXXXXXX';
-  var PIXEL_ID = 'XXXXXXXXXXXXXXX';
+  var PIXEL_ID = '656755720468865';
   var GA4_ON = GA4_ID !== 'G-XXXXXXXXXX' && /^G-[A-Z0-9]{6,}$/.test(GA4_ID);
   var PIXEL_ON = PIXEL_ID !== 'XXXXXXXXXXXXXXX' && /^\d{6,}$/.test(PIXEL_ID);
 
