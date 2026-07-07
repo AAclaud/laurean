@@ -12,7 +12,7 @@
 // ============================================================
 
 (function () {
-  const CACHE_KEY = 'laurean_catalog_cache';
+  const CACHE_KEY = 'laurean_catalog_cache_v2';
   const TTL_MS    = 5 * 60 * 1000;
 
   function emit(ok, source) {
