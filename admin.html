@@ -32,6 +32,7 @@
       z-index: 50;
       overflow-y: auto;
     }
+    .sidebar-overlay { display: none; }
     .sb-logo {
       padding: 32px 24px 28px;
       border-bottom: 1px solid rgba(255,255,255,0.07);
@@ -106,6 +107,7 @@
       padding: 0 36px;
       position: sticky; top: 0; z-index: 40;
     }
+    .mobile-menu-btn { display: none; }
     .main-header-title { font-size: 15px; font-weight: 500; color: var(--carbon); }
     .main-header-right { display: flex; align-items: center; gap: 12px; }
     .header-store-link {
@@ -215,6 +217,7 @@
     .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--fb); cursor: pointer; border: none; transition: opacity 0.2s; border-radius: 6px; }
     .btn:hover { opacity: 0.8; }
     .btn-dark  { background: var(--carbon); color: var(--crema); }
+    .btn-primary { background: var(--carbon); color: var(--crema); }
     .btn-light { background: var(--piedra); color: var(--carbon); }
     .btn-danger{ background: rgba(229,57,53,0.1); color: #C62828; border: 1px solid rgba(229,57,53,0.2); }
     .btn svg   { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
@@ -287,8 +290,14 @@
 
     /* ─── Configuración ───────────────────────────────────────────────────── */
     .config-section { background: white; border: 1px solid var(--piedra); padding: 28px; margin-bottom: 20px; }
-    .config-title   { font-size: 14px; font-weight: 500; margin-bottom: 20px; color: var(--carbon); }
+    .config-title,
+    .config-section-title { font-size: 14px; font-weight: 500; margin-bottom: 20px; color: var(--carbon); }
     .config-row     { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    #view-dashboard { position: relative; isolation: isolate; }
+    #view-dashboard::before,
+    #view-dashboard::after { pointer-events: none; z-index: -1; }
+    #view-dashboard > * { position: relative; z-index: 1; }
 
     /* ─── Empty state ─────────────────────────────────────────────────────── */
     .empty-state { text-align: center; padding: 60px 20px; color: var(--warm-mid); }
@@ -501,6 +510,74 @@
       .content { padding: 20px; }
       .main-header { padding: 0 20px; }
     }
+    @media (max-width: 768px) {
+      body { display: block; overflow-x: hidden; }
+      .sidebar {
+        width: min(280px, 86vw);
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        z-index: 120;
+      }
+      body.sidebar-open .sidebar { transform: translateX(0); }
+      .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(26,25,22,0.36);
+        z-index: 110;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease;
+      }
+      body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
+      .sb-link { justify-content: flex-start; padding: 11px 24px; }
+      .sb-link span, .sb-logo-sub, .sb-user-name, .sb-user-role, .sb-section, .sb-logout span { display: inline; }
+      .sb-logo-name { display: block; }
+      .sb-section { display: block; }
+      .sb-user { padding: 20px 24px; }
+      .sb-logout { justify-content: flex-start; }
+      .main { margin-left: 0; width: 100%; min-width: 0; }
+      .main-header {
+        min-height: 60px;
+        height: auto;
+        padding: 10px 16px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .mobile-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        flex: none;
+      }
+      .mobile-menu-btn svg { width: 18px; height: 18px; }
+      .main-header-title { flex: 1; min-width: 0; }
+      .main-header-right { flex-wrap: wrap; justify-content: flex-end; }
+      .content { padding: 16px; max-width: 100%; overflow-x: hidden; }
+      .view, .config-section, .table-wrap { max-width: 100%; }
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .table-wrap table { min-width: 720px; }
+      .users-table { min-width: 780px; }
+      .config-section { padding: 20px; overflow-x: auto; }
+      .filter-row .form-input,
+      #ord-search,
+      #ord-status-filter,
+      #ord-origin-filter,
+      #inv-filter-bodega,
+      #inv-filter-product,
+      #invmov-filter-type,
+      #invmov-filter-bodega,
+      #invmov-filter-product,
+      #mayoreo-search,
+      #mayoreo-filter-week {
+        width: 100% !important;
+        max-width: 100%;
+      }
+      #cal-month-label { min-width: 0 !important; }
+    }
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
@@ -621,10 +698,14 @@
       </button>
     </div>
   </aside>
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- Main -->
   <div class="main">
     <header class="main-header">
+      <button class="btn btn-icon mobile-menu-btn" type="button" onclick="toggleSidebar()" aria-label="Abrir menú" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <span class="main-header-title" id="header-title">Dashboard</span>
       <div class="main-header-right">
         <span class="header-badge" id="header-role">—</span>
@@ -952,6 +1033,63 @@
 
           <div style="margin-top:24px;display:flex;justify-content:flex-end;">
             <button class="btn btn-dark" onclick="saveSiteContent()">Guardar contenido</button>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h2 class="config-section-title">Datos del negocio <em>(legales / contacto)</em></h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Razón social</label>
+              <input type="text" class="form-input" id="cfg-biz-razon" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">NIT</label>
+              <input type="text" class="form-input" id="cfg-biz-nit" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Correo de contacto</label>
+              <input type="email" class="form-input" id="cfg-biz-correo" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Teléfono</label>
+              <input type="text" class="form-input" id="cfg-biz-telefono" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Dirección</label>
+              <textarea class="form-input" id="cfg-biz-direccion" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Horario de atención</label>
+              <textarea class="form-input" id="cfg-biz-horario" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Plazo para cambios (días)</label>
+              <input type="text" class="form-input" id="cfg-biz-plazo-cambios" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Método y plazo de reembolso</label>
+              <textarea class="form-input" id="cfg-biz-plazo-reembolso" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Plazos de envío (detalle)</label>
+              <textarea class="form-input" id="cfg-biz-plazo-envio" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha de revisión legal</label>
+              <input type="text" class="form-input" id="cfg-biz-fecha-revision" />
+            </div>
+          </div>
+          <div style="margin-top:24px;display:flex;justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="saveBusinessInfo()">Guardar datos del negocio</button>
           </div>
         </div>
 
@@ -2348,6 +2486,20 @@
       pagos:        'Pagos QPayPro',
     };
 
+    function setSidebarOpen(open) {
+      document.body.classList.toggle('sidebar-open', !!open);
+      const btn = document.querySelector('.mobile-menu-btn');
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function toggleSidebar() {
+      setSidebarOpen(!document.body.classList.contains('sidebar-open'));
+    }
+
+    function closeSidebar() {
+      setSidebarOpen(false);
+    }
+
     function showView(name) {
       if (SESSION && SESSION.role === 'agente_pedidos' && name !== 'pedidos') return;
       if (name === 'lookbook' && !lookbookCanManage()) {
@@ -2363,6 +2515,7 @@
       viewEl.classList.add('active');
       document.querySelector(`[data-view="${name}"]`)?.classList.add('active');
       document.getElementById('header-title').textContent = VIEW_TITLES[name] || name;
+      closeSidebar();
 
       if (name === 'dashboard')    renderDashboard();
       if (name === 'productos')    { renderCategories(); renderProducts(); }
@@ -2987,7 +3140,7 @@
       const users       = getUsers();
       const apps        = getVendorApplications();
       const sellers     = users.filter(u => u.role === 'vendedor' && u.active);
-      const totalRev    = orders.filter(o => o.status !== 'cancelado').reduce((s, o) => s + (o.total_gtq || 0), 0);
+      const totalRev    = orders.filter(o => o.status === 'completado').reduce((s, o) => s + (o.total_gtq || 0), 0);
       const pendCom     = commissions.filter(c => c.status === 'pendiente').reduce((s, c) => s + c.commissionAmount, 0);
       const pendApps    = apps.filter(a => a.status === 'pendiente').length;
       const newOrders   = getNewOrderCount();
@@ -3001,7 +3154,7 @@
         <div class="stat-card">
           <div class="stat-label">Ingresos totales</div>
           <div class="stat-value">${fmtQ(totalRev)}</div>
-          <div class="stat-sub">Pedidos confirmados</div>
+          <div class="stat-sub">Pedidos completados</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Vendedores activos</div>
@@ -3921,6 +4074,7 @@
       renderTiers();
       loadShippingRates();
       loadSiteContent();
+      loadBusinessInfo();
     }
 
     // ─── Niveles de vendedor ─────────────────────────────────────────────────────
@@ -4061,6 +4215,45 @@
         saveSiteSettings({ marquee, marquee_size, whatsapp, social_links });
       }
       alert('Contenido del sitio guardado.');
+    }
+
+    function loadBusinessInfo() {
+      const b = ((typeof getSiteSettings==='function'?getSiteSettings():{}).business)||{};
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+      };
+      set('cfg-biz-razon', b.razon_social);
+      set('cfg-biz-nit', b.nit);
+      set('cfg-biz-correo', b.correo);
+      set('cfg-biz-telefono', b.telefono);
+      set('cfg-biz-direccion', b.direccion);
+      set('cfg-biz-horario', b.horario);
+      set('cfg-biz-plazo-cambios', b.plazo_cambios);
+      set('cfg-biz-plazo-reembolso', b.plazo_reembolso);
+      set('cfg-biz-plazo-envio', b.plazo_envio);
+      set('cfg-biz-fecha-revision', b.fecha_revision);
+    }
+
+    function saveBusinessInfo() {
+      const val = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+      };
+      const business = {
+        razon_social: val('cfg-biz-razon'),
+        nit: val('cfg-biz-nit'),
+        correo: val('cfg-biz-correo'),
+        telefono: val('cfg-biz-telefono'),
+        direccion: val('cfg-biz-direccion'),
+        horario: val('cfg-biz-horario'),
+        plazo_cambios: val('cfg-biz-plazo-cambios'),
+        plazo_reembolso: val('cfg-biz-plazo-reembolso'),
+        plazo_envio: val('cfg-biz-plazo-envio'),
+        fecha_revision: val('cfg-biz-fecha-revision'),
+      };
+      if (typeof saveSiteSettings === 'function') saveSiteSettings({ business });
+      alert('Datos del negocio guardados.');
     }
 
     function saveConfig() {
@@ -4695,14 +4888,14 @@
         const d = new Date(o.createdAt);
         return d >= from && d <= to;
       });
-      const completed  = allOrders.filter(o => o.status !== 'cancelado');
+      const completed  = allOrders.filter(o => o.status === 'completado');
       const totalRev   = completed.reduce((s, o) => s + (o.total_gtq || 0), 0);
       const avgTicket  = completed.length ? Math.round(totalRev / completed.length) : 0;
       const cancelled  = allOrders.filter(o => o.status === 'cancelado').length;
 
       // KPIs
       document.getElementById('stats-kpis').innerHTML = [
-        { label: 'Ventas totales', value: fmtQ(totalRev), sub: `${completed.length} pedidos` },
+        { label: 'Ventas totales', value: fmtQ(totalRev), sub: `${completed.length} completados` },
         { label: 'Ticket promedio', value: fmtQ(avgTicket), sub: 'Por pedido completado' },
         { label: 'Total pedidos', value: allOrders.length, sub: `${cancelled} cancelados` },
         { label: 'Comisiones', value: fmtQ(getCommissions().filter(c => {
@@ -4772,7 +4965,7 @@
     // Calcula el set de métricas del período (reutilizado por la vista y el imprimible).
     function _computeStats(from, to) {
       const allOrders = getOrders().filter(o => { const d = new Date(o.createdAt); return d >= from && d <= to; });
-      const completed = allOrders.filter(o => o.status !== 'cancelado');
+      const completed = allOrders.filter(o => o.status === 'completado');
       const totalRev  = completed.reduce((s, o) => s + (o.total_gtq || 0), 0);
       const avgTicket = completed.length ? Math.round(totalRev / completed.length) : 0;
       const cancelled = allOrders.filter(o => o.status === 'cancelado').length;
@@ -4817,7 +5010,7 @@
       const s = _computeStats(from, to);
 
       const kpis = [
-        { label: 'Ventas totales',  value: fmtQ(s.totalRev),         sub: s.completedCount + ' pedidos' },
+        { label: 'Ventas totales',  value: fmtQ(s.totalRev),         sub: s.completedCount + ' completados' },
         { label: 'Ticket promedio', value: fmtQ(s.avgTicket),        sub: 'Por pedido completado' },
         { label: 'Total pedidos',   value: String(s.totalCount),     sub: s.cancelled + ' cancelados' },
         { label: 'Comisiones',      value: fmtQ(s.commissionsTotal), sub: 'En el período' },
