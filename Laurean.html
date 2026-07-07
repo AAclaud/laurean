@@ -4765,8 +4765,15 @@
 
       // ── Sweaters ────────────────────────────────────────────────────────────
       const swGrid = document.getElementById('sweaters-grid');
-      if (swGrid && data.sweaters) {
-        swGrid.innerHTML = data.sweaters.map(p => {
+      const sweaters = Array.isArray(data.sweaters) ? data.sweaters : [];
+      const swWrap = document.querySelector('.sweaters-wrap');
+      if (!sweaters.length) {
+        if (swWrap) swWrap.style.display = 'none';
+      } else {
+        if (swWrap) swWrap.style.display = '';
+      }
+      if (swGrid && sweaters.length) {
+        swGrid.innerHTML = sweaters.map(p => {
           const showPrice = shouldShowPublicPrice(p);
           const prices = showPrice ? getProductPrices(p) : null;
           const cta = showPrice
