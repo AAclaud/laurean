@@ -1161,6 +1161,22 @@ function getBodegas() {
   return JSON.parse(localStorage.getItem('laurean_bodegas') || '[]');
 }
 
+function ensureDefaultBodegas() {
+  const list = getBodegas();
+  const defaults = [
+    { id: 'bdg_central', name: 'Bodega Central', protected: true, notes: 'Bodega principal · reparte el inventario' },
+    { id: 'bdg_website', name: 'Website',        protected: true, notes: 'Inventario publicado en la tienda' },
+  ];
+  let changed = false;
+  defaults.forEach(d => {
+    const ex = list.find(b => b.id === d.id);
+    if (!ex) { list.push({ ...d, createdAt: new Date().toISOString() }); changed = true; }
+    else if (!ex.protected) { ex.protected = true; changed = true; }
+  });
+  if (changed) localStorage.setItem('laurean_bodegas', JSON.stringify(list));
+  return list;
+}
+
 function saveBodega(bodega) {
   const list = getBodegas();
   if (bodega.id) {
@@ -1177,6 +1193,8 @@ function saveBodega(bodega) {
 }
 
 function deleteBodega(id) {
+  const target = getBodegas().find(b => b.id === id);
+  if (target && target.protected) return;
   const list = getBodegas().filter(b => b.id !== id);
   localStorage.setItem('laurean_bodegas', JSON.stringify(list));
 }

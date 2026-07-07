@@ -84,6 +84,13 @@ create table if not exists public.bodegas (
   active        boolean default true,
   created_at    timestamptz default now()
 );
+-- Bodegas base (fijas): Central reparte el inventario, Website = lo publicado en la tienda.
+-- IDs estables para que el inventario (inventory_stock) y el admin las referencien. El nombre
+-- es editable desde el admin; estas dos no se eliminan.
+insert into public.bodegas (id, name) values
+  ('bdg_central', 'Bodega Central'),
+  ('bdg_website', 'Website')
+on conflict (id) do nothing;
 
 -- ────────────────────────────────────────────────────────────
 -- Usuarios del sistema (perfil + rol; auth real vive en auth.users)

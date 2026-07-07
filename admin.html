@@ -1776,8 +1776,7 @@
         <h1 class="view-title">Envíos · <em>Forza Delivery</em> <span id="env-mode-badge" class="env-badge sandbox" style="margin-left:8px;font-size:9.5px;display:none">Sandbox</span></h1>
 
         <div class="env-status-banner" id="env-config-banner">
-          <strong>Configuración pendiente.</strong> Las Edge Functions <code>forza-proxy</code> no están desplegadas todavía.
-          Para activarlas corre desde tu terminal: <code>supabase functions deploy forza-proxy && supabase functions deploy forza-webhook</code>.
+          <strong>Configuración pendiente.</strong> Revisa el checklist de integración en Setup.
         </div>
 
         <div class="env-tabs">
@@ -5653,12 +5652,18 @@
 
     // ─── Bodegas ──────────────────────────────────────────────────────────────
     function renderBodegas() {
+      ensureDefaultBodegas();
       const list  = getBodegas();
       const tbody = document.getElementById('bodega-tbody');
       tbody.innerHTML = list.length ? list.map(b => {
         const stockByBodega = getStockForBodega(b.id);
         const totalUnits    = Object.values(stockByBodega).reduce((s, v) => s + (v.stock || 0), 0);
         const productos     = Object.keys(stockByBodega).length;
+        const deleteControl = b.protected
+          ? '<span class="td-muted" title="Bodega fija — no se puede eliminar">🔒 fija</span>'
+          : `<button class="btn btn-icon btn-danger" onclick="deleteBodegaItem('${jsAttr(b.id)}')">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>`;
         return `
         <tr>
           <td><strong>${escapeHtml(b.name)}</strong></td>
@@ -5675,9 +5680,7 @@
             <button class="btn btn-icon" onclick="openBodegaModal('${jsAttr(b.id)}')">
               <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
-            <button class="btn btn-icon btn-danger" onclick="deleteBodegaItem('${jsAttr(b.id)}')">
-              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-            </button>
+            ${deleteControl}
           </div></td>
         </tr>`;
       }).join('')
@@ -5723,6 +5726,11 @@
     }
 
     function deleteBodegaItem(id) {
+      const target = getBodegas().find(b => b.id === id);
+      if (target && target.protected) {
+        alert('Esta bodega es fija y no se puede eliminar.');
+        return;
+      }
       if (!confirm('¿Eliminar esta bodega?')) return;
       deleteBodega(id);
       renderBodegas();
@@ -7118,13 +7126,29 @@
       // Status info en setup
       const status = document.getElementById('es-status');
       if (status) {
-        status.innerHTML = `
-          <ul style="margin:0 0 0 20px;padding:0">
-            <li>Supabase: ${sbReady ? '<strong style="color:#2e7d32">conectado</strong>' : '<strong style="color:#c62828">no conectado</strong>'}</li>
-            <li>Cliente Forza cargado: ${window.Forza ? '<strong style="color:#2e7d32">sí</strong>' : '<strong style="color:#c62828">no</strong>'}</li>
-            <li>Edge Function <code>forza-proxy</code>: requiere deploy con <code>supabase functions deploy forza-proxy</code></li>
-            <li>Edge Function <code>forza-webhook</code>: requiere deploy + registrar URL con Forza</li>
-          </ul>`;
+        async function probeFn(name){
+          try {
+            const base = window.LAUREAN_CONFIG && window.LAUREAN_CONFIG.SUPABASE_URL;
+            if (!base) return false;
+            const r = await fetch(base + '/functions/v1/' + name, { method: 'OPTIONS' });
+            return r.status !== 404;
+          } catch(_) { return false; }
+        }
+        const proxyOk   = await probeFn('forza-proxy');
+        const webhookOk = await probeFn('forza-webhook');
+        const checks = [
+          { label: 'Supabase conectado', ok: sbReady },
+          { label: 'Cliente Forza cargado', ok: !!window.Forza },
+          { label: 'Edge Function forza-proxy', ok: proxyOk },
+          { label: 'Edge Function forza-webhook', ok: webhookOk },
+        ];
+        const passed = checks.filter(c => c.ok).length;
+        status.innerHTML =
+          `<div style="font-weight:600;margin-bottom:8px;color:${passed===4?'#2e7d32':'#8a6d1a'}">`
+          + (passed===4 ? 'Integración lista · 4/4 ✓' : `Integración · ${passed}/4 checks`) + `</div>`
+          + '<ul style="list-style:none;margin:0;padding:0;font-size:13px;line-height:1.9">'
+          + checks.map(c => `<li>${c.ok ? '<span style="color:#2e7d32">✓</span>' : '<span style="color:#c62828">✗</span>'} ${c.label}</li>`).join('')
+          + '</ul>';
       }
     }
 
