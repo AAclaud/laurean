@@ -61,7 +61,6 @@ create table if not exists public.products (
 create index if not exists idx_product_parent  on public.products(parent_id);
 create index if not exists idx_product_subcat  on public.products(subcat_id);
 create index if not exists idx_product_active  on public.products(active);
-create index if not exists idx_product_week    on public.products(week_number);
 
 -- Columnas Fase A para instalaciones en vivo (idempotente)
 alter table public.products add column if not exists show_price   boolean default true;
@@ -70,6 +69,8 @@ alter table public.products add column if not exists gallery      jsonb default 
 alter table public.products add column if not exists size_chart   jsonb;
 alter table public.products add column if not exists source_cod   text;
 alter table public.products add column if not exists variants     jsonb default '[]'::jsonb;  -- variantes de color/diseño (label, hex, imageIndex, sizes[])
+-- Índice de week_number DESPUÉS del add-column (BD que ya tenían `products` sin la columna)
+create index if not exists idx_product_week    on public.products(week_number);
 
 -- ────────────────────────────────────────────────────────────
 -- Bodegas (warehouses)
