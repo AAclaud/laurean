@@ -151,10 +151,10 @@
 
       <section class="legal-section reveal">
         <h2>Responsable</h2>
-        <p>El responsable de la tienda en línea es [POR COMPLETAR: razón social y NIT].</p>
+        <p>El responsable de la tienda en línea es <span data-biz="razon_social"></span> (NIT <span data-biz="nit"></span>).</p>
       </section>
 
-      <p class="legal-note reveal">Última revisión: [POR COMPLETAR: fecha de aprobación legal]</p>
+      <p class="legal-note reveal">Última revisión: <span data-biz="fecha_revision"></span></p>
     </article>
   </main>
 
@@ -177,6 +177,7 @@
       els.forEach(function(e){ io.observe(e); });
     })();
   </script>
+  <script src="js/business-info.js"></script>
   <script src="js/site-footer.js"></script>
   <script defer src="js/cursor.js"></script>
 </body>

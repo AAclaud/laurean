@@ -128,7 +128,7 @@
     <article class="info-article">
       <section class="info-section reveal">
         <h2>Plazo</h2>
-        <p>Dispones de [POR CONFIRMAR: X] días desde que recibes el pedido para solicitar un cambio. La solicitud debe realizarse dentro de ese plazo para que podamos revisar disponibilidad, estado de la prenda y ruta de envío.</p>
+        <p>Dispones de <span data-biz="plazo_cambios"></span> días desde que recibes el pedido para solicitar un cambio. La solicitud debe realizarse dentro de ese plazo para que podamos revisar disponibilidad, estado de la prenda y ruta de envío.</p>
       </section>
 
       <section class="info-section reveal">
@@ -149,7 +149,7 @@
 
       <section class="info-section reveal">
         <h2>Reembolsos</h2>
-        <p>[POR CONFIRMAR: método y plazos de reembolso]</p>
+        <p><span data-biz="plazo_reembolso"></span></p>
       </section>
     </article>
   </main>
@@ -173,6 +173,7 @@
       els.forEach(function(e){ io.observe(e); });
     })();
   </script>
+  <script src="js/business-info.js"></script>
   <script src="js/site-footer.js"></script>
   <script defer src="js/cursor.js"></script>
 </body>
