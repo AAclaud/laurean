@@ -190,6 +190,7 @@
       '.store-icon-btn{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.88);color:var(--acento,var(--vino,#8f3833));box-shadow:0 8px 24px rgba(25,26,24,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:background .2s var(--ease),color .2s var(--ease),transform .2s var(--ease)}' +
       '.store-icon-btn:hover{background:#fff;transform:translateY(-1px)}' +
       '.store-icon-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none}' +
+      '@media (max-width:768px){.store-icon-btn{width:44px;height:44px}}' +
       '.store-fav-btn.active{background:var(--acento,var(--vino,#8f3833));color:#fff}' +
       '.store-fav-btn.active svg{fill:currentColor}' +
       '.store-share-menu{position:fixed;z-index:10000;width:190px;padding:8px;border:1px solid rgba(25,26,24,.12);border-radius:12px;background:#fff;box-shadow:0 18px 50px rgba(25,26,24,.18)}' +
