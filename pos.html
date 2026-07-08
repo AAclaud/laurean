@@ -880,6 +880,7 @@
 <script src="js/auth.js"></script>
 <script src="data/products.js"></script>
 <script src="js/supabase-client.js"></script>
+<script src="js/catalog-loader.js"></script>
 <script>
   // ─── State ─────────────────────────────────────────────────────────────────
   let POS_SESSION          = null;
@@ -889,6 +890,10 @@
   let posActiveCat         = 'all';
   let POS_PRODUCTS         = [];   // flat array of all products
   let posAppliedDscCode    = null; // { id, code, discountGtq }
+
+  document.addEventListener('laurean:catalog-ready', () => {
+    refreshPosCatalog();
+  });
 
   // ─── Login ─────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
@@ -1030,12 +1035,12 @@
   }
 
   // ─── Products ──────────────────────────────────────────────────────────────
-  function buildProductList() {
-    const data = window.LAUREAN_DATA;
-    if (!data) return;
+  function getPosProductsSnapshot() {
+    const data = window.LAUREAN_DATA || {};
+    if (!POS_SESSION) return [];
     const role     = POS_SESSION.role;
     const bodegaId = getActiveBodega();
-    POS_PRODUCTS = [
+    return [
       ...(data.products    || []),
       ...(data.sweaters    || []),
       ...(data.accessories || []),
@@ -1046,19 +1051,35 @@
     }));
   }
 
+  function buildProductList() {
+    POS_PRODUCTS = getPosProductsSnapshot();
+  }
+
   function buildCatFilters() {
     const data = window.LAUREAN_DATA;
     const cats = [...(data?.parentCategories || data?.categories || [])];
     document.getElementById('pos-cat-btns').innerHTML = cats.map(c =>
-      `<button class="pos-filter-btn" onclick="filterCat('${jsAttr(c.id)}')" id="pf-${c.id}">${escapeHtml(c.name)}</button>`
+      `<button class="pos-filter-btn${c.id === posActiveCat ? ' active' : ''}" onclick="filterCat('${jsAttr(c.id)}')" id="pf-${c.id}">${escapeHtml(c.name)}</button>`
     ).join('');
+    syncPosFilterState();
+  }
+
+  function syncPosFilterState() {
+    document.querySelectorAll('.pos-filter-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('pf-' + posActiveCat);
+    if (btn) btn.classList.add('active');
+  }
+
+  function refreshPosCatalog() {
+    if (!POS_SESSION) return;
+    buildProductList();
+    buildCatFilters();
+    renderPosProducts();
   }
 
   function filterCat(catId) {
     posActiveCat = catId;
-    document.querySelectorAll('.pos-filter-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.getElementById('pf-' + catId);
-    if (btn) btn.classList.add('active');
+    syncPosFilterState();
     renderPosProducts();
   }
 
@@ -1096,6 +1117,7 @@
       return;
     }
 
+    buildProductList();
     let list = POS_PRODUCTS;
     if (posActiveCat !== 'all') {
       list = list.filter(p => p.parent === posActiveCat || p.category === posActiveCat);

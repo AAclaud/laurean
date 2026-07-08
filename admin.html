@@ -495,7 +495,7 @@
       #order-detail-overlay #od-totals { margin-top: 2mm !important; }
       #order-detail-overlay .od-totals-row { padding: 1.5mm 0 !important; border-bottom: 1px dotted #bbb !important; font-size: 11px !important; color: #000 !important; }
       #order-detail-overlay .od-totals-row:last-child { border-top: 1px solid #000 !important; border-bottom: 0 !important; font-weight: 700 !important; font-size: 12px !important; }
-      #order-detail-overlay .od-noprint, #order-detail-overlay .modal-footer, #order-detail-overlay .btn { display: none !important; }
+      #order-detail-overlay .od-noprint, #order-detail-overlay .modal-footer, #order-detail-overlay .btn, #order-detail-overlay #od-wa-follow { display: none !important; }
     }
 
     /* ─── Responsive ──────────────────────────────────────────────────────── */
@@ -2195,6 +2195,10 @@
       </div>
 
       <div class="modal-footer od-noprint">
+        <button class="btn btn-light" id="od-wa-follow" onclick="openWaFollowUp(_currentOrderId)" style="display:none;color:#128C7E;border:1px solid rgba(18,140,126,0.35);background:rgba(18,140,126,0.08)">
+          <svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M12.04 2C6.57 2 2.13 6.4 2.13 11.82c0 1.73.46 3.42 1.33 4.91L2 22l5.4-1.41a9.96 9.96 0 004.64 1.16c5.47 0 9.91-4.4 9.91-9.82S17.51 2 12.04 2zm0 17.98a8.14 8.14 0 01-4.15-1.13l-.3-.18-3.2.84.85-3.1-.2-.32a8.02 8.02 0 01-1.14-4.27c0-4.43 3.65-8.04 8.14-8.04s8.14 3.61 8.14 8.04-3.65 8.16-8.14 8.16zm4.47-6.1c-.24-.12-1.45-.71-1.67-.79-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.37-1.94-1.19-.72-.64-1.2-1.42-1.34-1.66-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.29-.74-1.77-.2-.47-.39-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.81-.84 1.98s.86 2.3.98 2.46c.12.16 1.7 2.56 4.12 3.59.58.25 1.03.4 1.38.51.58.18 1.1.16 1.52.1.46-.07 1.45-.59 1.65-1.15.2-.57.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
+          Seguimiento WhatsApp
+        </button>
         <button class="btn btn-light" onclick="printOrderDetail()">
           <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Imprimir
@@ -2288,6 +2292,10 @@
         <div class="form-group">
           <label class="form-label">Galería (URLs separadas por coma, opcional)</label>
           <input type="text" class="form-input" id="mp-gallery" placeholder="images/foto1.jpg, images/foto2.jpg" oninput="renderVariantImageOptions()" />
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+            <button class="btn btn-light" type="button" id="mp-gallery-upload-btn" style="font-size:12px;padding:7px 12px" onclick="pickGalleryImages()">Subir imágenes</button>
+            <input type="file" id="mp-gallery-files" accept="image/*" multiple style="display:none" onchange="uploadGalleryImages(this)" />
+          </div>
           <small class="field-hint">La imagen principal es la #1. Las variantes pueden enlazarse a cualquier foto.</small>
         </div>
       </div>
@@ -3841,12 +3849,76 @@
     }
 
     function paymentStatusBadge(o) {
-      const method = String(o.payment_method || o.pay_method || '').toLowerCase();
-      if (method !== 'card') return '';
+      const isCard = String(o.pay_method || '').toLowerCase() === 'card'
+        || String(o.payment_method || '').toLowerCase() === 'card';
+      if (!isCard) return '';
       const paid = String(o.payment_status || '').toLowerCase() === 'pagado';
       const color = paid ? '#2e7d32' : '#c62828';
       const label = paid ? 'Pagado' : 'No pagado · coordinar';
       return `<span style="display:inline-block;margin-top:3px;font-size:10px;font-weight:600;color:${color};border:1px solid ${color};border-radius:4px;padding:1px 6px;">${label}</span>`;
+    }
+
+    function shippingMethodLabel(method) {
+      const key = String(method || '').toLowerCase();
+      const labels = { forza: 'Forza', cargo_expreso: 'Cargo Expreso', sobrex: 'Sobrex' };
+      return labels[key] || String(method || '').trim();
+    }
+
+    function orderPaymentStatusDetail(o) {
+      const isCard = String(o.pay_method || '').toLowerCase() === 'card'
+        || String(o.payment_method || '').toLowerCase() === 'card';
+      const status = String(o.payment_status || '').trim();
+      if (isCard) {
+        const paid = status.toLowerCase() === 'pagado';
+        const color = paid ? '#2e7d32' : '#c62828';
+        return `<span style="display:inline-block;font-size:11px;font-weight:600;color:${color};border:1px solid ${color};border-radius:4px;padding:2px 7px;">${paid ? 'Pagado' : 'No pagado'}</span>`;
+      }
+      return status ? escapeHtml(status) : '';
+    }
+
+    function shouldShowWaFollowUp(o) {
+      const phone = o?.customerPhone || o?.customer_phone || '';
+      const paymentStatus = String(o?.payment_status || '').toLowerCase();
+      const status = String(o?.status || '').toLowerCase();
+      return !!String(phone).replace(/\D/g, '') && paymentStatus !== 'pagado' && status !== 'cancelado' && status !== 'completado';
+    }
+
+    function moneyForWa(n) {
+      const value = Number(n || 0);
+      return value.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function orderShortRef(o) {
+      return o?.order_number || o?.orderNumber || String(o?.id || '').slice(-8).toUpperCase();
+    }
+
+    function waFollowUpUrl(o) {
+      if (!shouldShowWaFollowUp(o)) return '';
+      let tel = String(o.customerPhone || o.customer_phone || '').replace(/\D/g, '');
+      if (tel.length === 8) tel = '502' + tel;
+      if (!tel) return '';
+      const fullName = String(o.customerName || o.customer_name || o.userName || '').trim();
+      const firstName = fullName.split(/\s+/).filter(Boolean)[0] || '';
+      const greeting = firstName ? `Hola ${firstName}!` : 'Hola!';
+      const ref = orderShortRef(o) || 'pedido';
+      const items = Array.isArray(o.items) ? o.items : [];
+      const itemLines = items.map(item => {
+        const qty = Number(item.qty || item.quantity || 1);
+        const name = item.name || item.productName || item.id || 'Producto';
+        const subtotal = item.subtotal_gtq != null
+          ? Number(item.subtotal_gtq)
+          : Number(item.price_gtq || item.price || item.unit_price_gtq || 0) * qty;
+        return `• ${qty}× ${name} — Q${moneyForWa(subtotal)}`;
+      }).join('\n');
+      const total = moneyForWa(o.total_gtq || o.totalGtq || o.total || 0);
+      const message = `${greeting} Te saludamos de Laurean 🌿 Sobre tu pedido #${ref}:\n\n${itemLines}\nTotal: Q${total}\n\nQuedó pendiente de pago. ¿Te ayudamos a completarlo para preparar tu envío?`;
+      return `https://wa.me/${tel}?text=${encodeURIComponent(message)}`;
+    }
+
+    function openWaFollowUp(id) {
+      const o = getOrders().find(ord => ord.id === id);
+      const url = o ? waFollowUpUrl(o) : '';
+      if (url) window.open(url, '_blank', 'noopener');
     }
 
     function renderOrders() {
@@ -3879,6 +3951,9 @@
               ).join('')}
             </select>`}
             ${paymentStatusBadge(o)}
+            ${waFollowUpUrl(o)
+              ? `<button class="btn btn-light" style="padding:4px 7px;font-size:10px;display:inline-flex;margin-top:3px;margin-left:4px;color:#128C7E;border:1px solid rgba(18,140,126,0.35);background:rgba(18,140,126,0.08)" onclick="openWaFollowUp('${jsAttr(o.id)}')" title="Seguimiento WhatsApp" aria-label="Seguimiento WhatsApp"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;stroke:none"><path d="M12.04 2C6.57 2 2.13 6.4 2.13 11.82c0 1.73.46 3.42 1.33 4.91L2 22l5.4-1.41a9.96 9.96 0 004.64 1.16c5.47 0 9.91-4.4 9.91-9.82S17.51 2 12.04 2zm4.47 11.88c-.24-.12-1.45-.71-1.67-.79-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.37-1.94-1.19-.72-.64-1.2-1.42-1.34-1.66-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.29-.74-1.77-.2-.47-.39-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.81-.84 1.98s.86 2.3.98 2.46c.12.16 1.7 2.56 4.12 3.59.58.25 1.03.4 1.38.51.58.18 1.1.16 1.52.1.46-.07 1.45-.59 1.65-1.15.2-.57.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg></button>`
+              : ''}
             ${o.forza_guide_number
               ? `<button class="btn btn-light" style="padding:3px 8px;font-size:10px;display:block;margin-top:3px" onclick="envTrackInline('${jsAttr(o.forza_guide_serie || 'FD')}','${jsAttr(o.forza_guide_number)}')" title="Rastrear ${escapeAttr(o.forza_guide_serie || 'FD')}-${escapeAttr(o.forza_guide_number)}">📦 ${escapeHtml(o.forza_guide_number)}</button>`
               : (isPosOrder(o) ? '' : `<button class="btn btn-light" style="padding:3px 8px;font-size:10px;display:block;margin-top:3px;color:var(--vino);border-color:var(--vino)" onclick="envCreateGuideFromOrder('${jsAttr(o.supabase_id || o.id)}')" title="Crear guía Forza con datos de este pedido">+ Guía Forza</button>`)
@@ -3967,10 +4042,18 @@
       badge.style.color = statusColor(o.status);
       document.getElementById('od-meta').textContent = fmtDate(o.createdAt) + (o.createdAt ? ' · ' + new Date(o.createdAt).toLocaleTimeString('es-GT', {hour:'2-digit',minute:'2-digit'}) : '');
       document.getElementById('od-origin').innerHTML = originBadge(o);
+      const customerDept = o.customerDepartment || o.customer_department || '';
+      const customerMuni = o.customerCity || o.customer_city || '';
+      const shippingMethod = shippingMethodLabel(o.shipping_method || o.shippingMethod || '');
+      const paymentDetail = orderPaymentStatusDetail(o);
       document.getElementById('od-customer').innerHTML = `
         <div><div class="od-label">Nombre</div><div>${escapeHtml(o.customerName || o.userName || '—')}</div></div>
         <div><div class="od-label">Teléfono</div><div>${escapeHtml(o.customerPhone || o.userPhone || '—')}</div></div>
         <div style="grid-column:1/-1"><div class="od-label">Dirección</div><div>${escapeHtml(o.address || '—')}</div></div>
+        ${customerDept ? `<div><div class="od-label">Departamento</div><div>${escapeHtml(customerDept)}</div></div>` : ''}
+        ${customerMuni ? `<div><div class="od-label">Municipio</div><div>${escapeHtml(customerMuni)}</div></div>` : ''}
+        ${shippingMethod ? `<div><div class="od-label">Método de envío</div><div>${escapeHtml(shippingMethod)}</div></div>` : ''}
+        ${paymentDetail ? `<div><div class="od-label">Estado de pago</div><div>${paymentDetail}</div></div>` : ''}
         ${o.notes ? `<div style="grid-column:1/-1"><div class="od-label">Notas</div><div>${escapeHtml(o.notes)}</div></div>` : ''}
         ${o.referral_code ? `<div><div class="od-label">Código referido</div><div><span class="code-chip">${escapeHtml(o.referral_code)}</span></div></div>` : ''}
       `;
@@ -4006,11 +4089,15 @@
         histWrap.style.display = 'none';
       }
 
+      const waBtn = document.getElementById('od-wa-follow');
+      if (waBtn) waBtn.style.display = waFollowUpUrl(o) ? '' : 'none';
       document.getElementById('order-detail-overlay').style.display = 'flex';
     }
 
     function closeOrderDetail() {
       document.getElementById('order-detail-overlay').style.display = 'none';
+      const waBtn = document.getElementById('od-wa-follow');
+      if (waBtn) waBtn.style.display = 'none';
       _currentOrderId = null;
     }
 
@@ -4607,6 +4694,54 @@
 
     function closeProductModalOutside(e) {
       if (e.target === document.getElementById('modal-product-overlay')) closeProductModal();
+    }
+
+    function pickGalleryImages() {
+      document.getElementById('mp-gallery-files')?.click();
+    }
+
+    async function uploadGalleryImages(input) {
+      const files = Array.from(input?.files || []);
+      if (!files.length) return;
+      if (!window.LAUREAN_DB) {
+        alert('Conecta Supabase para subir imágenes.');
+        input.value = '';
+        return;
+      }
+
+      const btn = document.getElementById('mp-gallery-upload-btn');
+      const gallery = document.getElementById('mp-gallery');
+      const prevText = btn ? btn.textContent : '';
+      const urls = [];
+      const stamp = Date.now();
+      try {
+        if (btn) btn.disabled = true;
+        for (let i = 0; i < files.length; i++) {
+          if (btn) btn.textContent = `Subiendo… (${i + 1}/${files.length})`;
+          const file = files[i];
+          const path = `products/gallery/${stamp}_${i + 1}.jpg`;
+          const { data, error } = await window.LAUREAN_DB.storage
+            .from('product-images')
+            .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true, cacheControl: '3600' });
+          if (error) throw error;
+          const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
+          if (pub?.publicUrl) urls.push(pub.publicUrl);
+        }
+      } catch (err) {
+        console.error('[admin] upload galería falló:', err);
+        alert('No se pudieron subir todas las imágenes: ' + (err?.message || err));
+      } finally {
+        if (urls.length && gallery) {
+          const current = gallery.value.trim();
+          gallery.value = current ? `${current.replace(/\s*,\s*$/, '')}, ${urls.join(', ')}` : urls.join(', ');
+          renderVariantImageOptions();
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText || 'Subir imágenes';
+        }
+        input.value = '';
+      }
     }
 
     function clearProductFieldHints() {

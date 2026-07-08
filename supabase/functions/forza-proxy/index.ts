@@ -44,6 +44,12 @@ const ALLOWED = new Set<string>([
   'SetPickupServiceByIntegration',
 ]);
 
+// Catálogo geográfico: datos públicos no sensibles (los usa el checkout de la tienda).
+const PUBLIC_ENDPOINTS = new Set<string>([
+  'GetListProvincesByHeaderCode',
+  'GetListTownshipByHeaderCode',
+]);
+
 const URL_PATH: Record<string,string> = {
   GetListProvincesByHeaderCode:   'ecommerce/GetListProvincesByHeaderCode',
   GetListTownshipByHeaderCode:    'ecommerce/GetListTownshipByHeaderCode',
@@ -203,15 +209,17 @@ Deno.serve(async (req) => {
     return json({ error: 'forza_not_configured' }, 500);
   }
 
-  const auth = await verifyAdmin(req);
-  if (!auth.ok) return json({ error: 'forbidden', detail: auth.error }, 403);
-
   let body: { endpoint?: string; params?: Record<string, unknown> };
   try { body = await req.json(); }
   catch { return json({ error: 'invalid_json' }, 400); }
   const endpoint = body.endpoint ?? '';
   const inputParams = body.params ?? {};
   if (!ALLOWED.has(endpoint)) return json({ error: 'endpoint_not_allowed', endpoint }, 400);
+
+  if (!PUBLIC_ENDPOINTS.has(endpoint)) {
+    const auth = await verifyAdmin(req);
+    if (!auth.ok) return json({ error: 'forbidden', detail: auth.error }, 403);
+  }
 
   // Construir inner con formato Forza
   const inner = {
