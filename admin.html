@@ -2449,6 +2449,9 @@
       } else {
         renderDashboard();
       }
+      if (typeof syncOrdersFromSupabase === 'function') {
+        syncOrdersFromSupabase().then(() => { renderOrders(); renderDashboard(); });
+      }
       // Cambiar vista al cambiar hash
       window.addEventListener('hashchange', () => {
         const h = (window.location.hash || '').replace('#','').trim();
@@ -2523,7 +2526,7 @@
       if (name === 'combos')       renderCombos();
       if (name === 'inventario')   renderInventario();
       if (name === 'vendedores')   { renderUsers(); if (window.syncUsersFromSupabase) syncUsersFromSupabase().then(ok => { if (ok) renderUsers(); }); }
-      if (name === 'pedidos')      { renderOrders(); clearOrdersNotif(); }
+      if (name === 'pedidos')      { renderOrders(); if (typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); }); clearOrdersNotif(); }
       if (name === 'comisiones')   renderCommissions();
       if (name === 'estadisticas') renderEstadisticas();
       if (name === 'analytics')     renderAnalytics();

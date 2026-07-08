@@ -653,6 +653,59 @@ function recordPriceChange(productId, productName, field, previousValue, newValu
 function getOrders()          { return JSON.parse(localStorage.getItem(KEYS.ORDERS) || '[]'); }
 function saveOrders(orders)   { localStorage.setItem(KEYS.ORDERS, JSON.stringify(orders)); }
 
+async function syncOrdersFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('orders')
+    .select('id,order_number,customer_name,customer_phone,customer_email,customer_address,customer_township_code,customer_department,customer_city,subtotal_gtq,discount_gtq,shipping_gtq,total_gtq,items,notes,status,payment_method,payment_status,origin,channel,shipping_method,referral_code,bodega_id,forza_guide_number,forza_tracking_status,created_at')
+    .order('created_at', { ascending: false })
+    .limit(1000);
+  if (error || !data) { console.warn('[supabase] sync orders:', error && error.message); return false; }
+  const local = getOrders();
+  const byRemote = {};
+  local.forEach(o => { if (o.supabase_id) byRemote[o.supabase_id] = o; });
+  data.forEach(r => {
+    const prev = byRemote[r.id] || {};
+    const mapped = {
+      ...prev,
+      id:            prev.id || ('ord_sb_' + r.id.slice(0, 8)),
+      supabase_id:   r.id,
+      order_number:  r.order_number,
+      customerName:  r.customer_name,
+      customerPhone: r.customer_phone,
+      customerEmail: r.customer_email,
+      address:       r.customer_address,
+      customerDepartment:     r.customer_department,
+      customerCity:           r.customer_city,
+      customer_township_code: r.customer_township_code,
+      subtotal_gtq:  r.subtotal_gtq,
+      discount_gtq:  r.discount_gtq,
+      shipping_gtq:  r.shipping_gtq,
+      total_gtq:     r.total_gtq,
+      items:         Array.isArray(r.items) ? r.items : (prev.items || []),
+      notes:         r.notes,
+      status:        r.status,
+      pay_method:    r.payment_method,
+      payment_status:r.payment_status,
+      origin:        r.origin,
+      channel:       r.channel,
+      shipping_method: r.shipping_method,
+      referral_code: r.referral_code,
+      bodegaId:      r.bodega_id,
+      forza_guide_number:   r.forza_guide_number,
+      forza_tracking_status:r.forza_tracking_status,
+      createdAt:     r.created_at,
+    };
+    byRemote[r.id] = mapped;
+  });
+  const localOnly = local.filter(o => !o.supabase_id);
+  const merged = [...localOnly, ...Object.values(byRemote)];
+  saveOrders(merged);
+  document.dispatchEvent(new CustomEvent('laurean:orders-synced'));
+  return true;
+}
+window.syncOrdersFromSupabase = syncOrdersFromSupabase;
+
 function createOrder(data) {
   const session = getSession();
   const orders  = getOrders();
