@@ -389,6 +389,13 @@
     }
     .btn-outline:hover { color: var(--crema); }
     .btn-outline:hover::before { transform: translateY(0); }
+    body #laurean-wa-fab {
+      transition: opacity 0.22s var(--ease), background-color .25s var(--ease), color .25s var(--ease), transform .18s var(--ease), box-shadow .25s var(--ease);
+    }
+    body.panel-open #laurean-wa-fab {
+      opacity: 0;
+      pointer-events: none;
+    }
     .hero-price {
       font-family: var(--fd);
       font-size: 19px;
@@ -1840,6 +1847,11 @@
     .co-success svg { width: 52px; height: 52px; stroke: #388E3C; fill: none; stroke-width: 1.2; }
     .co-success-title { font-family: var(--fd); font-size: 32px; font-weight: 300; }
     .co-success-id { font-size: 12px; color: var(--warm-mid); letter-spacing: 0.1em; }
+    .co-pending-payment-wa {
+      border-color: var(--vino);
+      color: var(--vino);
+    }
+    .co-pending-payment-wa::before { background: var(--vino); }
 
     /* ─── Seller panel ──────────────────────────────────────────────────────── */
     .seller-overlay {
@@ -2060,6 +2072,7 @@
 
       /* Cart drawer: ancho completo */
       .cart-drawer { width: 100%; right: -100%; }
+      .cart-foot { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 
       /* Toast */
       .toast-wrap { left: 12px; right: 12px; bottom: 16px; }
@@ -3658,9 +3671,9 @@
       return 'Precio especial para vendedoras · Ver programa';
     }
 
-    function renderFavorites() {
-      const body = document.getElementById('favorites-body');
-      if (!body) return;
+        function renderFavorites() {
+          const body = document.getElementById('favorites-body');
+          if (!body) return;
       const ids = getFavoriteIds();
       const items = ids.map(getProductById).filter(Boolean);
       if (!items.length) {
@@ -3685,26 +3698,58 @@
           </div>
           ${price}
         </div>`;
-      }).join('');
-    }
+          }).join('');
+        }
 
-    function openFavorites() {
-      closeCart();
-      renderFavorites();
-      document.getElementById('favorites-drawer').classList.add('open');
-      document.getElementById('cart-overlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
+        let _lockScrollY = 0;
+        function hasOpenPanel() {
+          return ['cart-drawer', 'checkout-overlay', 'favorites-drawer', 'seller-panel'].some(function(id) {
+            const el = document.getElementById(id);
+            return !!(el && el.classList.contains('open'));
+          });
+        }
+        function lockBodyScroll() {
+          document.body.classList.add('panel-open');
+          if (document.body.style.position === 'fixed') return;
+          _lockScrollY = window.scrollY || 0;
+          document.body.style.position = 'fixed';
+          document.body.style.top = (-_lockScrollY) + 'px';
+          document.body.style.left = '0';
+          document.body.style.right = '0';
+          document.body.style.overflow = 'hidden';
+        }
+        function unlockBodyScroll() {
+          if (hasOpenPanel()) {
+            document.body.classList.add('panel-open');
+            return;
+          }
+          document.body.classList.remove('panel-open');
+          const wasLocked = document.body.style.position === 'fixed';
+          document.body.style.position = '';
+          document.body.style.top = '';
+          document.body.style.left = '';
+          document.body.style.right = '';
+          document.body.style.overflow = '';
+          if (wasLocked) window.scrollTo(0, _lockScrollY);
+        }
+
+        function openFavorites() {
+          closeCart();
+          renderFavorites();
+          document.getElementById('favorites-drawer').classList.add('open');
+          document.getElementById('cart-overlay').classList.add('open');
+          lockBodyScroll();
+        }
 
     function closeFavorites() {
       const drawer = document.getElementById('favorites-drawer');
       if (drawer) drawer.classList.remove('open');
-      const cartDrawer = document.getElementById('cart-drawer');
-      if (!cartDrawer || !cartDrawer.classList.contains('open')) {
-        document.getElementById('cart-overlay').classList.remove('open');
-        document.body.style.overflow = '';
-      }
-    }
+          const cartDrawer = document.getElementById('cart-drawer');
+          if (!cartDrawer || !cartDrawer.classList.contains('open')) {
+            document.getElementById('cart-overlay').classList.remove('open');
+            unlockBodyScroll();
+          }
+        }
 
     function closeDrawers() {
       closeCart();
@@ -3730,6 +3775,8 @@
     // que se dejan en localStorage['laurean_pending_cart'] porque el carrito vive
     // en memoria y no se comparte entre páginas.
     function mergePendingCart() {
+      const params = new URLSearchParams(location.search);
+      const wantCart = params.get('cart') === '1' || location.hash === '#carrito';
       let pending = [];
       try { pending = JSON.parse(localStorage.getItem('laurean_pending_cart') || '[]'); } catch { pending = []; }
       if (!Array.isArray(pending) || !pending.length) return;
@@ -3739,7 +3786,14 @@
         const qty = Math.max(1, parseInt(it.qty, 10) || 1);
         for (let n = 0; n < qty; n++) addToCart(p);
       });
-      openCart();
+      if (wantCart) {
+        openCart();
+        if (params.get('cart') === '1') {
+          params.delete('cart');
+          const nextSearch = params.toString();
+          try { history.replaceState(null, '', location.pathname + (nextSearch ? '?' + nextSearch : '') + location.hash); } catch (_) {}
+        }
+      }
     }
 
     function addToCart(product) {
@@ -3851,12 +3905,12 @@
     }
 
     // ─── Cart drawer ───────────────────────────────────────────────────────────
-    function openCart() {
-      if (window.track) window.track('open_cart');
-      closeFavorites();
-      document.getElementById('cart-drawer').classList.add('open');
-      document.getElementById('cart-overlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
+        function openCart() {
+          if (window.track) window.track('open_cart');
+          closeFavorites();
+          document.getElementById('cart-drawer').classList.add('open');
+          document.getElementById('cart-overlay').classList.add('open');
+          lockBodyScroll();
       setTimeout(function() {
         try {
           const closeBtn = document.querySelector('#cart-drawer .cart-close-btn');
@@ -3869,12 +3923,12 @@
     }
     function closeCart() {
       document.getElementById('cart-drawer').classList.remove('open');
-      const favDrawer = document.getElementById('favorites-drawer');
-      if (!favDrawer || !favDrawer.classList.contains('open')) {
-        document.getElementById('cart-overlay').classList.remove('open');
-        document.body.style.overflow = '';
-      }
-    }
+          const favDrawer = document.getElementById('favorites-drawer');
+          if (!favDrawer || !favDrawer.classList.contains('open')) {
+            document.getElementById('cart-overlay').classList.remove('open');
+            unlockBodyScroll();
+          }
+        }
 
     // ─── Referral code ─────────────────────────────────────────────────────────
     function toggleReferralBox() {
@@ -4073,11 +4127,12 @@
       const errEl = document.getElementById('co-error');
       errEl.textContent = '';
       errEl.classList.remove('show');
-      document.getElementById('co-form-wrap').style.display = '';
-      document.getElementById('co-success').style.display   = 'none';
-      document.getElementById('checkout-overlay').classList.add('open');
-      if (window.track) window.track('begin_checkout');
-      document.body.style.overflow = 'hidden';
+          document.getElementById('co-form-wrap').style.display = '';
+          document.getElementById('co-success').style.display   = 'none';
+          document.getElementById('checkout-overlay').classList.add('open');
+          if (window.track) window.track('begin_checkout');
+          removePendingPaymentWhatsappCta();
+          lockBodyScroll();
       setTimeout(function() {
         try {
           const firstField = document.getElementById('co-name');
@@ -4160,10 +4215,10 @@
       twSel.disabled = false;
     }
 
-    function closeCheckout() {
-      document.getElementById('checkout-overlay').classList.remove('open');
-      document.body.style.overflow = '';
-    }
+        function closeCheckout() {
+          document.getElementById('checkout-overlay').classList.remove('open');
+          unlockBodyScroll();
+        }
 
     // ─── PIN descuento especial ────────────────────────────────────────────────
     function toggleDiscountPinBox() {
@@ -4345,18 +4400,46 @@
       }
     }
 
-    function closeQppModal() {
-      document.getElementById('qpp-overlay').classList.remove('open');
+        function closeQppModal() {
+          document.getElementById('qpp-overlay').classList.remove('open');
       // Mostrar éxito: el pedido ya fue creado
       document.getElementById('co-success').style.display  = 'flex';
       const successId = document.getElementById('co-success-id');
       if (!successId.textContent) successId.textContent = 'Pedido registrado';
-    }
+        }
 
-    // ─── Retorno de QPayPro (Hosted Page) ───────────────────────────────────────
-    function handlePaymentReturn() {
-      const params = new URLSearchParams(location.search);
-      const pago   = params.get('pago');
+        // ─── Retorno de QPayPro (Hosted Page) ───────────────────────────────────────
+        function removePendingPaymentWhatsappCta() {
+          const existing = document.getElementById('co-pending-payment-wa');
+          if (existing) existing.remove();
+        }
+
+        function addPendingPaymentWhatsappCta(orderRef) {
+          const success = document.getElementById('co-success');
+          if (!success) return;
+          removePendingPaymentWhatsappCta();
+          let wa = '50236672415';
+          try {
+            const settingsWa = ((getSiteSettings() || {}).whatsapp || '').replace(/[^0-9]/g, '');
+            if (settingsWa) wa = settingsWa;
+          } catch (_) {}
+          const link = document.createElement('a');
+          link.id = 'co-pending-payment-wa';
+          link.className = 'btn-outline co-pending-payment-wa';
+          link.href = 'https://wa.me/' + wa + '?text=' + encodeURIComponent('Hola, quiero coordinar el pago de mi pedido ' + orderRef);
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = 'Coordinar pago por WhatsApp';
+          link.onclick = function() {
+            if (window.track) window.track('whatsapp_click', { location: 'payment_pending' });
+          };
+          const actions = success.querySelector('div[style*="display:flex"]');
+          success.insertBefore(link, actions || null);
+        }
+
+        function handlePaymentReturn() {
+          const params = new URLSearchParams(location.search);
+          const pago   = params.get('pago');
       if (!pago) return;
 
       const orderRef = params.get('order') || '';
@@ -4367,40 +4450,43 @@
       const successTtl  = success ? success.querySelector('.co-success-title') : null;
       const successMsg  = success ? success.querySelector('p') : null;
 
-      if (overlay) overlay.classList.add('open');
-      if (formWrap) formWrap.style.display = 'none';
-      if (success)  success.style.display  = 'flex';
-      if (successId) successId.textContent = orderRef ? ('Pedido #' + orderRef) : '';
+          if (overlay) overlay.classList.add('open');
+          if (formWrap) formWrap.style.display = 'none';
+          if (success)  success.style.display  = 'flex';
+          if (successId) successId.textContent = orderRef ? ('Pedido #' + orderRef) : '';
+          lockBodyScroll();
+          removePendingPaymentWhatsappCta();
 
-      if (pago === 'ok') {
-        if (successTtl) successTtl.textContent = '¡Pago confirmado!';
-        if (successMsg) successMsg.textContent = 'Recibimos tu pago. Nos pondremos en contacto para coordinar la entrega.';
-      } else if (pago === 'cancel') {
-        if (successTtl) successTtl.textContent = 'Pago cancelado';
-        if (successMsg) successMsg.textContent = 'Cancelaste el pago. Tu pedido quedó registrado como pendiente; puedes intentar de nuevo o coordinar el pago con nosotros.';
-        if (window.track) window.track('payment_cancelled');
-      } else {
-        if (successTtl) successTtl.textContent = 'No se completó el pago';
-        if (successMsg) successMsg.textContent = 'Hubo un problema al procesar el pago. Tu pedido quedó registrado como pendiente; intenta de nuevo o escríbenos para coordinar.';
-      }
+          if (pago === 'ok') {
+            if (successTtl) successTtl.textContent = '¡Pago confirmado!';
+            if (successMsg) successMsg.textContent = 'Recibimos tu pago. Nos pondremos en contacto para coordinar la entrega.';
+          } else if (['cancel', 'error', 'rechazado'].includes(pago)) {
+            if (successTtl) successTtl.textContent = 'Pago no completado';
+            if (successMsg) successMsg.textContent = 'Tu pedido #' + orderRef + ' quedó registrado PENDIENTE DE PAGO. Puedes intentar pagar de nuevo o coordinar el pago por WhatsApp.';
+            addPendingPaymentWhatsappCta(orderRef);
+            if (pago === 'cancel' && window.track) window.track('payment_cancelled');
+          } else {
+            if (successTtl) successTtl.textContent = 'No se completó el pago';
+            if (successMsg) successMsg.textContent = 'Hubo un problema al procesar el pago. Tu pedido quedó registrado como pendiente; intenta de nuevo o escríbenos para coordinar.';
+          }
 
       // Limpiar el query para que no reaparezca al recargar.
       try { history.replaceState(null, '', location.pathname); } catch (_) {}
     }
 
     // ─── Seller panel ──────────────────────────────────────────────────────────
-    function openSellerPanel() {
-      renderSellerPanel();
-      document.getElementById('seller-panel').classList.add('open');
-      document.getElementById('seller-overlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
+        function openSellerPanel() {
+          renderSellerPanel();
+          document.getElementById('seller-panel').classList.add('open');
+          document.getElementById('seller-overlay').classList.add('open');
+          lockBodyScroll();
+        }
 
-    function closeSellerPanel() {
-      document.getElementById('seller-panel').classList.remove('open');
-      document.getElementById('seller-overlay').classList.remove('open');
-      document.body.style.overflow = '';
-    }
+        function closeSellerPanel() {
+          document.getElementById('seller-panel').classList.remove('open');
+          document.getElementById('seller-overlay').classList.remove('open');
+          unlockBodyScroll();
+        }
 
     function spTab(tab) {
       document.getElementById('sp-orders').classList.toggle('active', tab === 'orders');

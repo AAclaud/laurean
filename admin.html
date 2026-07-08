@@ -3220,12 +3220,17 @@
           source_cod: p.source_cod || p.sourceCod || null,
         }));
       }
-      getCustomProducts().forEach(p => all.push({
-        id: p.id, name: p.name,
-        category: p.category || '—',
-        base_gtq: p.price_gtq, base_usd: p.price_usd, custom: true,
-        source_cod: p.source_cod || p.sourceCod || p.cod || null,
-      }));
+      const seen = new Set(all.map(p => p.id));
+      getCustomProducts().forEach(p => {
+        if (seen.has(p.id)) return;
+        seen.add(p.id);
+        all.push({
+          id: p.id, name: p.name,
+          category: p.category || '—',
+          base_gtq: p.price_gtq, base_usd: p.price_usd, custom: true,
+          source_cod: p.source_cod || p.sourceCod || p.cod || null,
+        });
+      });
       return all;
     }
 
@@ -3704,6 +3709,15 @@
       return getFilteredOrders().filter(o => !isPosOrder(o) && !(o.forza_guide_number || o.forzaGuideNumber));
     }
 
+    function paymentStatusBadge(o) {
+      const method = String(o.payment_method || o.pay_method || '').toLowerCase();
+      if (method !== 'card') return '';
+      const paid = String(o.payment_status || '').toLowerCase() === 'pagado';
+      const color = paid ? '#2e7d32' : '#c62828';
+      const label = paid ? 'Pagado' : 'No pagado · coordinar';
+      return `<span style="display:inline-block;margin-top:3px;font-size:10px;font-weight:600;color:${color};border:1px solid ${color};border-radius:4px;padding:1px 6px;">${label}</span>`;
+    }
+
     function renderOrders() {
       const orders = getFilteredOrders();
       const tbody  = document.getElementById('orders-tbody');
@@ -3733,6 +3747,7 @@
                 `<option value="${s}" ${o.status === s ? 'selected' : ''}>${escapeHtml(statusLabel(s))}</option>`
               ).join('')}
             </select>`}
+            ${paymentStatusBadge(o)}
             ${o.forza_guide_number
               ? `<button class="btn btn-light" style="padding:3px 8px;font-size:10px;display:block;margin-top:3px" onclick="envTrackInline('${jsAttr(o.forza_guide_serie || 'FD')}','${jsAttr(o.forza_guide_number)}')" title="Rastrear ${escapeAttr(o.forza_guide_serie || 'FD')}-${escapeAttr(o.forza_guide_number)}">📦 ${escapeHtml(o.forza_guide_number)}</button>`
               : (isPosOrder(o) ? '' : `<button class="btn btn-light" style="padding:3px 8px;font-size:10px;display:block;margin-top:3px;color:var(--vino);border-color:var(--vino)" onclick="envCreateGuideFromOrder('${jsAttr(o.supabase_id || o.id)}')" title="Crear guía Forza con datos de este pedido">+ Guía Forza</button>`)
@@ -4541,6 +4556,7 @@
         gallery,
         variants,
       });
+      window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
       closeProductModal();
       renderProducts();
     }
@@ -4658,6 +4674,7 @@
       if (!confirm('¿Eliminar este producto personalizado?')) return;
       deleteCustomProduct(id);
       renderProducts();
+      window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
     }
 
     // ─── Importador CSV de inventario ───────────────────────────────────────────
@@ -5316,9 +5333,21 @@
     function saveCatPrice(id, inp, field) {
       const cats = getCustomCategories();
       const idx  = cats.findIndex(c => c.id === id);
-      if (idx === -1) return; // base categories not editable via localStorage
-      cats[idx][`starting_price_${field}`] = parseFloat(inp.value) || 0;
-      localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
+      const col = field === 'usd' ? 'starting_price_usd' : 'starting_price_gtq';
+      const value = parseFloat(inp.value) || 0;
+      if (idx !== -1) {
+        cats[idx][col] = value;
+        localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
+      }
+      ['parentCategories', 'categories'].forEach(key => {
+        (window.LAUREAN_DATA?.[key] || []).forEach(c => {
+          if (c.id === id) c[col] = value;
+        });
+      });
+      if (window.LAUREAN_DB) {
+        window.LAUREAN_DB.from('categories').update({ [col]: value }).eq('id', id)
+          .then(({ error }) => { if (error) console.warn('[supabase] category price update:', error.message); });
+      }
     }
 
     function deleteCat(id) {

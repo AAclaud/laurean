@@ -316,6 +316,20 @@
       justify-content: space-between;
       align-items: center;
     }
+    .pos-cart-title {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+    .pos-bar-summary,
+    .pos-cart-chevron {
+      display: none;
+    }
+    .pos-cart-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .pos-cart-clear {
       background: none;
       border: none;
@@ -651,6 +665,59 @@
       .pos-cart { width: 100%; height: 45vh; }
       .pos-topbar-tabs .pos-tab:nth-child(n+3) { display: none; }
     }
+
+    @media (max-width: 1024px) {
+      .pos-product-grid { padding-bottom: 96px; }
+      .pos-cart {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        width: 100%;
+        height: auto;
+        max-height: 75vh;
+        background: white;
+        box-shadow: 0 -16px 40px rgba(0,0,0,0.18);
+        border-top: 1px solid var(--piedra);
+        transform: translateY(calc(100% - 56px));
+        transition: transform .3s ease;
+      }
+      body.pos-cart-open .pos-cart { transform: translateY(0); }
+      .pos-cart-header {
+        min-height: 56px;
+        padding: 0 16px;
+        cursor: pointer;
+        background: white;
+        flex-shrink: 0;
+      }
+      .pos-cart-label { display: none; }
+      .pos-bar-summary {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--carbon);
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        text-transform: none;
+      }
+      .pos-cart-chevron {
+        display: inline-block;
+        color: var(--warm-mid);
+        font-size: 18px;
+        line-height: 1;
+        transition: transform .3s ease;
+      }
+      body.pos-cart-open .pos-cart-chevron { transform: rotate(180deg); }
+      .pos-cart-items,
+      .pos-cart-footer {
+        min-height: 0;
+        overflow-y: auto;
+      }
+      .pos-cart-items { flex: 1 1 auto; }
+      .pos-cart-footer { flex-shrink: 1; }
+    }
   </style>
 </head>
 <body>
@@ -718,9 +785,15 @@
 
       <!-- Carrito -->
       <div class="pos-cart">
-        <div class="pos-cart-header">
-          Carrito
-          <button class="pos-cart-clear" onclick="posClearCart()">Vaciar</button>
+        <div class="pos-cart-header" onclick="posToggleCartPanel()">
+          <div class="pos-cart-title">
+            <span class="pos-cart-label">Carrito</span>
+            <span class="pos-bar-summary" id="pos-bar-summary">Cuenta · 0 items — Q0</span>
+          </div>
+          <div class="pos-cart-actions">
+            <button class="pos-cart-clear" onclick="event.stopPropagation(); posClearCart()">Vaciar</button>
+            <span class="pos-cart-chevron" aria-hidden="true">⌄</span>
+          </div>
         </div>
         <div class="pos-cart-items" id="pos-cart-items">
           <div class="pos-cart-empty">Agrega productos al carrito</div>
@@ -1095,12 +1168,18 @@
     renderPosCart();
   }
 
+  function posToggleCartPanel() {
+    if (!window.matchMedia('(max-width: 1024px)').matches) return;
+    document.body.classList.toggle('pos-cart-open');
+  }
+
   function renderPosCart() {
     const itemsEl   = document.getElementById('pos-cart-items');
     const subtotal  = posCart.reduce((s, i) => s + i.price * i.qty, 0);
     const manualAmt = posManualDisc > 0 ? Math.round(subtotal * posManualDisc / 100) : 0;
     const codeAmt   = posAppliedDscCode ? posAppliedDscCode.discountGtq : 0;
     const total     = Math.max(0, subtotal - manualAmt - codeAmt);
+    const itemCount = posCart.reduce((s, i) => s + i.qty, 0);
 
     if (!posCart.length) {
       itemsEl.innerHTML = '<div class="pos-cart-empty">Agrega productos al carrito</div>';
@@ -1131,6 +1210,8 @@
       discRow.style.display = 'none';
     }
     document.getElementById('pos-total').textContent = 'Q' + total.toLocaleString();
+    document.getElementById('pos-bar-summary').textContent =
+      `Cuenta · ${itemCount} ${itemCount === 1 ? 'item' : 'items'} — Q${total.toLocaleString()}`;
 
     const btn = document.getElementById('pos-cobrar-btn');
     btn.textContent = posCart.length ? `Cobrar Q${total.toLocaleString()}` : 'Cobrar Q0';

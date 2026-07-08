@@ -128,5 +128,15 @@
   } else {
     hydrate();
   }
+
+  // Si Supabase conecta después del timeout inicial, reintentar una vez.
+  let _retried = false;
+  document.addEventListener('laurean:supabase-ready', () => {
+    const empty = !window.LAUREAN_DATA || !(window.LAUREAN_DATA.products || []).length;
+    if (_retried || !empty) return;
+    _retried = true;
+    hydrate();
+  }, { once: true });
+
   window.LAUREAN_CATALOG_HYDRATE = hydrate; // refresh manual
 })();

@@ -1157,19 +1157,22 @@ function saveCustomProduct(product) {
   localStorage.setItem('laurean_custom_products', JSON.stringify(products));
   // Dual-write a Supabase (fire-and-forget) si está conectado
   if (window.LAUREAN_DB) {
+    const parentId = product.category || product.parent || product.category_parent || null;
+    const subcatId = product.subcat || product.subcat_id || null;
     window.LAUREAN_DB.from('products').upsert({
       id: product.id,
       name: product.name,
-      image_url: product.image || null,
+      image_url: product.image || product.image_url || null,
       description: product.description || null,
       price_gtq: product.price_gtq || 0,
       price_usd: product.price_usd || 0,
-      parent_id: product.category || null,
-      subcat_id: product.subcat || null,
-      stock: Number.isFinite(product.stock) ? product.stock : 0,
+      parent_id: parentId || null,
+      subcat_id: subcatId || null,
+      stock: product.stock ?? 0,
+      is_new_arrival: !!product.is_new_arrival,
       gallery: Array.isArray(product.gallery) ? product.gallery : [],
       variants: Array.isArray(product.variants) ? product.variants : [],
-      active: true,
+      active: product.active !== false,
     }).then(({ error }) => { if (error) console.warn('[supabase] upsert product:', error.message); });
   }
   return product;

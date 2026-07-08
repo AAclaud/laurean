@@ -278,6 +278,15 @@
       z-index: 9999; white-space: nowrap;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.toast-action { pointer-events: auto; }
+    .toast a {
+      color: var(--dorado);
+      font-weight: 500;
+      margin-left: 10px;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .toast a:hover { text-decoration: underline; }
 
     /* ─── Drawer favoritos ─── */
     .fav-overlay {
@@ -540,6 +549,7 @@
     var _product     = null;
     var _selectedSize = null;
     var TOAST_TIMER  = null;
+    var BUY_BTN_TIMER = null;
     var FAVORITES_KEY = 'laurean_favorites';
 
     function jsAttr(s) {
@@ -995,9 +1005,15 @@
     }
 
     /* ─── Toast ──────────────────────────────────────────────────────────────── */
-    function showToast(msg) {
+    function showToast(msg, allowHtml) {
       var el = document.getElementById('toast');
-      el.textContent = msg;
+      if (allowHtml) {
+        el.innerHTML = msg;
+        el.classList.add('toast-action');
+      } else {
+        el.textContent = msg;
+        el.classList.remove('toast-action');
+      }
       el.classList.add('show');
       clearTimeout(TOAST_TIMER);
       TOAST_TIMER = setTimeout(function() { el.classList.remove('show'); }, 2800);
@@ -1005,8 +1021,8 @@
 
     /* ─── Carrito: persiste en localStorage (laurean_pending_cart) ──────────── */
     /* Laurean.html maneja su carrito en memoria. Para agregar desde una página
-       externa, escribimos el item en laurean_pending_cart y redirigimos.
-       Laurean.html puede consumir esta clave en su DOMContentLoaded (Fase E). */
+       externa, escribimos el item en laurean_pending_cart; Laurean.html puede
+       consumir esta clave en su DOMContentLoaded (Fase E). */
     function addToCart(product, priceObj) {
       var CART_KEY = 'laurean_pending_cart';
       var cart = [];
@@ -1130,7 +1146,7 @@
       if (showPrice && priceObj) {
         /* Carrito + WhatsApp */
         ctasEl.innerHTML =
-          '<button class="btn-primary" onclick="handleComprar()">Comprar</button>'
+          '<button class="btn-primary" id="product-buy-btn" onclick="handleComprar()">Comprar</button>'
           + '<button class="btn-secondary" id="product-fav-btn" onclick="toggleFavorite(\'' + jsAttr(p.id) + '\')" aria-pressed="' + (isFavorite(p.id) ? 'true' : 'false') + '">' + (isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos') + '</button>'
           + productShareButtonHtml()
           + '<a class="btn-secondary" href="' + buildWhatsApp(p) + '" target="_blank" rel="noopener">Contactar a Laurean</a>'
@@ -1228,10 +1244,22 @@
         : { gtq: _product.price_gtq, usd: _product.price_usd };
 
       addToCart(_product, priceObj);
-      showToast(_product.name + ' agregado al carrito');
-      setTimeout(function() {
-        window.location.href = 'Laurean.html';
-      }, 900);
+      showToast(
+        esc(_product.name) + ' agregado al carrito'
+          + '<a href="Laurean.html?cart=1">Ver carrito →</a>',
+        true
+      );
+
+      var btn = document.getElementById('product-buy-btn');
+      if (btn) {
+        var original = btn.getAttribute('data-original-text') || btn.textContent || 'Comprar';
+        btn.setAttribute('data-original-text', original);
+        btn.textContent = 'Agregado ✓';
+        clearTimeout(BUY_BTN_TIMER);
+        BUY_BTN_TIMER = setTimeout(function() {
+          btn.textContent = original;
+        }, 1500);
+      }
     }
 
     /* ─── Buscar producto ────────────────────────────────────────────────────── */
