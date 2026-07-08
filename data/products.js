@@ -87,40 +87,7 @@ window.LAUREAN_DATA = {
   products: [],
 
   // ─── ACCESORIOS Y CALZADO (sección independiente) ──────────────────────────
-  accessories: [
-    {
-      id: 'tote-bag-01',
-      name: 'Tote Bag',
-      image: 'images/accessories/tote-bag.jpg',
-      price_gtq: 299,
-      price_usd: 39,
-      category: 'accesorios',
-    },
-    {
-      id: 'bangles-01',
-      name: 'Bangles',
-      image: 'images/accessories/bangles.jpg',
-      price_gtq: 199,
-      price_usd: 26,
-      category: 'accesorios',
-    },
-    {
-      id: 'cinturon-01',
-      name: 'Cinturón',
-      image: 'images/accessories/cinturon.jpg',
-      price_gtq: 349,
-      price_usd: 45,
-      category: 'accesorios',
-    },
-    {
-      id: 'sandalia-01',
-      name: 'Sandalia',
-      image: 'images/accessories/sandalia.jpg',
-      price_gtq: 549,
-      price_usd: 71,
-      category: 'calzado',
-    },
-  ],
+  accessories: [],
 
   // ─── LEGACY: mantenido para compatibilidad con código previo ────────────────
   // admin.html getAllProducts() y renderProducts() en Laurean.html lo usaban.

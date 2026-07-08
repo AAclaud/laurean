@@ -781,6 +781,7 @@
           <table>
             <thead><tr>
               <th>Producto</th><th>Categoría</th>
+              <th>Publicado</th>
               <th>Público Q</th><th class="usd-only">Público USD</th>
               <th>Vendedor Q</th><th class="usd-only">Vendedor USD</th>
               <th>Bodega Q</th><th class="usd-only">Bodega USD</th>
@@ -1179,7 +1180,8 @@
       <!-- ── VISTA: CATEGORÍAS ───────────────────────────────────────────────── -->
       <div id="view-categorias" class="view">
         <h1 class="view-title">Categorías <em>del Catálogo</em></h1>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:20px;">
+          <button class="btn btn-light" onclick="openSubcategoryModal()">+ Nueva subcategoría</button>
           <button class="btn btn-dark" onclick="openCategoryModal()">+ Nueva categoría</button>
         </div>
         <table class="tbl">
@@ -1345,6 +1347,7 @@
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button class="btn btn-light" onclick="printStockReport()">Imprimir reporte</button>
               <button class="btn btn-light" onclick="exportStockCSV()">Exportar CSV</button>
+              <button class="btn btn-light" onclick="openInvModal('traslado')">⇄ Trasladar entre bodegas</button>
               <button class="btn btn-light" onclick="openInvModal('ingreso')">+ Ingreso</button>
               <button class="btn btn-light" onclick="openInvModal('salida')">- Salida</button>
               <button class="btn btn-dark" onclick="openInvModal('ajuste')">Ajuste</button>
@@ -1364,6 +1367,7 @@
               <option value="ingreso">Ingreso</option>
               <option value="salida">Salida</option>
               <option value="ajuste">Ajuste</option>
+              <option value="transferencia">Transferencia</option>
             </select>
             <select class="form-input" id="invmov-filter-bodega" style="width:180px;" onchange="renderInventarioMovimientos()">
               <option value="">Todas las bodegas</option>
@@ -1551,8 +1555,17 @@
             <input type="hidden" id="inv-modal-type" />
             <div class="form-row">
               <div class="form-group">
+                <label class="form-label">Tipo de movimiento</label>
+                <select class="form-input" id="inv-type-select" onchange="openInvModal(this.value)">
+                  <option value="ingreso">Ingreso</option>
+                  <option value="salida">Salida</option>
+                  <option value="ajuste">Ajuste</option>
+                  <option value="traslado">Traslado</option>
+                </select>
+              </div>
+              <div class="form-group" id="inv-main-bodega-group">
                 <label class="form-label">Bodega</label>
-                <select class="form-input" id="inv-bodega-select"></select>
+                <select class="form-input" id="inv-bodega-select" onchange="updateInvSelectedStockLabel()"></select>
               </div>
               <div class="form-group" id="inv-prov-group">
                 <label class="form-label">Proveedor <span style="color:var(--warm-mid);font-size:11px">(opcional)</span></label>
@@ -1569,7 +1582,7 @@
               </label>
             </div>
 
-            <!-- SALIDA / AJUSTE: un producto -->
+            <!-- SALIDA / AJUSTE / TRASLADO: un producto -->
             <div id="inv-single-block">
               <div class="form-group">
                 <label class="form-label">Producto</label>
@@ -1596,6 +1609,18 @@
                 <div class="form-group" id="inv-newstock-group" style="display:none">
                   <label class="form-label">Nuevo stock</label>
                   <input class="form-input" type="number" id="inv-newstock" min="0" placeholder="0" />
+                </div>
+              </div>
+            </div>
+            <div id="inv-transfer-block" style="display:none">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Bodega origen</label>
+                  <select class="form-input" id="inv-transfer-from" onchange="updateInvSelectedStockLabel()"></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Bodega destino</label>
+                  <select class="form-input" id="inv-transfer-to"></select>
                 </div>
               </div>
             </div>
@@ -2342,6 +2367,34 @@
     </div>
   </div>
 
+  <!-- ── MODAL SUBCATEGORÍA ──────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-subcategory-overlay" onclick="closeSubcategoryModalOutside(event)">
+    <div class="modal">
+      <h2 class="modal-title">Nueva subcategoría</h2>
+      <div class="modal-error" id="modal-subcategory-error"></div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Categoría padre</label>
+          <select class="form-select" id="msc-parent"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input type="text" class="form-input" id="msc-name" placeholder="Ej: Vestidos casuales" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">ID opcional</label>
+          <input type="text" class="form-input" id="msc-id" placeholder="vestidos-casuales" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" onclick="closeSubcategoryModal()">Cancelar</button>
+        <button class="btn btn-dark" onclick="saveSubcategory()">Guardar subcategoría</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Configuración (opcional, si existe). Crear js/config.js basado en js/config.example.js -->
   <script src="js/config.js" onerror="console.info('[admin] js/config.js no existe; modo localStorage');"></script>
   <script src="js/auth.js"></script>
@@ -2452,6 +2505,11 @@
       if (typeof syncOrdersFromSupabase === 'function') {
         syncOrdersFromSupabase().then(() => { renderOrders(); renderDashboard(); });
       }
+      if (typeof syncProductsFromSupabase === 'function') {
+        syncProductsFromSupabase()
+          .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
+          .then(() => { renderCategories(); renderProducts(); renderCategoriesView(); renderDashboard(); });
+      }
       // Cambiar vista al cambiar hash
       window.addEventListener('hashchange', () => {
         const h = (window.location.hash || '').replace('#','').trim();
@@ -2524,14 +2582,27 @@
       if (name === 'lookbook')     loadLookbookConfig();
       if (name === 'categorias')   renderCategoriesView();
       if (name === 'combos')       renderCombos();
-      if (name === 'inventario')   renderInventario();
+      if (name === 'inventario')   {
+        renderInventario();
+        syncProductsAndStockFromSupabase().then(() => renderInventarioStock());
+      }
       if (name === 'vendedores')   { renderUsers(); if (window.syncUsersFromSupabase) syncUsersFromSupabase().then(ok => { if (ok) renderUsers(); }); }
       if (name === 'pedidos')      { renderOrders(); if (typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); }); clearOrdersNotif(); }
       if (name === 'comisiones')   renderCommissions();
       if (name === 'estadisticas') renderEstadisticas();
       if (name === 'analytics')     renderAnalytics();
-      if (name === 'proveedores')  renderProveedores();
-      if (name === 'bodegas')      renderBodegas();
+      if (name === 'proveedores')  {
+        if (!_proveedoresSeeded && window.LAUREAN_DB) {
+          _proveedoresSeeded = true;
+          seedProveedoresFromInventory().then(() => renderProveedores());
+        } else {
+          renderProveedores();
+        }
+      }
+      if (name === 'bodegas')      {
+        renderBodegas();
+        syncProductsAndStockFromSupabase().then(() => renderBodegas());
+      }
       if (name === 'cotizaciones') renderCotizaciones();
       if (name === 'envios')       renderEnvios();
       if (name === 'config')       loadConfig();
@@ -2539,6 +2610,18 @@
       if (name === 'clientes')     renderClientes();
       if (name === 'descuentos')   renderDescuentos();
       if (name === 'pagos')      { renderPagos(); loadPaymentConfig(); }
+    }
+
+    function syncProductsAndStockFromSupabase() {
+      const productSync = (typeof syncProductsFromSupabase === 'function')
+        ? syncProductsFromSupabase()
+        : Promise.resolve(false);
+      return Promise.resolve(productSync)
+        .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
+        .catch(err => {
+          console.warn('[supabase] sync products/stock:', err && err.message ? err.message : err);
+          return false;
+        });
     }
 
     // ─── Gestor de Lookbook ───────────────────────────────────────────────────
@@ -3193,14 +3276,43 @@
     }
 
     // ─── Productos / Precios ───────────────────────────────────────────────────
+    function getNormalizedSubcatsForSelect() {
+      const base = (window.LAUREAN_DATA && LAUREAN_DATA.subcategories) ? LAUREAN_DATA.subcategories : [];
+      const custom = getCustomSubcategories();
+      const map = new Map();
+      [...base, ...custom].forEach(s => {
+        if (!s || !s.id) return;
+        map.set(s.id, {
+          ...s,
+          parent: s.parent || s.parent_id || '',
+          parent_id: s.parent_id || s.parent || '',
+        });
+      });
+      return Array.from(map.values());
+    }
+
+    function subcatName(id) {
+      if (!id) return '';
+      const s = getNormalizedSubcatsForSelect().find(s => s.id === id);
+      return s ? s.name : id;
+    }
+
     function getAllProducts() {
       const all = [];
-      if (window.LAUREAN_DATA) {
+      const adminProducts = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
+      if (adminProducts.length) {
+        adminProducts.forEach(p => all.push({
+          id: p.id, name: p.name,
+          category: subcatName(p.subcat_id) || p.parent_id || '—',
+          base_gtq: p.price_gtq, base_usd: p.price_usd,
+          custom: false, editable: true,
+          active: p.active !== false,
+          parent_id: p.parent_id, subcat_id: p.subcat_id,
+          image: p.image_url, gallery: p.gallery, variants: p.variants,
+          stock: p.stock, source_cod: p.source_cod || null,
+        }));
+      } else if (window.LAUREAN_DATA) {
         // Catálogo principal (nueva estructura jerárquica)
-        const subcatName = id => {
-          const s = (LAUREAN_DATA.subcategories || []).find(s => s.id === id);
-          return s ? s.name : id;
-        };
         (LAUREAN_DATA.products || []).forEach(p => all.push({
           id: p.id, name: p.name,
           category: subcatName(p.subcat) || p.parent || '—',
@@ -3278,7 +3390,7 @@
 
       const tbody = document.getElementById('products-tbody');
       if (!products.length) {
-        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><p>Sin productos</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><p>Sin productos</p></div></td></tr>`;
         return;
       }
       tbody.innerHTML = products.map(p => {
@@ -3293,6 +3405,9 @@
           <tr data-id="${escapeAttr(p.id)}">
             <td><strong>${escapeHtml(p.name)}</strong>${p.custom ? ' <span class="badge badge-vendedor" style="font-size:9px;padding:2px 7px">Custom</span>' : ''}</td>
             <td class="td-muted">${escapeHtml(p.category)}</td>
+            <td>
+              <input type="checkbox" ${p.active !== false ? 'checked' : ''} onchange="toggleProductPublished('${jsAttr(p.id)}', this.checked)" title="Visible en la tienda web y POS" style="width:16px;height:16px;cursor:pointer" />
+            </td>
             <td><input class="price-input" type="number" data-field="public_gtq" value="${pubGtq}" onchange="updateSuggested(this,'${jsAttr(p.id)}')" /></td>
             <td class="usd-only"><input class="price-input" type="number" data-field="public_usd" value="${pubUsd}" onchange="updateSuggested(this,'${jsAttr(p.id)}')" /></td>
             <td>
@@ -3324,17 +3439,33 @@
                 <button class="btn btn-light" style="font-size:11px;padding:4px 10px;" onclick="openKardex('${jsAttr(p.id)}','${jsAttr(p.name)}','${jsAttr(p.source_cod || '')}')">
                   Kardex
                 </button>
-                ${p.custom ? `
                 <button class="btn btn-light" style="font-size:11px;padding:4px 10px;" onclick="openProductModal('${jsAttr(p.id)}')" title="Editar producto">
                   Editar
                 </button>
                 <button class="btn btn-icon btn-danger" onclick="deleteProductConfirm('${jsAttr(p.id)}')" title="Eliminar">
                   <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                </button>` : ''}
+                </button>
               </div>
             </td>
           </tr>`;
       }).join('');
+    }
+
+    function toggleProductPublished(id, on) {
+      if (window.LAUREAN_DB) {
+        window.LAUREAN_DB.from('products').update({ active: on }).eq('id', id)
+          .then(({ error }) => {
+            if (error) { alert('No se pudo actualizar: ' + error.message); return; }
+            const list = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
+            const i = list.findIndex(p => p.id === id);
+            if (i !== -1) {
+              list[i].active = on;
+              localStorage.setItem('laurean_admin_products', JSON.stringify(list));
+            }
+            if (window.LAUREAN_CATALOG_HYDRATE) window.LAUREAN_CATALOG_HYDRATE();
+            renderProducts();
+          });
+      }
     }
 
     function updateSuggested(input, pid) {
@@ -4369,8 +4500,29 @@
 
     // ─── Modal producto ────────────────────────────────────────────────────────
     // Fuentes de categorías/subcategorías: catálogo base (LAUREAN_DATA) + personalizadas.
+    function getCustomSubcategories() {
+      return JSON.parse(localStorage.getItem('laurean_custom_subcats') || '[]');
+    }
+
+    function saveCustomSubcategory(subcat) {
+      const list = getCustomSubcategories();
+      const idx = list.findIndex(s => s.id === subcat.id);
+      if (idx !== -1) list[idx] = { ...list[idx], ...subcat };
+      else list.push(subcat);
+      localStorage.setItem('laurean_custom_subcats', JSON.stringify(list));
+      return subcat;
+    }
+
+    function slugifySubcategory(value) {
+      return String(value || '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     function getAllCategoriesForSelect() {
-      const base = (window.LAUREAN_DATA && LAUREAN_DATA.categories) ? LAUREAN_DATA.categories : [];
+      const base = window.LAUREAN_DATA ? (LAUREAN_DATA.parentCategories || LAUREAN_DATA.categories || []) : [];
       const custom = (typeof getCustomCategories === 'function') ? getCustomCategories() : [];
       const map = new Map();
       base.forEach(c => map.set(c.id, c.name));
@@ -4378,7 +4530,7 @@
       return Array.from(map, ([id, name]) => ({ id, name }));
     }
     function getAllSubcatsForSelect() {
-      return (window.LAUREAN_DATA && LAUREAN_DATA.subcategories) ? LAUREAN_DATA.subcategories : [];
+      return getNormalizedSubcatsForSelect();
     }
     function fillCategoryOptions(selected) {
       const sel = document.getElementById('mp-category');
@@ -4403,17 +4555,34 @@
       document.getElementById('modal-product-error').classList.remove('show');
       clearProductFieldHints();
       if (id) {
-        const p = getCustomProducts().find(p => p.id === id);
+        const localProduct = getCustomProducts().find(p => p.id === id);
+        const adminProduct = !localProduct && typeof getAdminProducts === 'function'
+          ? getAdminProducts().find(p => p.id === id)
+          : null;
+        const p = localProduct || (adminProduct ? {
+          id: adminProduct.id,
+          name: adminProduct.name,
+          category: adminProduct.parent_id || '',
+          subcat: adminProduct.subcat_id || '',
+          stock: adminProduct.stock,
+          price_gtq: adminProduct.price_gtq,
+          price_usd: adminProduct.price_usd,
+          image: adminProduct.image_url || '',
+          description: adminProduct.description || '',
+          gallery: adminProduct.gallery,
+          variants: adminProduct.variants,
+          active: adminProduct.active !== false,
+        } : null);
         if (!p) return;
         document.getElementById('modal-product-title').textContent = 'Editar producto';
         document.getElementById('mp-id').value         = p.id;
         document.getElementById('mp-name').value       = p.name;
-        fillCategoryOptions(p.category || p.parent || '');
-        fillSubcatOptions(p.subcat || '');
+        fillCategoryOptions(p.category || p.parent || p.parent_id || '');
+        fillSubcatOptions(p.subcat || p.subcat_id || '');
         document.getElementById('mp-stock').value      = (p.stock != null ? p.stock : '');
         document.getElementById('mp-price-gtq').value  = p.price_gtq;
         document.getElementById('mp-price-usd').value  = p.price_usd;
-        document.getElementById('mp-image').value      = p.image || '';
+        document.getElementById('mp-image').value      = p.image || p.image_url || '';
         document.getElementById('mp-desc').value       = p.description || '';
         document.getElementById('mp-cost').value       = (p.cost_price != null ? p.cost_price : '');
         document.getElementById('mp-gallery').value    = Array.isArray(p.gallery) ? p.gallery.join(', ') : '';
@@ -4541,6 +4710,11 @@
       const variants = collectVariants();
       const variantStock = variantsTotalStock(variants);
       const finalStock = variantStock > 0 ? variantStock : stock;
+      const existingCustom = id ? getCustomProducts().find(p => p.id === id) : null;
+      const existingAdmin = id && typeof getAdminProducts === 'function' ? getAdminProducts().find(p => p.id === id) : null;
+      const existingActive = existingCustom
+        ? existingCustom.active !== false
+        : (existingAdmin ? existingAdmin.active !== false : true);
 
       saveCustomProduct({
         id: id || undefined,
@@ -4555,10 +4729,15 @@
         description: desc,
         gallery,
         variants,
+        active: existingActive,
       });
       window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
       closeProductModal();
-      renderProducts();
+      if (typeof syncProductsFromSupabase === 'function') {
+        Promise.resolve(window.LAUREAN_LAST_PRODUCT_WRITE).then(() => syncProductsFromSupabase()).then(() => renderProducts());
+      } else {
+        renderProducts();
+      }
     }
 
     // ─── Editor de variantes (modal de producto) ────────────────────────────────
@@ -4600,7 +4779,7 @@
       const sizeQty = {};
       if (Array.isArray(v.sizes)) v.sizes.forEach(s => { sizeQty[s.size] = s.qty; });
       const sizeCells = STD_SIZES.map(sz => `
-        <div style="text-align:center">
+        <div style="text-align:center;flex:0 0 auto;width:72px">
           <label class="form-label" style="font-size:11px;display:block;margin-bottom:2px">${sz}</label>
           <input class="form-input mpv-size-qty" data-size="${sz}" type="number" min="0" step="1"
                  value="${sizeQty[sz] != null ? sizeQty[sz] : ''}" placeholder="0"
@@ -4625,7 +4804,7 @@
         </div>
         <div class="form-group" style="margin:8px 0 0">
           <label class="form-label" style="font-size:11px">Cantidad por talla</label>
-          <div style="display:grid;grid-template-columns:repeat(${STD_SIZES.length},1fr);gap:8px;margin-top:2px">${sizeCells}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px">${sizeCells}</div>
         </div>`;
       document.getElementById('mp-variants').appendChild(row);
     }
@@ -4671,10 +4850,14 @@
     }
 
     function deleteProductConfirm(id) {
-      if (!confirm('¿Eliminar este producto personalizado?')) return;
+      if (!confirm('¿Eliminar este producto?')) return;
       deleteCustomProduct(id);
-      renderProducts();
       window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
+      if (typeof syncProductsFromSupabase === 'function') {
+        Promise.resolve(window.LAUREAN_LAST_PRODUCT_WRITE).then(() => syncProductsFromSupabase()).then(() => renderProducts());
+      } else {
+        renderProducts();
+      }
     }
 
     // ─── Importador CSV de inventario ───────────────────────────────────────────
@@ -4875,6 +5058,64 @@
       saveCustomCategory({ id: id || undefined, name, starting_price_gtq: gtq, starting_price_usd: usd, image });
       closeCategoryModal();
       renderCategories();
+    }
+
+    function openSubcategoryModal() {
+      const overlay = document.getElementById('modal-subcategory-overlay');
+      const errEl = document.getElementById('modal-subcategory-error');
+      if (errEl) errEl.classList.remove('show');
+      const parentSel = document.getElementById('msc-parent');
+      parentSel.innerHTML = '<option value="">Selecciona categoría…</option>' +
+        getAllCategoriesForSelect().map(c => `<option value="${escapeAttr(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+      document.getElementById('msc-name').value = '';
+      document.getElementById('msc-id').value = '';
+      overlay.classList.add('open');
+    }
+
+    function closeSubcategoryModal() {
+      document.getElementById('modal-subcategory-overlay').classList.remove('open');
+    }
+
+    function closeSubcategoryModalOutside(e) {
+      if (e.target === document.getElementById('modal-subcategory-overlay')) closeSubcategoryModal();
+    }
+
+    async function saveSubcategory() {
+      const errEl = document.getElementById('modal-subcategory-error');
+      errEl.classList.remove('show');
+      const parentId = document.getElementById('msc-parent').value;
+      const name = document.getElementById('msc-name').value.trim();
+      let id = document.getElementById('msc-id').value.trim();
+      if (!parentId || !name) {
+        errEl.textContent = 'Selecciona una categoría padre y escribe el nombre.';
+        errEl.classList.add('show');
+        return;
+      }
+      id = id || slugifySubcategory(name);
+      if (!id) {
+        errEl.textContent = 'No se pudo generar un ID válido.';
+        errEl.classList.add('show');
+        return;
+      }
+      const record = { id, parent_id: parentId, parent: parentId, name, display_order: 99 };
+      if (window.LAUREAN_DB) {
+        const { error } = await window.LAUREAN_DB.from('subcategories').upsert({
+          id,
+          parent_id: parentId,
+          name,
+          display_order: 99,
+        });
+        if (error) {
+          alert('No se pudo guardar la subcategoría: ' + error.message);
+          return;
+        }
+      }
+      saveCustomSubcategory(record);
+      closeSubcategoryModal();
+      renderCategoriesView();
+      renderCategories();
+      fillCategoryOptions(document.getElementById('mp-category')?.value || '');
+      window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
     }
 
     function deleteCategoryConfirm(id) {
@@ -5316,18 +5557,25 @@
     function renderCategoriesView() {
       const data  = window.LAUREAN_DATA;
       const cats  = [...(data?.parentCategories || data?.categories || []), ...getCustomCategories()];
+      const subcats = getAllSubcatsForSelect();
       const tbody = document.getElementById('cat-view-tbody');
       if (!tbody) return;
-      tbody.innerHTML = cats.map(c => `
+      tbody.innerHTML = cats.map(c => {
+        const childNames = subcats.filter(s => s.parent === c.id).map(s => s.name).filter(Boolean);
+        const childLine = childNames.length
+          ? `<br><span class="td-muted" style="font-size:11px">Subcategorías: ${escapeHtml(childNames.join(', '))}</span>`
+          : '';
+        return `
         <tr>
-          <td><strong>${escapeHtml(c.name)}</strong>${c.id?.startsWith('cat_') ? ' <span class="badge badge-vendedor" style="font-size:9px;padding:2px 7px">Custom</span>' : ''}</td>
+          <td><strong>${escapeHtml(c.name)}</strong>${c.id?.startsWith('cat_') ? ' <span class="badge badge-vendedor" style="font-size:9px;padding:2px 7px">Custom</span>' : ''}${childLine}</td>
           <td class="td-muted" style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.image || '—')}</td>
           <td><input class="price-input" type="number" value="${c.starting_price_gtq || 0}" onchange="saveCatPrice('${jsAttr(c.id)}',this,'gtq')" /></td>
           <td class="usd-only"><input class="price-input" type="number" value="${c.starting_price_usd || 0}" onchange="saveCatPrice('${jsAttr(c.id)}',this,'usd')" /></td>
           <td>${c.id?.startsWith('cat_') ? `<button class="btn btn-icon btn-danger" onclick="deleteCat('${jsAttr(c.id)}')">
             <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           </button>` : ''}</td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
     }
 
     function saveCatPrice(id, inp, field) {
@@ -5357,6 +5605,24 @@
     }
 
     // ─── Proveedores ──────────────────────────────────────────────────────────
+    let _proveedoresSeeded = false;
+
+    async function seedProveedoresFromInventory() {
+      if (!window.LAUREAN_DB) return;
+      const { data, error } = await window.LAUREAN_DB.from('inventory_items').select('supplier');
+      if (error || !data) return;
+      const names = [...new Set(data.map(r => (r.supplier || '').trim()).filter(Boolean))];
+      const existing = getProveedores();
+      let added = 0;
+      names.forEach(n => {
+        if (existing.some(p => (p.name || '').trim().toLowerCase() === n.toLowerCase())) return;
+        const saved = saveProveedor({ name: n, contact: '', phone: '', email: '', city: '', notes: 'Importado del inventario - completar datos' });
+        existing.push(saved);
+        added++;
+      });
+      if (added) renderProveedores();
+    }
+
     function renderProveedores() {
       const list  = getProveedores();
       const tbody = document.getElementById('prov-tbody');
@@ -6265,25 +6531,31 @@
       const typeLabel = { ingreso: 'Ingreso', salida: 'Salida', ajuste: 'Ajuste', transferencia: 'Transferencia' };
       const typeColor = { ingreso: '#4CAF50', salida: '#E53935', ajuste: '#4A90D9', transferencia: '#D4A017' };
 
-      tbody.innerHTML = list.length ? list.map(m => `
+      tbody.innerHTML = list.length ? list.map(m => {
+        const bodegaTxt = m.type === 'transferencia' && (m.fromBodegaName || m.toBodegaName)
+          ? `${m.fromBodegaName || m.fromBodega || '—'} → ${m.toBodegaName || m.toBodega || '—'}`
+          : m.bodegaName;
+        return `
         <tr>
           <td class="td-muted">${fmtDate(m.createdAt)}</td>
           <td><span class="badge" style="background:${typeColor[m.type]}22;color:${typeColor[m.type]}">${typeLabel[m.type] || m.type}</span></td>
           <td><strong>${escapeHtml(m.productName)}</strong></td>
-          <td>${escapeHtml(m.bodegaName)}</td>
+          <td>${escapeHtml(bodegaTxt)}</td>
           <td style="font-weight:600;color:${m.quantity >= 0 ? '#4CAF50' : '#E53935'}">${m.quantity >= 0 ? '+' : ''}${m.quantity}</td>
           <td class="td-muted">${m.previousStock}</td>
           <td class="td-muted">${m.newStock}</td>
           <td class="td-muted">${escapeHtml(m.proveedorName || '—')}</td>
           <td class="td-muted" style="font-size:11px">${escapeHtml(m.notes || '—')}</td>
-        </tr>`).join('')
+        </tr>`;
+      }).join('')
         : `<tr><td colspan="9"><div class="empty-state"><p>Sin movimientos registrados</p></div></td></tr>`;
     }
 
     function openInvModal(type) {
-      const titles = { ingreso: 'Registrar Ingreso', salida: 'Registrar Salida', ajuste: 'Ajuste de Stock' };
+      const titles = { ingreso: 'Registrar Ingreso', salida: 'Registrar Salida', ajuste: 'Ajuste de Stock', traslado: 'Trasladar entre bodegas' };
       document.getElementById('inv-modal-title').textContent = titles[type] || 'Movimiento';
       document.getElementById('inv-modal-type').value  = type;
+      document.getElementById('inv-type-select').value = type;
       document.getElementById('inv-product-search').value = '';
       document.getElementById('inv-product-id').value  = '';
       document.getElementById('inv-product-name').value = '';
@@ -6297,26 +6569,35 @@
         bodegas.length
           ? bodegas.map(b => `<option value="${escapeAttr(b.id)}" data-name="${escapeAttr(b.name)}">${escapeHtml(b.name)}</option>`).join('')
           : '<option value="">Sin bodegas registradas</option>';
+      const bodegaOptions = bodegas.length
+        ? bodegas.map(b => `<option value="${escapeAttr(b.id)}" data-name="${escapeAttr(b.name)}">${escapeHtml(b.name)}</option>`).join('')
+        : '<option value="">Sin bodegas registradas</option>';
+      document.getElementById('inv-transfer-from').innerHTML = bodegaOptions;
+      document.getElementById('inv-transfer-to').innerHTML = bodegaOptions;
+      if (bodegas.length > 1) document.getElementById('inv-transfer-to').value = bodegas[1].id;
 
       const proveedores = getProveedores();
       document.getElementById('inv-proveedor-select').innerHTML =
         '<option value="">Sin proveedor</option>' +
         proveedores.map(p => `<option value="${escapeAttr(p.id)}" data-name="${escapeAttr(p.nombre || p.name || '')}">${escapeHtml(p.nombre || p.name || p.id)}</option>`).join('');
 
+      document.getElementById('inv-main-bodega-group').style.display = type === 'traslado' ? 'none' : '';
       document.getElementById('inv-prov-group').style.display    = type === 'ingreso' ? '' : 'none';
       document.getElementById('inv-motivo-group').style.display  = type === 'salida'  ? '' : 'none';
       document.getElementById('inv-newstock-group').style.display = type === 'ajuste'  ? '' : 'none';
       document.getElementById('inv-qty-label').textContent =
-        type === 'salida' ? 'Cantidad a retirar' : 'Cantidad (delta)';
+        type === 'salida' ? 'Cantidad a retirar' : type === 'traslado' ? 'Cantidad a trasladar' : 'Cantidad (delta)';
       const qtyParent = document.getElementById('inv-qty').closest('.form-group');
       if (qtyParent) qtyParent.style.display = type === 'ajuste' ? 'none' : '';
       document.getElementById('inv-modal-save-btn').textContent =
-        type === 'ingreso' ? 'Registrar ingreso' : type === 'salida' ? 'Registrar salida' : 'Aplicar ajuste';
+        type === 'ingreso' ? 'Registrar ingreso' : type === 'salida' ? 'Registrar salida' : type === 'traslado' ? 'Registrar traslado' : 'Aplicar ajuste';
 
-      // Bloques: ingreso usa multi-línea; salida/ajuste usan un solo producto
+      // Bloques: ingreso usa multi-línea; salida/ajuste/traslado usan un solo producto
       const isIngreso = type === 'ingreso';
+      const isTraslado = type === 'traslado';
       document.getElementById('inv-multi-block').style.display  = isIngreso ? '' : 'none';
       document.getElementById('inv-single-block').style.display = isIngreso ? 'none' : '';
+      document.getElementById('inv-transfer-block').style.display = isTraslado ? '' : 'none';
       if (isIngreso) { _invLines = []; document.getElementById('inv-paid').checked = false; addInvLine(); }
 
       document.getElementById('inv-modal').style.display = 'flex';
@@ -6356,9 +6637,9 @@
         </div>
         <div class="form-group" style="margin:8px 0 0">
           <label class="form-label" style="font-size:11px">Cantidad por talla <span style="color:var(--warm-mid)">(opcional — si las llenas, suman la cantidad total)</span></label>
-          <div style="display:grid;grid-template-columns:repeat(${STD_SIZES.length},1fr);gap:8px;margin-top:2px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px">
             ${STD_SIZES.map(sz => `
-              <div style="text-align:center">
+              <div style="text-align:center;flex:0 0 auto;width:72px">
                 <label class="form-label" style="font-size:11px;display:block;margin-bottom:2px">${sz}</label>
                 <input class="form-input inv-line-size-qty" data-size="${sz}" type="number" min="0" step="1" placeholder="0"
                        style="padding:6px;text-align:center" oninput="syncInvLineQtyFromSizes(this)" />
@@ -6450,27 +6731,37 @@
       dropdown.style.display = 'block';
     }
 
+    function updateInvSelectedStockLabel() {
+      const productId = document.getElementById('inv-product-id').value;
+      if (!productId) return;
+      const type = document.getElementById('inv-modal-type').value;
+      const bodegaId = type === 'traslado'
+        ? document.getElementById('inv-transfer-from').value
+        : document.getElementById('inv-bodega-select').value;
+      if (!bodegaId) {
+        document.getElementById('inv-current-stock').textContent = '';
+        return;
+      }
+      const stock = getStockValue(productId, bodegaId);
+      document.getElementById('inv-current-stock').textContent = `Stock actual en esta bodega: ${stock} unidades`;
+      if (type === 'ajuste') document.getElementById('inv-newstock').value = stock;
+    }
+
     function selectInvProduct(id, name) {
       document.getElementById('inv-product-id').value    = id;
       document.getElementById('inv-product-name').value  = name;
       document.getElementById('inv-product-search').value = name;
       document.getElementById('inv-product-dropdown').style.display = 'none';
-      const type     = document.getElementById('inv-modal-type').value;
-      const bodegaId = document.getElementById('inv-bodega-select').value;
-      if (bodegaId) {
-        const stock = getStockValue(id, bodegaId);
-        document.getElementById('inv-current-stock').textContent = `Stock actual en esta bodega: ${stock} unidades`;
-        if (type === 'ajuste') document.getElementById('inv-newstock').value = stock;
-      }
+      updateInvSelectedStockLabel();
     }
 
     function saveInvMovement() {
       const type        = document.getElementById('inv-modal-type').value;
       const bodegaId    = document.getElementById('inv-bodega-select').value;
-      if (!bodegaId)  return alert('Selecciona una bodega.');
 
       // INGRESO múltiple: una o más líneas con costo y tallas
       if (type === 'ingreso') {
+        if (!bodegaId) return alert('Selecciona una bodega.');
         const provSel  = document.getElementById('inv-proveedor-select');
         const provId   = provSel.value;
         const provName = provId ? provSel.options[provSel.selectedIndex].dataset.name : null;
@@ -6504,6 +6795,39 @@
       const productId   = document.getElementById('inv-product-id').value;
       const productName = document.getElementById('inv-product-name').value;
       if (!productId) return alert('Selecciona un producto.');
+
+      if (type === 'traslado') {
+        const origen  = document.getElementById('inv-transfer-from').value;
+        const destino = document.getElementById('inv-transfer-to').value;
+        const qty     = parseInt(document.getElementById('inv-qty').value);
+        const notes   = document.getElementById('inv-notes').value;
+        if (!origen) return alert('Selecciona la bodega origen.');
+        if (!destino) return alert('Selecciona la bodega destino.');
+        if (origen === destino) return alert('La bodega destino debe ser distinta de la bodega origen.');
+        if (!qty || qty <= 0) return alert('Ingresa una cantidad válida.');
+        if (qty > getStockValue(productId, origen)) { alert('Stock insuficiente en la bodega origen.'); return; }
+        const bodegas = getBodegas();
+        const origenName = bodegas.find(b => b.id === origen)?.name || origen;
+        const destinoName = bodegas.find(b => b.id === destino)?.name || destino;
+        const meta = {
+          productName,
+          motivo: 'traslado',
+          notes,
+          fromBodega: origen,
+          toBodega: destino,
+          fromBodegaName: origenName,
+          toBodegaName: destinoName,
+        };
+        updateStock(productId, origen, -qty, 'transferencia', meta);
+        updateStock(productId, destino, qty, 'transferencia', meta);
+        closeInvModal();
+        renderInventarioStock();
+        renderInventarioMovimientos();
+        alert('Traslado registrado correctamente.');
+        return;
+      }
+
+      if (!bodegaId) return alert('Selecciona una bodega.');
 
       if (type === 'ajuste') {
         const newStock = parseInt(document.getElementById('inv-newstock').value);

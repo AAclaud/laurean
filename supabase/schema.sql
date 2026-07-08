@@ -382,6 +382,35 @@ create table if not exists public.inventory_stock (
   updated_at timestamptz default now(),
   primary key (cod, bodega_id)
 );
+
+-- Movimientos de inventario (trazabilidad multi-equipo): ingresos, salidas,
+-- ajustes y TRASLADOS entre bodegas (from_bodega → to_bodega).
+create table if not exists public.inventory_movements (
+  id             uuid primary key default gen_random_uuid(),
+  cod            text references public.inventory_items(cod) on delete set null,
+  product_id     text,
+  product_name   text,
+  type           text not null check (type in ('ingreso','salida','ajuste','transferencia')),
+  from_bodega    text references public.bodegas(id) on delete set null,
+  to_bodega      text references public.bodegas(id) on delete set null,
+  quantity       int  not null,
+  previous_stock int,
+  new_stock      int,
+  motivo         text,
+  notes          text,
+  created_by     uuid,
+  created_by_name text,
+  created_at     timestamptz default now()
+);
+create index if not exists idx_inv_mov_cod     on public.inventory_movements(cod);
+create index if not exists idx_inv_mov_created on public.inventory_movements(created_at desc);
+alter table public.inventory_movements enable row level security;
+do $$ begin
+  drop policy if exists "read_auth"  on public.inventory_movements;
+  drop policy if exists "write_admin" on public.inventory_movements;
+  create policy "read_auth"   on public.inventory_movements for select using (auth.uid() is not null);
+  create policy "write_admin" on public.inventory_movements for all using (public.is_admin()) with check (public.is_admin());
+end $$;
 create index if not exists idx_inv_stock_bodega on public.inventory_stock(bodega_id);
 
 -- Leyenda configurable semana → color (la define el superusuario; editable).

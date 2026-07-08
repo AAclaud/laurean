@@ -1175,6 +1175,10 @@
       });
     }
 
+    function normalizeVariantSize(sz) {
+      return (typeof sz === 'string') ? { size: sz, qty: null } : (sz || {});
+    }
+
     /* ─── Variantes de color/diseño ──────────────────────────────────────────── */
     var _selectedVariant = null;
 
@@ -1212,11 +1216,12 @@
       if (Array.isArray(v.sizes) && v.sizes.length) {
         var pillsEl = document.getElementById('size-pills');
         pillsEl.innerHTML = v.sizes.map(function(sz) {
-          var avail = (sz.qty || 0) > 0;
-          return '<button class="size-pill" data-size="' + esc(sz.size) + '" '
+          var sizeObj = normalizeVariantSize(sz);
+          var avail = sizeObj.qty == null ? true : (sizeObj.qty > 0);
+          return '<button class="size-pill" data-size="' + esc(sizeObj.size) + '" '
             + (avail ? '' : 'disabled style="opacity:.35;cursor:not-allowed" ')
-            + 'onclick="selectSize(\'' + esc(sz.size) + '\')" aria-label="Talla ' + esc(sz.size) + '">'
-            + esc(sz.size) + '</button>';
+            + 'onclick="selectSize(\'' + esc(sizeObj.size) + '\')" aria-label="Talla ' + esc(sizeObj.size) + '">'
+            + esc(sizeObj.size) + '</button>';
         }).join('');
         _selectedSize = null;
       }

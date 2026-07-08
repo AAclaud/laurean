@@ -706,6 +706,48 @@ async function syncOrdersFromSupabase() {
 }
 window.syncOrdersFromSupabase = syncOrdersFromSupabase;
 
+// ─── Productos admin desde Supabase ───────────────────────────────────────────
+async function syncProductsFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('products')
+    .select('id,name,image_url,description,price_gtq,price_usd,parent_id,subcat_id,stock,is_new_arrival,active,show_price,gallery,variants,source_cod')
+    .order('name')
+    .limit(2000);
+  if (error || !data) { console.warn('[supabase] sync products:', error && error.message); return false; }
+  localStorage.setItem('laurean_admin_products', JSON.stringify(data));
+  document.dispatchEvent(new CustomEvent('laurean:admin-products-synced'));
+  return true;
+}
+
+function getAdminProducts() {
+  return JSON.parse(localStorage.getItem('laurean_admin_products') || '[]');
+}
+
+window.syncProductsFromSupabase = syncProductsFromSupabase;
+window.getAdminProducts = getAdminProducts;
+
+async function syncStockFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('inventory_stock').select('cod,bodega_id,stock,updated_at').limit(5000);
+  if (error || !data) { console.warn('[supabase] sync stock:', error && error.message); return false; }
+  const prods = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
+  const byCod = {};
+  prods.forEach(p => { if (p.source_cod) byCod[String(p.source_cod)] = p.id; });
+  const inv = {};
+  data.forEach(r => {
+    const pid = byCod[String(r.cod)] || ('inv-' + r.cod);
+    if (!inv[pid]) inv[pid] = {};
+    inv[pid][r.bodega_id] = { stock: r.stock || 0, updatedAt: r.updated_at };
+  });
+  localStorage.setItem(KEYS.INVENTORY, JSON.stringify(inv));
+  document.dispatchEvent(new CustomEvent('laurean:stock-synced'));
+  return true;
+}
+
+window.syncStockFromSupabase = syncStockFromSupabase;
+
 function createOrder(data) {
   const session = getSession();
   const orders  = getOrders();
@@ -1159,7 +1201,7 @@ function saveCustomProduct(product) {
   if (window.LAUREAN_DB) {
     const parentId = product.category || product.parent || product.category_parent || null;
     const subcatId = product.subcat || product.subcat_id || null;
-    window.LAUREAN_DB.from('products').upsert({
+    window.LAUREAN_LAST_PRODUCT_WRITE = window.LAUREAN_DB.from('products').upsert({
       id: product.id,
       name: product.name,
       image_url: product.image || product.image_url || null,
@@ -1182,7 +1224,7 @@ function deleteCustomProduct(id) {
   const products = getCustomProducts().filter(p => p.id !== id);
   localStorage.setItem('laurean_custom_products', JSON.stringify(products));
   if (window.LAUREAN_DB) {
-    window.LAUREAN_DB.from('products').delete().eq('id', id)
+    window.LAUREAN_LAST_PRODUCT_WRITE = window.LAUREAN_DB.from('products').delete().eq('id', id)
       .then(({ error }) => { if (error) console.warn('[supabase] delete product:', error.message); });
   }
 }
@@ -1410,6 +1452,10 @@ function updateStock(productId, bodegaId, delta, type, meta = {}) {
 
   const movements = getInventoryMovements();
   const bodega    = getBodegas().find(b => b.id === bodegaId);
+  const fromBodega = meta.fromBodega || null;
+  const toBodega   = meta.toBodega   || null;
+  const fromBodegaName = meta.fromBodegaName || (fromBodega ? (getBodegas().find(b => b.id === fromBodega)?.name || fromBodega) : null);
+  const toBodegaName   = meta.toBodegaName   || (toBodega   ? (getBodegas().find(b => b.id === toBodega)?.name   || toBodega)   : null);
   movements.unshift({
     id:            genId('mov'),
     type,
@@ -1417,6 +1463,10 @@ function updateStock(productId, bodegaId, delta, type, meta = {}) {
     productName:   meta.productName || productId,
     bodegaId,
     bodegaName:    bodega ? bodega.name : bodegaId,
+    fromBodega,
+    fromBodegaName,
+    toBodega,
+    toBodegaName,
     quantity:      delta,
     previousStock,
     newStock,
@@ -1433,6 +1483,34 @@ function updateStock(productId, bodegaId, delta, type, meta = {}) {
     createdByName: session ? (session.userName || session.name || null) : null,
   });
   localStorage.setItem(KEYS.INV_MOVEMENTS, JSON.stringify(movements));
+
+  if (window.LAUREAN_DB) {
+    const prods = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
+    const p = prods.find(x => x.id === productId);
+    const cod = p && p.source_cod ? String(p.source_cod) : null;
+    if (cod) {
+      const movementType = type === 'ajuste'
+        ? 'ajuste'
+        : (type === 'transferencia' || type === 'traslado') ? 'transferencia' : (delta >= 0 ? 'ingreso' : 'salida');
+      window.LAUREAN_DB.from('inventory_stock')
+        .upsert({ cod, bodega_id: bodegaId, stock: newStock, updated_at: new Date().toISOString() }, { onConflict: 'cod,bodega_id' })
+        .then(({ error }) => { if (error) console.warn('[supabase] stock upsert:', error.message); });
+      window.LAUREAN_DB.from('inventory_movements').insert({
+        cod,
+        product_id: productId,
+        product_name: meta.productName || productId,
+        type: movementType,
+        from_bodega: (meta && meta.fromBodega) || (delta < 0 ? bodegaId : null),
+        to_bodega:   (meta && meta.toBodega)   || (delta >= 0 ? bodegaId : null),
+        quantity: Math.abs(delta),
+        previous_stock: previousStock,
+        new_stock: newStock,
+        motivo: (meta && meta.motivo) || type,
+        notes: (meta && meta.notes) || null,
+        created_by_name: session ? (session.name || session.email || session.userName || null) : null,
+      }).then(({ error }) => { if (error) console.warn('[supabase] movement insert:', error.message); });
+    }
+  }
   return newStock;
 }
 
