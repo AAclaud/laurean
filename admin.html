@@ -903,7 +903,7 @@
           <table>
             <thead><tr>
               <th>ID</th><th>Fecha</th><th>Cliente</th><th>Origen</th><th>Ítems</th>
-              <th>Subtotal</th><th>Descuento</th><th>Total</th><th>Referido</th><th>Estado</th>
+              <th>Subtotal</th><th>Descuento</th><th>Total</th><th>Pago</th><th>Referido</th><th>Estado</th>
             </tr></thead>
             <tbody id="orders-tbody"></tbody>
           </table>
@@ -1140,6 +1140,11 @@
           </div>
         </div>
         <div class="config-section" style="margin-top:24px">
+          <div class="config-title">Ventas por método de pago</div>
+          <table class="tbl" style="margin-top:12px"><thead><tr><th>Método</th><th style="text-align:right">Pedidos</th><th style="text-align:right">Total Q</th></tr></thead>
+          <tbody id="stats-pay-methods"></tbody></table>
+        </div>
+        <div class="config-section" style="margin-top:24px">
           <div class="config-title">Liquidez por artículo <span style="font-weight:400;font-size:.78em;opacity:.6">utilidad bruta = venta − costo</span></div>
           <table class="tbl" style="margin-top:12px"><thead><tr><th>Artículo</th><th style="text-align:right">Unid.</th><th style="text-align:right">Venta Q</th><th style="text-align:right">Costo Q</th><th style="text-align:right">Utilidad Q</th></tr></thead>
           <tbody id="stats-profit"></tbody>
@@ -1188,6 +1193,9 @@
           <thead><tr><th>Nombre</th><th>Imagen</th><th>Precio desde Q</th><th class="usd-only">Precio desde USD</th><th>Acciones</th></tr></thead>
           <tbody id="cat-view-tbody"></tbody>
         </table>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button class="btn btn-dark" onclick="saveAllCatPrices()">Guardar precios</button>
+        </div>
       </div>
 
       <!-- ── VISTA: PROVEEDORES ─────────────────────────────────────────────── -->
@@ -1610,6 +1618,10 @@
                   <label class="form-label">Nuevo stock</label>
                   <input class="form-input" type="number" id="inv-newstock" min="0" placeholder="0" />
                 </div>
+              </div>
+              <div class="form-group" id="inv-adjust-tallas-group" style="display:none">
+                <label class="form-label">Detalle por talla (opcional)</label>
+                <input class="form-input" id="inv-adjust-tallas" placeholder="Ej: S:10, M:25, L:8" />
               </div>
             </div>
             <div id="inv-transfer-block" style="display:none">
@@ -2513,6 +2525,12 @@
       if (typeof syncOrdersFromSupabase === 'function') {
         syncOrdersFromSupabase().then(() => { renderOrders(); renderDashboard(); });
       }
+      if (typeof syncVendorAppsFromSupabase === 'function') {
+        syncVendorAppsFromSupabase().then(() => {
+          const b = document.querySelector('.view.active');
+          if (b && b.id === 'view-solicitudes') renderSolicitudes();
+        });
+      }
       if (typeof syncProductsFromSupabase === 'function') {
         syncProductsFromSupabase()
           .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
@@ -2614,7 +2632,10 @@
       if (name === 'cotizaciones') renderCotizaciones();
       if (name === 'envios')       renderEnvios();
       if (name === 'config')       loadConfig();
-      if (name === 'solicitudes')  renderSolicitudes();
+      if (name === 'solicitudes')  {
+        renderSolicitudes();
+        if (typeof syncVendorAppsFromSupabase === 'function') syncVendorAppsFromSupabase().then(() => renderSolicitudes());
+      }
       if (name === 'clientes')     renderClientes();
       if (name === 'descuentos')   renderDescuentos();
       if (name === 'pagos')      { renderPagos(); loadPaymentConfig(); }
@@ -3130,6 +3151,10 @@
       return (o?.origin || '').toLowerCase() === 'pos' || (o?.channel || '').toLowerCase() === 'pos';
     }
 
+    function isCompletedSale(o) {
+      return String(o?.status || '').toLowerCase() === 'completado' || isPosOrder(o);
+    }
+
     function originBadge(o) {
       if (isPosOrder(o)) {
         return `<span class="badge badge-pos">POS${o.bodegaName ? ' · ' + escapeHtml(o.bodegaName) : ''}</span>`;
@@ -3305,6 +3330,45 @@
       return s ? s.name : id;
     }
 
+    function normalizeCategoryForAdmin(c, customOverride) {
+      const src = { ...(c || {}), ...(customOverride || {}) };
+      if (!src.id) return null;
+      return {
+        ...src,
+        image: src.image || src.image_url || '',
+        starting_price_gtq: Number(src.starting_price_gtq || 0),
+        starting_price_usd: Number(src.starting_price_usd || 0),
+      };
+    }
+
+    function getBaseCategoriesForAdmin() {
+      const data = window.LAUREAN_DATA || {};
+      const map = new Map();
+      [...(data.parentCategories || []), ...(data.categories || [])].forEach(c => {
+        const n = normalizeCategoryForAdmin(c);
+        if (n) map.set(n.id, n);
+      });
+      return Array.from(map.values());
+    }
+
+    function getCategoriesForAdmin() {
+      const custom = getCustomCategories();
+      const customMap = new Map(custom.map(c => [c.id, normalizeCategoryForAdmin(c)]));
+      const map = new Map();
+      getBaseCategoriesForAdmin().forEach(c => {
+        map.set(c.id, normalizeCategoryForAdmin(c, customMap.get(c.id)));
+      });
+      custom.forEach(c => {
+        const n = normalizeCategoryForAdmin(c);
+        if (n) map.set(n.id, n);
+      });
+      return Array.from(map.values());
+    }
+
+    function findCategoryForAdmin(id) {
+      return getCategoriesForAdmin().find(c => c.id === id) || null;
+    }
+
     function getAllProducts() {
       const all = [];
       const adminProducts = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
@@ -3355,20 +3419,10 @@
     }
 
     function renderCategories() {
-      const baseCats = window.LAUREAN_DATA ? (LAUREAN_DATA.categories || []) : [];
-      const customCats = getCustomCategories();
+      const cats = getCategoriesForAdmin();
       const tbody = document.getElementById('categories-tbody');
 
-      const baseRows = baseCats.map(c => `
-        <tr>
-          <td><strong>${escapeHtml(c.name)}</strong></td>
-          <td class="td-muted" style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.image)}</td>
-          <td>Q${c.starting_price_gtq.toLocaleString()}</td>
-          <td class="usd-only">$${c.starting_price_usd}</td>
-          <td><span class="td-muted" style="font-size:11px">Base (products.js)</span></td>
-        </tr>`).join('');
-
-      const customRows = customCats.map(c => `
+      const rows = cats.map(c => `
         <tr>
           <td><strong>${escapeHtml(c.name)}</strong></td>
           <td class="td-muted" style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.image || '—')}</td>
@@ -3386,7 +3440,7 @@
           </td>
         </tr>`).join('');
 
-      tbody.innerHTML = baseRows + customRows || `<tr><td colspan="5"><div class="empty-state"><p>Sin categorías personalizadas</p></div></td></tr>`;
+      tbody.innerHTML = rows || `<tr><td colspan="5"><div class="empty-state"><p>Sin categorías</p></div></td></tr>`;
     }
 
     function renderProducts() {
@@ -3858,6 +3912,24 @@
       return `<span style="display:inline-block;margin-top:3px;font-size:10px;font-weight:600;color:${color};border:1px solid ${color};border-radius:4px;padding:1px 6px;">${label}</span>`;
     }
 
+    function paymentMethodLabel(raw) {
+      const original = String(raw || '').trim();
+      if (!original) return '—';
+      const key = original.toLowerCase();
+      return {
+        card: 'Tarjeta',
+        transfer: 'Transferencia',
+        qr: 'QR',
+        cash: 'Efectivo',
+        efectivo: 'Efectivo',
+        whatsapp: 'WhatsApp',
+      }[key] || original;
+    }
+
+    function orderPaymentMethodLabel(o) {
+      return paymentMethodLabel(o?.pay_method || o?.payment_method);
+    }
+
     function shippingMethodLabel(method) {
       const key = String(method || '').toLowerCase();
       const labels = { forza: 'Forza', cargo_expreso: 'Cargo Expreso', sobrex: 'Sobrex' };
@@ -3925,7 +3997,7 @@
       const orders = getFilteredOrders();
       const tbody  = document.getElementById('orders-tbody');
       if (!orders.length) {
-        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><p>Sin pedidos</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><p>Sin pedidos</p></div></td></tr>`;
         return;
       }
       tbody.innerHTML = orders.map(o => `
@@ -3941,6 +4013,7 @@
           <td>${fmtQ(o.subtotal_gtq || 0)}</td>
           <td style="color:#388E3C">${o.referral_discount_gtq ? '−' + fmtQ(o.referral_discount_gtq) : '—'}</td>
           <td><strong>${fmtQ(o.total_gtq || 0)}</strong></td>
+          <td>${escapeHtml(orderPaymentMethodLabel(o))}</td>
           <td>${o.referral_code ? `<span class="code-chip">${escapeHtml(o.referral_code)}</span>` : '—'}</td>
           <td onclick="event.stopPropagation()" style="white-space:nowrap">
             ${isPosOrder(o)
@@ -5154,7 +5227,7 @@
       const overlay = document.getElementById('modal-category-overlay');
       document.getElementById('modal-category-error').classList.remove('show');
       if (id) {
-        const c = getCustomCategories().find(c => c.id === id);
+        const c = findCategoryForAdmin(id);
         if (!c) return;
         document.getElementById('modal-category-title').textContent = 'Editar categoría';
         document.getElementById('mc-id').value            = c.id;
@@ -5193,6 +5266,8 @@
       saveCustomCategory({ id: id || undefined, name, starting_price_gtq: gtq, starting_price_usd: usd, image });
       closeCategoryModal();
       renderCategories();
+      renderCategoriesView();
+      window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
     }
 
     function openSubcategoryModal() {
@@ -5253,10 +5328,24 @@
       window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
     }
 
-    function deleteCategoryConfirm(id) {
-      if (!confirm('¿Eliminar esta categoría personalizada?')) return;
-      deleteCustomCategory(id);
+    async function deleteCategoryConfirm(id) {
+      const cat = findCategoryForAdmin(id);
+      const name = cat?.name || id;
+      if (['mujer','hombre','kids'].includes(id)) {
+        if (!confirm(`⚠️ ACCIÓN CRÍTICA\n\n«${name}» es una categoría base de la tienda (Women/Men/Kids). Eliminarla afecta la navegación y los productos asignados.\n\n¿Seguro que deseas eliminarla?`)) return;
+        if (!confirm('Confirma de nuevo: eliminar categoría base.')) return;
+      } else {
+        if (!confirm(`Eliminar «${name}» es un movimiento importante porque puede afectar la navegación y productos asignados.\n\n¿Continuar?`)) return;
+      }
+      const cats = getCustomCategories().filter(c => c.id !== id);
+      localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
+      if (window.LAUREAN_DB) {
+        const { error } = await window.LAUREAN_DB.from('categories').delete().eq('id', id);
+        if (error) console.warn('[supabase] delete category:', error.message);
+      }
+      if (window.LAUREAN_CATALOG_HYDRATE) await window.LAUREAN_CATALOG_HYDRATE();
       renderCategories();
+      renderCategoriesView();
     }
 
     // ─── Utils ─────────────────────────────────────────────────────────────────
@@ -5284,10 +5373,11 @@
         const d = new Date(o.createdAt);
         return d >= from && d <= to;
       });
-      const completed  = allOrders.filter(o => o.status === 'completado');
+      const completed  = allOrders.filter(isCompletedSale);
       const totalRev   = completed.reduce((s, o) => s + (o.total_gtq || 0), 0);
       const avgTicket  = completed.length ? Math.round(totalRev / completed.length) : 0;
       const cancelled  = allOrders.filter(o => o.status === 'cancelado').length;
+      const pStats = _computeStats(from, to);
 
       // KPIs
       document.getElementById('stats-kpis').innerHTML = [
@@ -5297,6 +5387,9 @@
         { label: 'Comisiones', value: fmtQ(getCommissions().filter(c => {
             const d = new Date(c.createdAt); return d >= from && d <= to;
           }).reduce((s, c) => s + c.commissionAmount, 0)), sub: 'En el período' },
+        { label: 'Por cobrar', value: fmtQ(pStats.pendingPayment.total), sub: `${pStats.pendingPayment.count} pedidos` },
+        { label: 'Ventas POS', value: fmtQ(pStats.byOrigin.pos.total), sub: `${pStats.byOrigin.pos.count} ventas` },
+        { label: 'Ventas Web', value: fmtQ(pStats.byOrigin.web.total), sub: `${pStats.byOrigin.web.count} pedidos` },
       ].map(k => `
         <div class="stat-card">
           <div class="stat-label">${k.label}</div>
@@ -5328,6 +5421,14 @@
         ? topSellers.map(([name, total]) => `<tr><td>${escapeHtml(name)}</td><td>${fmtQ(total)}</td></tr>`).join('')
         : `<tr><td colspan="2" class="td-muted">Sin datos</td></tr>`;
 
+      const payRows = Object.entries(pStats.byPayMethod).sort((a, b) => b[1].total - a[1].total);
+      const payBody = document.getElementById('stats-pay-methods');
+      if (payBody) {
+        payBody.innerHTML = payRows.length
+          ? payRows.map(([method, d]) => `<tr><td>${escapeHtml(method)}</td><td style="text-align:right">${d.count}</td><td style="text-align:right">${fmtQ(d.total)}</td></tr>`).join('')
+          : `<tr><td colspan="3" class="td-muted">Sin ventas completadas</td></tr>`;
+      }
+
       // Barras por estado
       const statusCounts = {};
       allOrders.forEach(o => { statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
@@ -5343,7 +5444,6 @@
         </div>`).join('');
 
       // Liquidez (utilidad) por artículo
-      const pStats = _computeStats(from, to);
       const profBody = document.getElementById('stats-profit');
       const profFoot = document.getElementById('stats-profit-foot');
       if (profBody) {
@@ -5361,10 +5461,36 @@
     // Calcula el set de métricas del período (reutilizado por la vista y el imprimible).
     function _computeStats(from, to) {
       const allOrders = getOrders().filter(o => { const d = new Date(o.createdAt); return d >= from && d <= to; });
-      const completed = allOrders.filter(o => o.status === 'completado');
+      const completed = allOrders.filter(isCompletedSale);
       const totalRev  = completed.reduce((s, o) => s + (o.total_gtq || 0), 0);
       const avgTicket = completed.length ? Math.round(totalRev / completed.length) : 0;
       const cancelled = allOrders.filter(o => o.status === 'cancelado').length;
+      const byPayMethod = {};
+      const byOrigin = {
+        web: { count: 0, total: 0 },
+        pos: { count: 0, total: 0 },
+      };
+      const pendingPayment = { count: 0, total: 0 };
+
+      completed.forEach(o => {
+        const total = Number(o.total_gtq || 0);
+        const payLabel = orderPaymentMethodLabel(o);
+        if (!byPayMethod[payLabel]) byPayMethod[payLabel] = { count: 0, total: 0 };
+        byPayMethod[payLabel].count += 1;
+        byPayMethod[payLabel].total += total;
+        const originKey = isPosOrder(o) ? 'pos' : 'web';
+        byOrigin[originKey].count += 1;
+        byOrigin[originKey].total += total;
+      });
+
+      allOrders.forEach(o => {
+        const status = String(o.status || '').toLowerCase();
+        const paid = String(o.payment_status || '').toLowerCase() === 'pagado';
+        if (!paid && status !== 'cancelado' && status !== 'completado') {
+          pendingPayment.count += 1;
+          pendingPayment.total += Number(o.total_gtq || 0);
+        }
+      });
 
       const prodMap = {};
       completed.forEach(o => (o.items || []).forEach(it => {
@@ -5393,6 +5519,7 @@
         completedCount: completed.length, totalCount: allOrders.length,
         commissionsTotal: comms.reduce((s, c) => s + c.commissionAmount, 0),
         topProds, topSellers, statusCounts,
+        byPayMethod, byOrigin, pendingPayment,
         profitByProduct, liquidezTotal, costoTotal,
       };
     }
@@ -5410,6 +5537,9 @@
         { label: 'Ticket promedio', value: fmtQ(s.avgTicket),        sub: 'Por pedido completado' },
         { label: 'Total pedidos',   value: String(s.totalCount),     sub: s.cancelled + ' cancelados' },
         { label: 'Comisiones',      value: fmtQ(s.commissionsTotal), sub: 'En el período' },
+        { label: 'Por cobrar',      value: fmtQ(s.pendingPayment.total), sub: s.pendingPayment.count + ' pedidos' },
+        { label: 'Ventas POS',      value: fmtQ(s.byOrigin.pos.total),   sub: s.byOrigin.pos.count + ' ventas' },
+        { label: 'Ventas Web',      value: fmtQ(s.byOrigin.web.total),   sub: s.byOrigin.web.count + ' pedidos' },
       ];
       const kpiHtml = kpis.map(k => `
         <div class="rk-card">
@@ -5427,6 +5557,9 @@
       const statusRows = Object.entries(s.statusCounts).length
         ? Object.entries(s.statusCounts).map(([st, n]) => `<tr><td>${escapeHtml(statusLabel(st))}</td><td style="text-align:right;">${n}</td></tr>`).join('')
         : '<tr><td colspan="2" class="rk-empty">Sin pedidos</td></tr>';
+      const payRows = Object.entries(s.byPayMethod).length
+        ? Object.entries(s.byPayMethod).sort((a, b) => b[1].total - a[1].total).map(([method, d]) => `<tr><td>${escapeHtml(method)}</td><td style="text-align:right;">${d.count}</td><td style="text-align:right;">${escapeHtml(fmtQ(d.total))}</td></tr>`).join('')
+        : '<tr><td colspan="3" class="rk-empty">Sin ventas completadas</td></tr>';
       const profitRows = s.profitByProduct.length
         ? s.profitByProduct.map(p => `<tr><td>${escapeHtml(p.name)}</td><td style="text-align:right;">${p.units}</td><td style="text-align:right;">${escapeHtml(fmtQ(p.total))}</td><td style="text-align:right;">${escapeHtml(fmtQ(p.cost))}</td><td style="text-align:right;font-weight:600;">${escapeHtml(fmtQ(p.profit))}</td></tr>`).join('')
           + `<tr style="border-top:2px solid var(--carbon);font-weight:600;"><td>Total</td><td></td><td style="text-align:right;">${escapeHtml(fmtQ(s.totalRev))}</td><td style="text-align:right;">${escapeHtml(fmtQ(s.costoTotal))}</td><td style="text-align:right;color:var(--vino);">${escapeHtml(fmtQ(s.liquidezTotal))}</td></tr>`
@@ -5484,6 +5617,10 @@
     <div class="rk-section">
       <div class="rk-h2">Liquidez por artículo</div>
       <table><thead><tr><th>Artículo</th><th style="text-align:right;">Unid.</th><th style="text-align:right;">Venta Q</th><th style="text-align:right;">Costo Q</th><th style="text-align:right;">Utilidad Q</th></tr></thead><tbody>${profitRows}</tbody></table>
+    </div>
+    <div class="rk-section">
+      <div class="rk-h2">Ventas por método de pago</div>
+      <table><thead><tr><th>Método</th><th style="text-align:right;">Pedidos</th><th style="text-align:right;">Total Q</th></tr></thead><tbody>${payRows}</tbody></table>
     </div>
     <div class="rk-section">
       <div class="rk-h2">Pedidos por estado</div>
@@ -5690,8 +5827,7 @@
 
     // ─── Vista de Categorías (view-categorias) ─────────────────────────────────
     function renderCategoriesView() {
-      const data  = window.LAUREAN_DATA;
-      const cats  = [...(data?.parentCategories || data?.categories || []), ...getCustomCategories()];
+      const cats  = getCategoriesForAdmin();
       const subcats = getAllSubcatsForSelect();
       const tbody = document.getElementById('cat-view-tbody');
       if (!tbody) return;
@@ -5704,16 +5840,23 @@
         <tr>
           <td><strong>${escapeHtml(c.name)}</strong>${c.id?.startsWith('cat_') ? ' <span class="badge badge-vendedor" style="font-size:9px;padding:2px 7px">Custom</span>' : ''}${childLine}</td>
           <td class="td-muted" style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.image || '—')}</td>
-          <td><input class="price-input" type="number" value="${c.starting_price_gtq || 0}" onchange="saveCatPrice('${jsAttr(c.id)}',this,'gtq')" /></td>
-          <td class="usd-only"><input class="price-input" type="number" value="${c.starting_price_usd || 0}" onchange="saveCatPrice('${jsAttr(c.id)}',this,'usd')" /></td>
-          <td>${c.id?.startsWith('cat_') ? `<button class="btn btn-icon btn-danger" onclick="deleteCat('${jsAttr(c.id)}')">
-            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-          </button>` : ''}</td>
+          <td><input class="price-input cat-price-input" data-cat-id="${escapeAttr(c.id)}" data-field="gtq" type="number" value="${c.starting_price_gtq || 0}" onchange="saveCatPrice('${jsAttr(c.id)}',this,'gtq')" /></td>
+          <td class="usd-only"><input class="price-input cat-price-input" data-cat-id="${escapeAttr(c.id)}" data-field="usd" type="number" value="${c.starting_price_usd || 0}" onchange="saveCatPrice('${jsAttr(c.id)}',this,'usd')" /></td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-icon" onclick="openCategoryModal('${jsAttr(c.id)}')" title="Editar">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn btn-icon btn-danger" onclick="deleteCategoryConfirm('${jsAttr(c.id)}')" title="Eliminar">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+              </button>
+            </div>
+          </td>
         </tr>`;
       }).join('');
     }
 
-    function saveCatPrice(id, inp, field) {
+    async function saveCatPrice(id, inp, field) {
       const cats = getCustomCategories();
       const idx  = cats.findIndex(c => c.id === id);
       const col = field === 'usd' ? 'starting_price_usd' : 'starting_price_gtq';
@@ -5721,6 +5864,12 @@
       if (idx !== -1) {
         cats[idx][col] = value;
         localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
+      } else {
+        const base = findCategoryForAdmin(id);
+        if (base) {
+          cats.push({ ...base, [col]: value });
+          localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
+        }
       }
       ['parentCategories', 'categories'].forEach(key => {
         (window.LAUREAN_DATA?.[key] || []).forEach(c => {
@@ -5728,15 +5877,23 @@
         });
       });
       if (window.LAUREAN_DB) {
-        window.LAUREAN_DB.from('categories').update({ [col]: value }).eq('id', id)
-          .then(({ error }) => { if (error) console.warn('[supabase] category price update:', error.message); });
+        const { error } = await window.LAUREAN_DB.from('categories').update({ [col]: value }).eq('id', id);
+        if (error) console.warn('[supabase] category price update:', error.message);
       }
     }
 
-    function deleteCat(id) {
-      if (!confirm('¿Eliminar esta categoría?')) return;
-      deleteCustomCategory(id);
+    async function saveAllCatPrices() {
+      const inputs = Array.from(document.querySelectorAll('#cat-view-tbody .cat-price-input'));
+      for (const inp of inputs) {
+        await saveCatPrice(inp.dataset.catId, inp, inp.dataset.field);
+      }
+      renderCategories();
       renderCategoriesView();
+      alert('Precios guardados.');
+    }
+
+    function deleteCat(id) {
+      deleteCategoryConfirm(id);
     }
 
     // ─── Proveedores ──────────────────────────────────────────────────────────
@@ -6565,14 +6722,58 @@
     }
 
     // Widget de stock bajo + sugerencia de reorden
+    function getInventoryMasterItemsForAdmin() {
+      if (typeof getInventoryItems === 'function') {
+        const list = getInventoryItems();
+        if (Array.isArray(list)) return list;
+      }
+      try {
+        return JSON.parse(localStorage.getItem('laurean_inventory_master') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function productSourceCodForAdmin(productId) {
+      const p = getAllProducts().find(x => x.id === productId)
+        || getCustomProducts().find(x => x.id === productId)
+        || null;
+      return p?.source_cod
+        || p?.sourceCod
+        || (String(productId || '').startsWith('inv-') ? String(productId).slice(4) : null);
+    }
+
+    function lowStockProductInfo(item) {
+      const products = getAllProducts();
+      const p = products.find(x => x.id === item.productId)
+        || getCustomProducts().find(x => x.id === item.productId)
+        || null;
+      const cod = item.cod
+        || productSourceCodForAdmin(item.productId)
+        || item.productId;
+      const master = getInventoryMasterItemsForAdmin().find(x =>
+        String(x.cod || x.id || '') === String(cod)
+        || String(x.product_id || '') === String(item.productId)
+      );
+      const fallbackName = item.productName && item.productName !== item.productId ? item.productName : '';
+      const name = master?.description || master?.name || p?.name || fallbackName || '';
+      return { cod, name: name || cod, hasName: !!name };
+    }
+
+    function lowStockProductLabel(item) {
+      const info = lowStockProductInfo(item);
+      return info.hasName ? `${info.name} (COD ${info.cod})` : String(info.cod || info.name);
+    }
+
     function renderLowStockWidget() {
       const widget = document.getElementById('low-stock-widget');
       if (!widget) return;
       const low = getLowStockItems();
       if (!low.length) { widget.style.display = 'none'; return; }
-      const items = low.slice(0, 8).map(i =>
-        `<li style="margin:2px 0"><strong>${escapeHtml(i.productName)}</strong> en ${escapeHtml(i.bodegaName)}: <span style="color:#B00">${i.stock}</span> / umbral ${i.threshold} <span style="color:#9b8e7f">→ reponer ~${Math.max(i.threshold * 2 - i.stock, i.threshold)}</span></li>`
-      ).join('');
+      const items = low.slice(0, 8).map(i => {
+        const label = lowStockProductLabel(i);
+        return `<li style="margin:2px 0"><strong>${escapeHtml(label)}</strong> — quedan <span style="color:#B00">${i.stock}</span> en ${escapeHtml(i.bodegaName)} / umbral ${i.threshold} <span style="color:#9b8e7f">→ reponer ~${Math.max(i.threshold * 2 - i.stock, i.threshold)}</span></li>`;
+      }).join('');
       widget.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
           <strong style="font-size:13px">⚠ ${low.length} artículo(s) con stock bajo</strong>
@@ -6605,10 +6806,11 @@
       const sections = Object.entries(byProv).map(([prov, items]) => {
         const rows = items.map(i => {
           const sugerido = Math.max(i.threshold * 2 - i.stock, i.threshold);
-          return `<tr><td>${escapeHtml(i.productName)}</td><td>${escapeHtml(i.bodegaName)}</td><td style="text-align:right">${i.stock}</td><td style="text-align:right">${i.threshold}</td><td style="text-align:right;font-weight:600">${sugerido}</td></tr>`;
+          const info = lowStockProductInfo(i);
+          return `<tr><td>${escapeHtml(info.name)}</td><td>${escapeHtml(info.cod)}</td><td>${escapeHtml(i.bodegaName)}</td><td style="text-align:right">${i.stock}</td><td style="text-align:right">${i.threshold}</td><td style="text-align:right;font-weight:600">${sugerido}</td></tr>`;
         }).join('');
         return `<div class="oc-section"><div class="oc-prov2">${escapeHtml(prov)}</div>
-          <table><thead><tr><th>Producto</th><th>Bodega</th><th style="text-align:right">Stock</th><th style="text-align:right">Umbral</th><th style="text-align:right">Sugerido</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+          <table><thead><tr><th>Producto</th><th>COD</th><th>Bodega</th><th style="text-align:right">Stock</th><th style="text-align:right">Umbral</th><th style="text-align:right">Sugerido</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
 
       const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
@@ -6698,6 +6900,7 @@
       document.getElementById('inv-qty').value  = '';
       document.getElementById('inv-notes').value = '';
       if (document.getElementById('inv-newstock')) document.getElementById('inv-newstock').value = '';
+      if (document.getElementById('inv-adjust-tallas')) document.getElementById('inv-adjust-tallas').value = '';
 
       const bodegas = getBodegas();
       document.getElementById('inv-bodega-select').innerHTML =
@@ -6720,6 +6923,7 @@
       document.getElementById('inv-prov-group').style.display    = type === 'ingreso' ? '' : 'none';
       document.getElementById('inv-motivo-group').style.display  = type === 'salida'  ? '' : 'none';
       document.getElementById('inv-newstock-group').style.display = type === 'ajuste'  ? '' : 'none';
+      document.getElementById('inv-adjust-tallas-group').style.display = type === 'ajuste' ? '' : 'none';
       document.getElementById('inv-qty-label').textContent =
         type === 'salida' ? 'Cantidad a retirar' : type === 'traslado' ? 'Cantidad a trasladar' : 'Cantidad (delta)';
       const qtyParent = document.getElementById('inv-qty').closest('.form-group');
@@ -6890,7 +7094,45 @@
       updateInvSelectedStockLabel();
     }
 
-    function saveInvMovement() {
+    function notesWithTallas(notes, tallasText) {
+      const detail = (tallasText || '').trim();
+      if (!detail) return notes || '';
+      return notes ? `${notes} · Tallas: ${detail}` : `Tallas: ${detail}`;
+    }
+
+    async function saveAdjustmentTallasDetail(productId, tallasText) {
+      const detail = (tallasText || '').trim();
+      if (!detail) return;
+      const cod = productSourceCodForAdmin(productId);
+      if (!cod) return;
+      try {
+        const list = getInventoryMasterItemsForAdmin();
+        const idx = list.findIndex(i => String(i.cod || i.id || '') === String(cod));
+        let currentObservation = '';
+        if (idx !== -1) {
+          const item = list[idx];
+          currentObservation = item.observation || '';
+          if (Object.prototype.hasOwnProperty.call(item, 'tallas')) item.tallas = detail;
+          else if (Object.prototype.hasOwnProperty.call(item, 'sizes')) item.sizes = detail;
+          else item.tallas_detalle = detail;
+          localStorage.setItem('laurean_inventory_master', JSON.stringify(list));
+        }
+        if (window.LAUREAN_DB) {
+          let observation = currentObservation;
+          const res = await window.LAUREAN_DB.from('inventory_items').select('observation').eq('cod', cod).maybeSingle();
+          if (!res.error && res.data) observation = res.data.observation || '';
+          const nextObservation = observation
+            ? `${observation}\nTallas: ${detail}`
+            : `Tallas: ${detail}`;
+          const { error } = await window.LAUREAN_DB.from('inventory_items').update({ observation: nextObservation }).eq('cod', cod);
+          if (error) console.warn('[supabase] inventory_items tallas update:', error.message);
+        }
+      } catch (err) {
+        console.warn('[inventory] tallas detail:', err && err.message ? err.message : err);
+      }
+    }
+
+    async function saveInvMovement() {
       const type        = document.getElementById('inv-modal-type').value;
       const bodegaId    = document.getElementById('inv-bodega-select').value;
 
@@ -6967,7 +7209,10 @@
       if (type === 'ajuste') {
         const newStock = parseInt(document.getElementById('inv-newstock').value);
         if (isNaN(newStock) || newStock < 0) return alert('Ingresa un stock válido (0 o mayor).');
-        ajustarStock(productId, bodegaId, newStock, document.getElementById('inv-notes').value);
+        const tallasText = document.getElementById('inv-adjust-tallas')?.value.trim() || '';
+        const notes = notesWithTallas(document.getElementById('inv-notes').value, tallasText);
+        await saveAdjustmentTallasDetail(productId, tallasText);
+        ajustarStock(productId, bodegaId, newStock, notes);
       } else {
         const qty = parseInt(document.getElementById('inv-qty').value);
         if (!qty || qty <= 0) return alert('Ingresa una cantidad válida.');

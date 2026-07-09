@@ -507,6 +507,43 @@ do $$ begin
     for each row execute function public.tg_set_updated_at();
 end $$;
 
+-- ────────────────────────────────────────────────────────────
+-- Solicitudes de vendedoras (formulario público de vendedoras.html)
+-- Insert anónimo (es un formulario de contacto); lectura/gestión solo admin.
+-- ────────────────────────────────────────────────────────────
+create table if not exists public.vendor_applications (
+  id          text primary key,               -- id local (app_...) para dedup multi-equipo
+  name        text not null,
+  email       text,
+  phone       text,
+  city        text,
+  message     text,
+  status      text default 'pendiente' check (status in ('pendiente','aprobado','rechazado')),
+  approved_at timestamptz,
+  created_at  timestamptz default now()
+);
+alter table public.vendor_applications enable row level security;
+do $$ begin
+  drop policy if exists "anon_insert" on public.vendor_applications;
+  drop policy if exists "admin_all"   on public.vendor_applications;
+  create policy "anon_insert" on public.vendor_applications for insert with check (status = 'pendiente');
+  create policy "admin_all"   on public.vendor_applications for all using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- Pedidos de la TIENDA por visitantes anónimos (transferencia/QR): insert público
+-- pero SOLO con valores seguros (pendiente, sin created_by). Los de tarjeta los crea
+-- qpaypro-proxy con service_role; los de POS pasan por auth_insert.
+do $$ begin
+  drop policy if exists "anon_insert_store" on public.orders;
+  create policy "anon_insert_store" on public.orders for insert with check (
+    auth.uid() is null
+    and status = 'pendiente'
+    and payment_status = 'pendiente'
+    and origin = 'store'
+    and created_by is null
+  );
+end $$;
+
 create table if not exists public.analytics_page_visits (
   id uuid primary key default gen_random_uuid(),
   site_key text not null default 'laurean',

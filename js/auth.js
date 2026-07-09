@@ -1114,6 +1114,41 @@ function getVendorApplications() {
   return JSON.parse(localStorage.getItem('laurean_vendor_apps') || '[]');
 }
 
+async function syncVendorAppsFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('vendor_applications')
+    .select('id,name,email,phone,city,message,status,approved_at,created_at')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error || !data) { console.warn('[supabase] sync vendor apps:', error && error.message); return false; }
+
+  const local = getVendorApplications();
+  const byId = {};
+  local.forEach(app => { if (app.id) byId[app.id] = app; });
+
+  const remoteIds = new Set();
+  const remoteApps = data.map(r => {
+    remoteIds.add(r.id);
+    const prev = byId[r.id] || {};
+    return {
+      id:         r.id,
+      name:       r.name    || prev.name    || '',
+      email:      r.email   || prev.email   || '',
+      phone:      r.phone   || prev.phone   || '',
+      city:       r.city    || prev.city    || '',
+      message:    r.message || prev.message || '',
+      status:     r.status  || prev.status  || 'pendiente',
+      approvedAt: r.approved_at,
+      createdAt:  r.created_at || prev.createdAt || new Date().toISOString(),
+    };
+  });
+  const localOnly = local.filter(app => !remoteIds.has(app.id));
+  localStorage.setItem('laurean_vendor_apps', JSON.stringify([...remoteApps, ...localOnly]));
+  return true;
+}
+window.syncVendorAppsFromSupabase = syncVendorAppsFromSupabase;
+
 function createVendorApplication(data) {
   const apps = getVendorApplications();
   const app = {
@@ -1128,6 +1163,18 @@ function createVendorApplication(data) {
   };
   apps.push(app);
   localStorage.setItem('laurean_vendor_apps', JSON.stringify(apps));
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('vendor_applications').insert({
+      id: app.id,
+      name: app.name,
+      email: app.email || null,
+      phone: app.phone || null,
+      city: app.city || null,
+      message: app.message || null,
+      status: 'pendiente',
+      created_at: app.createdAt,
+    }).then(({ error }) => { if (error) console.warn('[supabase] vendor app insert:', error.message); });
+  }
   return app;
 }
 
@@ -1137,6 +1184,12 @@ function updateVendorApplication(id, updates) {
   if (idx === -1) return { ok: false, error: 'Solicitud no encontrada.' };
   apps[idx] = { ...apps[idx], ...updates };
   localStorage.setItem('laurean_vendor_apps', JSON.stringify(apps));
+  if (window.LAUREAN_DB && Object.prototype.hasOwnProperty.call(updates, 'status')) {
+    window.LAUREAN_DB.from('vendor_applications')
+      .update({ status: updates.status, approved_at: updates.approvedAt || null })
+      .eq('id', id)
+      .then(({ error }) => { if (error) console.warn('[supabase] vendor app update:', error.message); });
+  }
   return { ok: true, app: apps[idx] };
 }
 
