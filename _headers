@@ -7,3 +7,11 @@
 
 /sw.js
   Cache-Control: no-cache
+
+# JS/CSS: revalidar cada 5 min para que los deploys lleguen rápido a los
+# navegadores (un auth.js viejo cacheado dejó sin efecto un fix en producción).
+/js/*
+  Cache-Control: public, max-age=300, must-revalidate
+
+/css/*
+  Cache-Control: public, max-age=300, must-revalidate
