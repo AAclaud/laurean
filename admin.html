@@ -3685,7 +3685,8 @@
 
     async function deleteUserConfirm(id) {
       if (!confirm('¿Eliminar este usuario permanentemente?')) return;
-      if (window.LAUREAN_DB) {
+      const isCloudId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);   // UUID de Supabase
+      if (window.LAUREAN_DB && isCloudId) {
         const r = await callUserFn({ action: 'delete', id });
         if (!r.ok) { alert('No se pudo eliminar en Supabase: ' + r.error); return; }
       }
@@ -4616,37 +4617,52 @@
         </tr>`).join('');
     }
 
+    const _approvingApps = new Set();
     async function approveApplication(id) {
-      const app = getVendorApplications().find(a => a.id === id);
-      if (!app) return;
-      if (getUserByEmail && getUserByEmail(app.email)) { alert('Ya existe un usuario con ese correo.'); return; }
-      const pwd = `Laurean${Math.floor(1000 + Math.random() * 9000)}`;
-      const finalCode = (typeof genSellerCode === 'function') ? genSellerCode(app.name) : null;
-      const connected = !!window.LAUREAN_DB;
-      let newId = genId('vnd');
-      // Cloud-first (igual que saveUser): crea en auth.users + profiles vía Edge Function.
-      if (connected) {
-        const r = await callUserFn({
-          action: 'create', name: app.name, email: app.email, password: pwd,
-          role: 'vendedor', phone: app.phone || '', code: finalCode, can_login_pos: true,
-        });
-        if (r.ok && r.data && r.data.id) {
-          newId = r.data.id;
-        } else {
-          alert('No se pudo crear en la nube (' + (r.error || 'error') + ').\nSe guardó localmente; revisa que la función create-user esté desplegada.');
+      if (_approvingApps.has(id)) return;            // evita duplicados por doble clic
+      _approvingApps.add(id);
+      try {
+        const app = getVendorApplications().find(a => a.id === id);
+        if (!app) return;
+        if (app.status === 'aprobado') { alert('Esta solicitud ya fue aprobada.'); return; }
+        if (getUserByEmail && getUserByEmail(app.email)) { alert('Ya existe un usuario con ese correo.'); return; }
+        const pwd = `Laurean${Math.floor(1000 + Math.random() * 9000)}`;
+        const finalCode = (typeof genSellerCode === 'function') ? genSellerCode(app.name) : null;
+        const connected = !!window.LAUREAN_DB;
+        let newId = genId('vnd');
+        // Cloud-first: la nube es la fuente de verdad del login (Supabase Auth).
+        if (connected) {
+          const r = await callUserFn({
+            action: 'create', name: app.name, email: app.email, password: pwd,
+            role: 'vendedor', phone: app.phone || '', code: finalCode, can_login_pos: true,
+          });
+          if (r.ok && r.data && r.data.id) {
+            newId = r.data.id;
+          } else {
+            // No creamos un usuario local fantasma que no podría iniciar sesión:
+            // dejamos la solicitud pendiente para reintentar, sin duplicar.
+            alert('No se pudo crear la vendedora en la nube (' + (r.error || 'error') + ').\n\n' +
+              'La solicitud queda pendiente; verifica tu conexión / que la función create-user ' +
+              'esté desplegada, y vuelve a intentar. No se creó ningún usuario duplicado.');
+            return;
+          }
         }
+        // Revalidación tras el await (defensa ante ejecuciones solapadas).
+        if (getUserByEmail && getUserByEmail(app.email)) { alert('Ya existe un usuario con ese correo.'); return; }
+        cacheUserLocal({
+          id: newId, name: app.name, email: app.email, password: btoa(pwd), role: 'vendedor',
+          phone: app.phone || '', code: finalCode, canLoginPOS: true, active: true,
+          notes: `Aprobada desde solicitud ${id}`, createdAt: new Date().toISOString(),
+        });
+        updateVendorApplication(id, { status: 'aprobado', approvedAt: new Date().toISOString() });
+        const dot = document.getElementById('sb-notify-dot');
+        if (dot) dot.style.display = getVendorApplications().filter(a => a.status === 'pendiente').length > 0 ? '' : 'none';
+        alert(`Vendedora aprobada.\n\nCorreo: ${app.email}\nContraseña temporal: ${pwd}\n\nComparte estas credenciales con la vendedora.`);
+        renderSolicitudes();
+        renderDashboard();
+      } finally {
+        _approvingApps.delete(id);
       }
-      cacheUserLocal({
-        id: newId, name: app.name, email: app.email, password: btoa(pwd), role: 'vendedor',
-        phone: app.phone || '', code: finalCode, canLoginPOS: true, active: true,
-        notes: `Aprobada desde solicitud ${id}`, createdAt: new Date().toISOString(),
-      });
-      updateVendorApplication(id, { status: 'aprobado', approvedAt: new Date().toISOString() });
-      const dot = document.getElementById('sb-notify-dot');
-      if (dot) dot.style.display = getVendorApplications().filter(a => a.status === 'pendiente').length > 0 ? '' : 'none';
-      alert(`Vendedora aprobada.\n\nCorreo: ${app.email}\nContraseña temporal: ${pwd}\n\nComparte estas credenciales con la vendedora.`);
-      renderSolicitudes();
-      renderDashboard();
     }
 
     function rejectApplication(id) {
