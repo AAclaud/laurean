@@ -300,6 +300,26 @@ do $$ begin
   create policy "admin_all" on public.profiles for all using (public.is_admin()) with check (public.is_admin());
 end $$;
 
+-- ── Validación pública de código de referido (para invitados en el checkout).
+-- `profiles` está protegido por RLS (nadie anónimo lo lee), así que exponemos SOLO
+-- lo mínimo para validar un código de vendedora: su código normalizado y su nombre.
+-- security definer para saltar RLS de forma controlada; no filtra email/teléfono/id.
+create or replace function public.validate_referral_code(p_code text)
+returns table(code text, name text)
+language sql
+security definer
+set search_path = public
+as $$
+  select p.code, p.name
+  from public.profiles p
+  where upper(p.code) = upper(trim(p_code))
+    and p.role = 'vendedor'
+    and p.active = true
+  limit 1;
+$$;
+revoke all on function public.validate_referral_code(text) from public;
+grant execute on function public.validate_referral_code(text) to anon, authenticated;
+
 -- ── Orders: admin todo; vendedor ve los suyos; auth crea
 do $$ begin
   drop policy if exists "admin_all"      on public.orders;
