@@ -467,7 +467,17 @@ function getNewOrderCount() {
 
 // ─── Configuración ─────────────────────────────────────────────────────────────
 function getSettings()     { return JSON.parse(localStorage.getItem(KEYS.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS)); }
-function saveSettings(s)   { localStorage.setItem(KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...s })); }
+function saveSettings(s) {
+  const merged = { ...DEFAULT_SETTINGS, ...s };
+  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(merged));
+  if (window.LAUREAN_DB) {
+    const { discount_pin, ...safe } = merged;
+    window.LAUREAN_DB.from('site_settings')
+      .upsert({ key: 'pricing_config', value: safe, updated_at: new Date().toISOString() })
+      .then(({ error }) => { if (error) console.warn('[supabase] pricing_config upsert:', error.message); });
+  }
+  return merged;
+}
 
 // ─── Contenido del sitio (marquee, redes, WhatsApp) ──────────────────────────────
 // Patrón local-first: lee/escribe localStorage y, si Supabase está disponible,
@@ -500,14 +510,25 @@ async function hydrateSiteSettings() {
     const { data, error } = await window.LAUREAN_DB.from('site_settings').select('key,value');
     if (!error && Array.isArray(data) && data.length) {
       const obj = {};
-      data.forEach(row => { obj[row.key] = row.value; });
+      let pricing = null;
+      data.forEach(row => {
+        if (row.key === 'pricing_config') pricing = row.value;
+        else obj[row.key] = row.value;
+      });
       const merged = { ...getSiteSettings(), ...obj };
       localStorage.setItem(KEYS.SITE_SETTINGS, JSON.stringify(merged));
+      if (pricing && typeof pricing === 'object') {
+        const localPin = getSettings().discount_pin;
+        localStorage.setItem(KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...pricing, discount_pin: localPin || '' }));
+        document.dispatchEvent(new CustomEvent('laurean:settings-ready', { detail: getSettings() }));
+      }
     }
   } catch (e) { /* fallback al local */ }
   document.dispatchEvent(new CustomEvent('laurean:site-settings-ready', { detail: getSiteSettings() }));
 }
 
+window.getSettings         = getSettings;
+window.saveSettings        = saveSettings;
 window.getSiteSettings     = getSiteSettings;
 window.saveSiteSettings    = saveSiteSettings;
 window.hydrateSiteSettings = hydrateSiteSettings;

@@ -2513,6 +2513,8 @@
       if (pendApps > 0) document.getElementById('sb-notify-dot').style.display = '';
 
       startOrderNotifPolling();
+      if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
+      document.addEventListener('laurean:settings-ready', () => { if (typeof renderDashboard === 'function') renderDashboard(); });
 
       // Honrar #hash al cargar (ej: admin.html#envios)
       const hash = (window.location.hash || '').replace('#','').trim();
