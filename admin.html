@@ -2523,7 +2523,15 @@
         renderDashboard();
       }
       if (typeof syncOrdersFromSupabase === 'function') {
-        syncOrdersFromSupabase().then(() => { renderOrders(); renderDashboard(); });
+        syncOrdersFromSupabase().then(() => {
+          renderOrders(); renderDashboard();
+          if (typeof reconcileCommissionsFromOrders === 'function') reconcileCommissionsFromOrders();
+          if (typeof syncCommissionsFromSupabase === 'function') syncCommissionsFromSupabase().then(() => {
+            const a = document.querySelector('.view.active');
+            if (a && a.id === 'view-comisiones' && typeof renderCommissions === 'function') renderCommissions();
+            if (typeof renderDashboard === 'function') renderDashboard();
+          });
+        });
       }
       if (typeof syncVendorAppsFromSupabase === 'function') {
         syncVendorAppsFromSupabase().then(() => {
@@ -2617,7 +2625,7 @@
       }
       if (name === 'vendedores')   { renderUsers(); if (window.syncUsersFromSupabase) syncUsersFromSupabase().then(ok => { if (ok) renderUsers(); }); }
       if (name === 'pedidos')      { renderOrders(); if (typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); }); clearOrdersNotif(); }
-      if (name === 'comisiones')   renderCommissions();
+      if (name === 'comisiones')   { renderCommissions(); if (typeof syncCommissionsFromSupabase === 'function') syncCommissionsFromSupabase().then(ok => { if (ok) renderCommissions(); }); }
       if (name === 'estadisticas') renderEstadisticas();
       if (name === 'analytics')     renderAnalytics();
       if (name === 'proveedores')  {

@@ -764,9 +764,7 @@ function createOrder(data) {
   orders.push(order);
   saveOrders(orders);
 
-  if (data.referral_code) {
-    createCommission(order.id, data.referral_code, data.total_gtq);
-  }
+  // La comisión por referido se reconcilia desde los pedidos (reconcileCommissionsFromOrders).
 
   // Auto-crear o actualizar registro de cliente
   upsertCustomerFromOrder(order);
@@ -855,14 +853,15 @@ function getOrdersByUser(userId) {
 function getCommissions()            { return JSON.parse(localStorage.getItem(KEYS.COMMISSIONS) || '[]'); }
 function saveCommissions(commissions){ localStorage.setItem(KEYS.COMMISSIONS, JSON.stringify(commissions)); }
 
-function createCommission(orderId, vendorCode, orderTotal) {
+function createCommission(orderId, vendorCode, orderTotal, opts = {}) {
   const vendor = getUserByCode(vendorCode);
   if (!vendor) return null;
+  const cid = opts.id || ('com_' + orderId);
+  const existing = getCommissions().find(c => c.id === cid || c.orderId === orderId);
+  if (existing) return existing;                       // idempotente
 
-  const settings     = getSettings();
-  const commissions  = getCommissions();
-  // Tasa: 1) override individual del vendedor; 2) tasa de su NIVEL por ventas acumuladas;
-  //       3) comisión base global.
+  const settings    = getSettings();
+  const commissions = getCommissions();
   let rate;
   if (vendor.commissionRate != null && !isNaN(vendor.commissionRate)) {
     rate = vendor.commissionRate;
@@ -870,28 +869,80 @@ function createCommission(orderId, vendorCode, orderTotal) {
     const lvl = (typeof getSellerLevel === 'function') ? getSellerLevel(vendor.id) : null;
     rate = lvl ? lvl.rate : settings.commission_rate;
   }
-  const commission   = {
-    id:               genId('com'),
-    orderId,
-    vendorId:         vendor.id,
-    vendorName:       vendor.name,
-    vendorCode:       vendorCode.toUpperCase(),
-    orderTotal,
-    commissionRate:   rate,
-    commissionAmount: Math.round(orderTotal * rate),
-    status:           'pendiente',
-    createdAt:        new Date().toISOString(),
+  const commission = {
+    id: cid, orderId, vendorId: vendor.id, vendorName: vendor.name,
+    vendorCode: (vendorCode || '').toUpperCase(), orderTotal: Number(orderTotal) || 0,
+    commissionRate: rate, commissionAmount: Math.round((Number(orderTotal) || 0) * rate),
+    status: 'pendiente', createdAt: opts.createdAt || new Date().toISOString(),
   };
   commissions.push(commission);
   saveCommissions(commissions);
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('commissions').upsert({
+      id: commission.id, order_id: commission.orderId, vendor_id: commission.vendorId,
+      vendor_name: commission.vendorName, vendor_code: commission.vendorCode,
+      order_total: commission.orderTotal, commission_rate: commission.commissionRate,
+      commission_amount: commission.commissionAmount, status: commission.status,
+      created_at: commission.createdAt,
+    }).then(({ error }) => { if (error) console.warn('[supabase] commission upsert:', error.message); });
+  }
   return commission;
 }
 
 function markCommissionPaid(id) {
   const commissions = getCommissions();
   const idx         = commissions.findIndex(c => c.id === id);
-  if (idx !== -1) { commissions[idx].status = 'pagado'; saveCommissions(commissions); }
+  if (idx !== -1) {
+    commissions[idx].status = 'pagado';
+    saveCommissions(commissions);
+    if (window.LAUREAN_DB) window.LAUREAN_DB.from('commissions').update({ status: 'pagado' }).eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] commission paid:', error.message); });
+  }
 }
+
+// Genera comisiones faltantes a partir de los pedidos con referral_code (idempotente
+// por id determinístico). Corre en el admin tras sincronizar pedidos y perfiles.
+function reconcileCommissionsFromOrders() {
+  const orders = getOrders();
+  let created = 0;
+  orders.forEach(o => {
+    if (!o || !o.referral_code) return;
+    if (o.status === 'cancelado') return;
+    const orderKey = o.supabase_id || o.id;
+    const cid = 'com_' + orderKey;
+    if (getCommissions().some(c => c.id === cid || c.orderId === orderKey)) return;
+    const total = Number(o.total_gtq) || 0;
+    const res = createCommission(orderKey, o.referral_code, total, { id: cid, createdAt: o.createdAt });
+    if (res) created++;
+  });
+  return created;
+}
+window.reconcileCommissionsFromOrders = reconcileCommissionsFromOrders;
+
+async function syncCommissionsFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('commissions')
+    .select('id,order_id,vendor_id,vendor_name,vendor_code,order_total,commission_rate,commission_amount,status,created_at')
+    .order('created_at', { ascending: false }).limit(2000);
+  if (error || !data) { console.warn('[supabase] sync commissions:', error && error.message); return false; }
+  const byId = {};
+  getCommissions().forEach(c => { if (c && c.id) byId[c.id] = c; });
+  data.forEach(r => {
+    byId[r.id] = {
+      ...(byId[r.id] || {}),
+      id: r.id, orderId: r.order_id, vendorId: r.vendor_id, vendorName: r.vendor_name,
+      vendorCode: r.vendor_code, orderTotal: Number(r.order_total) || 0,
+      commissionRate: Number(r.commission_rate) || 0, commissionAmount: Number(r.commission_amount) || 0,
+      status: r.status, createdAt: r.created_at,
+    };
+  });
+  saveCommissions(Object.values(byId));
+  return true;
+}
+window.syncCommissionsFromSupabase = syncCommissionsFromSupabase;
+window.createCommission = createCommission;
+window.markCommissionPaid = markCommissionPaid;
+window.getCommissions = getCommissions;
 
 function getCommissionsByVendor(vendorId) {
   return getCommissions().filter(c => c.vendorId === vendorId);

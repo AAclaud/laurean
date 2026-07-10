@@ -701,6 +701,36 @@ revoke all on function public.increment_discount_usage(text) from public;
 grant execute on function public.increment_discount_usage(text) to anon, authenticated;
 
 -- ════════════════════════════════════════════════════════════
+-- Comisiones de vendedoras (antes solo localStorage). Se reconcilian desde los
+-- pedidos con referral_code: id determinístico `com_<order_id>` para que dos
+-- equipos reconciliando el mismo pedido no dupliquen. El admin las gestiona;
+-- cada vendedora ve solo las suyas.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.commissions (
+  id                text primary key,
+  order_id          text not null,        -- supabase_id del pedido (uuid como texto)
+  vendor_id         uuid,
+  vendor_name       text,
+  vendor_code       text,
+  order_total       numeric not null default 0,
+  commission_rate   numeric not null default 0,
+  commission_amount numeric not null default 0,
+  status            text not null default 'pendiente',  -- 'pendiente' | 'pagado'
+  created_at        timestamptz default now()
+);
+create index if not exists idx_commission_order  on public.commissions(order_id);
+create index if not exists idx_commission_vendor on public.commissions(vendor_id);
+alter table public.commissions enable row level security;
+do $$ begin
+  drop policy if exists "admin_all"  on public.commissions;
+  drop policy if exists "seller_own" on public.commissions;
+  create policy "admin_all"  on public.commissions for all
+    using (public.is_admin()) with check (public.is_admin());
+  create policy "seller_own" on public.commissions for select
+    using (vendor_id = auth.uid());
+end $$;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════
