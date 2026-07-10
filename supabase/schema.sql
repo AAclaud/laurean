@@ -731,6 +731,27 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
+-- Combos (antes solo localStorage). El combo se guarda como jsonb (objeto anidado)
+-- + columna `active` para filtrar. Los usan el admin y el POS (usuarios autenticados),
+-- no la tienda pública: lectura para autenticados, escritura solo admin.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.combos (
+  id         text primary key,
+  data       jsonb not null,
+  active     boolean not null default false,
+  updated_at timestamptz default now()
+);
+create index if not exists idx_combo_active on public.combos(active);
+alter table public.combos enable row level security;
+do $$ begin
+  drop policy if exists "read_auth"   on public.combos;
+  drop policy if exists "write_admin" on public.combos;
+  create policy "read_auth"   on public.combos for select using (auth.uid() is not null);
+  create policy "write_admin" on public.combos for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════

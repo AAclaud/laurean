@@ -1012,6 +1012,7 @@
   function initPosApp() {
     document.getElementById('pos-login').style.display = 'none';
     if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
+    if (typeof syncCombosFromSupabase === 'function') syncCombosFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });
     document.getElementById('pos-bodega-select').style.display = 'none';
     document.getElementById('pos-app').classList.add('visible');
     document.getElementById('pos-user-name').textContent = POS_SESSION.name.split(' ')[0];

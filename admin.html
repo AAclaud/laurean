@@ -2549,6 +2549,9 @@
       if (typeof syncDiscountCodesFromSupabase === 'function') {
         syncDiscountCodesFromSupabase().then(() => { const a = document.querySelector('.view.active'); if (a && a.id === 'view-descuentos' && typeof renderDescuentos === 'function') renderDescuentos(); });
       }
+      if (typeof syncCombosFromSupabase === 'function') {
+        syncCombosFromSupabase().then(() => { const a = document.querySelector('.view.active'); if (a && a.id === 'view-combos' && typeof renderCombos === 'function') renderCombos(); });
+      }
       // Cambiar vista al cambiar hash
       window.addEventListener('hashchange', () => {
         const h = (window.location.hash || '').replace('#','').trim();
@@ -2620,7 +2623,7 @@
       if (name === 'productos')    { renderCategories(); renderProducts(); }
       if (name === 'lookbook')     loadLookbookConfig();
       if (name === 'categorias')   renderCategoriesView();
-      if (name === 'combos')       renderCombos();
+      if (name === 'combos')       { renderCombos(); if (typeof syncCombosFromSupabase === 'function') syncCombosFromSupabase().then(ok => { if (ok) renderCombos(); }); }
       if (name === 'inventario')   {
         renderInventario();
         syncProductsAndStockFromSupabase().then(() => renderInventarioStock());

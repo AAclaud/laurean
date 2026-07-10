@@ -1519,12 +1519,19 @@ function saveCombo(combo) {
 
   localStorage.setItem(KEYS.COMBOS, JSON.stringify(list));
   _addComboHistoryEntry(combo.id || list[list.length - 1].id, action);
-  return list.find(c => c.id === combo.id) || list[list.length - 1];
+  const savedCombo = list.find(c => c.id === combo.id) || list[list.length - 1];
+  if (window.LAUREAN_DB && savedCombo) {
+    window.LAUREAN_DB.from('combos').upsert({
+      id: savedCombo.id, data: savedCombo, active: !!savedCombo.active, updated_at: new Date().toISOString(),
+    }).then(({ error }) => { if (error) console.warn('[supabase] combo upsert:', error.message); });
+  }
+  return savedCombo;
 }
 
 function deleteCombo(id) {
   const list = getCombos().filter(c => c.id !== id);
   localStorage.setItem(KEYS.COMBOS, JSON.stringify(list));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('combos').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] combo delete:', error.message); });
 }
 
 function toggleComboActive(id) {
@@ -1541,8 +1548,26 @@ function toggleComboActive(id) {
   }
   localStorage.setItem(KEYS.COMBOS, JSON.stringify(list));
   _addComboHistoryEntry(id, list[idx].active ? 'activated' : 'deactivated');
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('combos').upsert({ id, data: list[idx], active: !!list[idx].active, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] combo toggle:', error.message); });
   return list[idx];
 }
+
+async function syncCombosFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('combos').select('id,data,active,updated_at').order('updated_at', { ascending: false });
+  if (error || !data) { console.warn('[supabase] sync combos:', error && error.message); return false; }
+  const byId = {};
+  getCombos().forEach(c => { if (c && c.id) byId[c.id] = c; });
+  data.forEach(r => { if (r && r.data) byId[r.id] = { ...(byId[r.id] || {}), ...r.data, id: r.id, active: !!r.active }; });
+  localStorage.setItem(KEYS.COMBOS, JSON.stringify(Object.values(byId)));
+  return true;
+}
+window.syncCombosFromSupabase = syncCombosFromSupabase;
+window.getCombos = getCombos;
+window.saveCombo = saveCombo;
+window.deleteCombo = deleteCombo;
+window.toggleComboActive = toggleComboActive;
 
 function reactivateComboFromHistory(historyId) {
   const hist = getComboHistory().find(h => h.id === historyId);
