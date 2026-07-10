@@ -669,11 +669,35 @@ function getPriceHistory(productId) {
   return productId ? all.filter(h => h.productId === productId) : all;
 }
 
+async function syncPriceHistoryFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('price_history')
+    .select('id,product_id,product_name,field,previous_value,new_value,changed_at,changed_by,changed_by_name')
+    .order('changed_at', { ascending: false }).limit(3000);
+  if (error || !data) { console.warn('[supabase] sync price_history:', error && error.message); return false; }
+  const list = JSON.parse(localStorage.getItem(KEYS.PRICE_HISTORY) || '[]');
+  const have = new Set(list.map(h => h && h.id).filter(Boolean));
+  let added = 0;
+  data.forEach(r => {
+    if (have.has(r.id)) return;
+    have.add(r.id);
+    list.push({ id: r.id, productId: r.product_id, productName: r.product_name, field: r.field,
+      previousValue: Number(r.previous_value), newValue: Number(r.new_value), changedAt: r.changed_at,
+      changedBy: r.changed_by, changedByName: r.changed_by_name });
+    added++;
+  });
+  if (added) { list.sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt)); localStorage.setItem(KEYS.PRICE_HISTORY, JSON.stringify(list)); }
+  return true;
+}
+window.syncPriceHistoryFromSupabase = syncPriceHistoryFromSupabase;
+window.getPriceHistory = getPriceHistory;
+
 function recordPriceChange(productId, productName, field, previousValue, newValue) {
   if (previousValue === newValue) return;
   const session = getSession();
   const history = JSON.parse(localStorage.getItem(KEYS.PRICE_HISTORY) || '[]');
-  history.unshift({
+  const entry = {
     id:            genId('ph'),
     productId,
     productName:   productName || productId,
@@ -683,8 +707,16 @@ function recordPriceChange(productId, productName, field, previousValue, newValu
     changedAt:     new Date().toISOString(),
     changedBy:     session ? session.userId : null,
     changedByName: session ? session.name   : null,
-  });
+  };
+  history.unshift(entry);
   localStorage.setItem(KEYS.PRICE_HISTORY, JSON.stringify(history));
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('price_history').insert({
+      id: entry.id, product_id: entry.productId, product_name: entry.productName, field: entry.field,
+      previous_value: entry.previousValue, new_value: entry.newValue, changed_at: entry.changedAt,
+      changed_by: entry.changedBy, changed_by_name: entry.changedByName,
+    }).then(({ error }) => { if (error) console.warn('[supabase] price history:', error.message); });
+  }
 }
 
 // ─── Órdenes ───────────────────────────────────────────────────────────────────

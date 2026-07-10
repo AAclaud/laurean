@@ -801,6 +801,29 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
+-- Historial de cambios de precio (auditoría). Append-only, id local ph_...
+-- Solo admin lo ve y lo escribe.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.price_history (
+  id              text primary key,
+  product_id      text,
+  product_name    text,
+  field           text,
+  previous_value  numeric,
+  new_value       numeric,
+  changed_at      timestamptz default now(),
+  changed_by      text,
+  changed_by_name text
+);
+create index if not exists idx_price_history_product on public.price_history(product_id);
+alter table public.price_history enable row level security;
+do $$ begin
+  drop policy if exists "admin_all" on public.price_history;
+  create policy "admin_all" on public.price_history for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════

@@ -2515,6 +2515,7 @@
       startOrderNotifPolling();
       if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
       if (typeof syncPriceOverridesFromSupabase === 'function') syncPriceOverridesFromSupabase();
+      if (typeof syncPriceHistoryFromSupabase === 'function') syncPriceHistoryFromSupabase();
       document.addEventListener('laurean:settings-ready', () => { if (typeof renderDashboard === 'function') renderDashboard(); });
 
       // Honrar #hash al cargar (ej: admin.html#envios)
