@@ -2632,6 +2632,7 @@
       if (name === 'inventario')   {
         renderInventario();
         syncProductsAndStockFromSupabase().then(() => renderInventarioStock());
+        if (typeof syncInventoryMovementsFromSupabase === 'function') syncInventoryMovementsFromSupabase().then(() => { if (typeof renderInventarioMovimientos === 'function') renderInventarioMovimientos(); });
       }
       if (name === 'vendedores')   { renderUsers(); if (window.syncUsersFromSupabase) syncUsersFromSupabase().then(ok => { if (ok) renderUsers(); }); }
       if (name === 'pedidos')      { renderOrders(); if (typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); }); clearOrdersNotif(); }

@@ -424,6 +424,9 @@ create table if not exists public.inventory_movements (
 );
 create index if not exists idx_inv_mov_cod     on public.inventory_movements(cod);
 create index if not exists idx_inv_mov_created on public.inventory_movements(created_at desc);
+-- id del movimiento en localStorage (mov_...), para leer de vuelta sin duplicar.
+alter table public.inventory_movements add column if not exists local_id text;
+create index if not exists idx_inv_mov_local on public.inventory_movements(local_id);
 alter table public.inventory_movements enable row level security;
 do $$ begin
   drop policy if exists "read_auth"  on public.inventory_movements;

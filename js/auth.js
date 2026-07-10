@@ -1722,8 +1722,9 @@ function updateStock(productId, bodegaId, delta, type, meta = {}) {
   const toBodega   = meta.toBodega   || null;
   const fromBodegaName = meta.fromBodegaName || (fromBodega ? (getBodegas().find(b => b.id === fromBodega)?.name || fromBodega) : null);
   const toBodegaName   = meta.toBodegaName   || (toBodega   ? (getBodegas().find(b => b.id === toBodega)?.name   || toBodega)   : null);
+  const movId = genId('mov');
   movements.unshift({
-    id:            genId('mov'),
+    id:            movId,
     type,
     productId,
     productName:   meta.productName || productId,
@@ -1763,6 +1764,7 @@ function updateStock(productId, bodegaId, delta, type, meta = {}) {
         .then(({ error }) => { if (error) console.warn('[supabase] stock upsert:', error.message); });
       window.LAUREAN_DB.from('inventory_movements').insert({
         cod,
+        local_id: movId,
         product_id: productId,
         product_name: meta.productName || productId,
         type: movementType,
@@ -1801,6 +1803,42 @@ function getInventoryMovements(filters = {}) {
   if (filters.to)         list = list.filter(m => m.createdAt   <= filters.to);
   return list;
 }
+
+async function syncInventoryMovementsFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('inventory_movements')
+    .select('id,local_id,cod,product_id,product_name,type,from_bodega,to_bodega,quantity,previous_stock,new_stock,motivo,notes,created_by_name,created_at')
+    .order('created_at', { ascending: false }).limit(2000);
+  if (error || !data) { console.warn('[supabase] sync movements:', error && error.message); return false; }
+  const list = JSON.parse(localStorage.getItem(KEYS.INV_MOVEMENTS) || '[]');
+  const haveIds = new Set(list.map(m => m && m.id).filter(Boolean));
+  const bodegas = (typeof getBodegas === 'function') ? getBodegas() : [];
+  const bodegaName = (id) => { const b = bodegas.find(x => x.id === id); return b ? b.name : (id || null); };
+  let added = 0;
+  data.forEach(r => {
+    const id = r.local_id || r.id;
+    if (haveIds.has(id)) return;
+    haveIds.add(id);
+    list.push({
+      id, type: r.type, productId: r.product_id, productName: r.product_name || r.product_id,
+      bodegaId: r.to_bodega || r.from_bodega || null, bodegaName: bodegaName(r.to_bodega || r.from_bodega),
+      fromBodega: r.from_bodega || null, fromBodegaName: bodegaName(r.from_bodega),
+      toBodega: r.to_bodega || null, toBodegaName: bodegaName(r.to_bodega),
+      quantity: r.quantity, previousStock: r.previous_stock, newStock: r.new_stock,
+      motivo: r.motivo || null, notes: r.notes || '', createdByName: r.created_by_name || null,
+      createdAt: r.created_at, _remote: true,
+    });
+    added++;
+  });
+  if (added) {
+    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    localStorage.setItem(KEYS.INV_MOVEMENTS, JSON.stringify(list));
+  }
+  return true;
+}
+window.syncInventoryMovementsFromSupabase = syncInventoryMovementsFromSupabase;
+window.getInventoryMovements = getInventoryMovements;
 
 // Arrancar siempre que se cargue este script
 initStore();
