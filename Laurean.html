@@ -1901,10 +1901,10 @@
     .sp-code-val { font-size: 15px; font-weight: 500; letter-spacing: 0.1em; color: var(--carbon); display: flex; align-items: center; gap: 10px; }
     .sp-copy-btn { background: none; border: none; cursor: pointer; padding: 4px; }
     .sp-copy-btn svg { width: 15px; height: 15px; stroke: var(--warm-mid); fill: none; stroke-width: 1.5; }
-    .sp-tabs { display: flex; border-bottom: 1px solid var(--piedra); flex-shrink: 0; }
+    .sp-tabs { display: flex; border-bottom: 1px solid var(--piedra); flex-shrink: 0; position: sticky; top: 0; background: var(--crema); z-index: 3; }
     .sp-tab { flex: 1; padding: 14px; text-align: center; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warm-mid); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-family: var(--fb); }
     .sp-tab.active { color: var(--carbon); border-bottom-color: var(--carbon); }
-    .sp-body { flex: 1; overflow-y: auto; }
+    .sp-body { flex: 1; overflow-y: auto; min-height: 0; }
     .sp-tab-content { display: none; }
     .sp-tab-content.active { display: block; }
     .sp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -3080,6 +3080,7 @@
         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
+    <div class="sp-body">
     <div id="sp-gift" style="display:none;"></div>
     <div id="sp-deposit" style="display:none;"></div>
     <div id="sp-level" style="display:none;"></div>
@@ -3106,7 +3107,6 @@
       <button class="sp-tab active" onclick="spTab('orders')" id="sp-tab-orders">Mis pedidos</button>
       <button class="sp-tab" onclick="spTab('commissions')" id="sp-tab-commissions">Mis comisiones</button>
     </div>
-    <div class="sp-body">
       <div class="sp-tab-content active" id="sp-orders">
         <table class="sp-table" id="sp-orders-table">
           <thead><tr><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
