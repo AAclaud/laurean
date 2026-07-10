@@ -539,6 +539,7 @@ function savePriceOverride(id, data) {
   const overrides = getPriceOverrides();
   overrides[id] = { ...overrides[id], ...data };
   localStorage.setItem(KEYS.PRICES, JSON.stringify(overrides));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('price_overrides').upsert({ product_id: id, data: overrides[id], updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] price override:', error.message); });
 }
 
 // Retorna { gtq, usd } según el rol del usuario.
@@ -620,7 +621,23 @@ function saveBodegaPrice(productId, bodegaId, gtq, usd) {
   if (!overrides[productId].bodega_prices) overrides[productId].bodega_prices = {};
   overrides[productId].bodega_prices[bodegaId] = { gtq: Number(gtq), usd: Number(usd) };
   localStorage.setItem(KEYS.PRICES, JSON.stringify(overrides));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('price_overrides').upsert({ product_id: productId, data: overrides[productId], updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] bodega price:', error.message); });
 }
+
+async function syncPriceOverridesFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('price_overrides').select('product_id,data').limit(5000);
+  if (error || !data) { console.warn('[supabase] sync price_overrides:', error && error.message); return false; }
+  const overrides = getPriceOverrides();
+  data.forEach(r => { if (r && r.product_id && r.data) overrides[r.product_id] = { ...(overrides[r.product_id] || {}), ...r.data }; });
+  localStorage.setItem(KEYS.PRICES, JSON.stringify(overrides));
+  return true;
+}
+window.syncPriceOverridesFromSupabase = syncPriceOverridesFromSupabase;
+window.getPriceOverrides = getPriceOverrides;
+window.savePriceOverride = savePriceOverride;
+window.saveBodegaPrice = saveBodegaPrice;
 
 // Precios sugeridos según descuentos configurados.
 function suggestedSellerPrice(publicGtq, publicUsd) {

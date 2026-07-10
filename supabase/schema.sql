@@ -782,6 +782,25 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
+-- Overrides de precios por producto (público/vendedor/bodega y por bodega).
+-- Contienen precios mayoristas internos → lectura solo autenticados (POS/admin),
+-- escritura solo admin. El precio PÚBLICO base sigue viviendo en `products`.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.price_overrides (
+  product_id text primary key,
+  data       jsonb not null,
+  updated_at timestamptz default now()
+);
+alter table public.price_overrides enable row level security;
+do $$ begin
+  drop policy if exists "read_auth"   on public.price_overrides;
+  drop policy if exists "write_admin" on public.price_overrides;
+  create policy "read_auth"   on public.price_overrides for select using (auth.uid() is not null);
+  create policy "write_admin" on public.price_overrides for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════
