@@ -2533,6 +2533,11 @@
             if (a && a.id === 'view-comisiones' && typeof renderCommissions === 'function') renderCommissions();
             if (typeof renderDashboard === 'function') renderDashboard();
           });
+          if (typeof reconcileCustomersFromOrders === 'function') reconcileCustomersFromOrders();
+          if (typeof syncCustomersFromSupabase === 'function') syncCustomersFromSupabase().then(() => {
+            const c = document.querySelector('.view.active');
+            if (c && c.id === 'view-clientes' && typeof renderClientes === 'function') renderClientes();
+          });
         });
       }
       if (typeof syncVendorAppsFromSupabase === 'function') {
@@ -2652,7 +2657,7 @@
         renderSolicitudes();
         if (typeof syncVendorAppsFromSupabase === 'function') syncVendorAppsFromSupabase().then(() => renderSolicitudes());
       }
-      if (name === 'clientes')     renderClientes();
+      if (name === 'clientes')     { renderClientes(); if (typeof syncCustomersFromSupabase === 'function') syncCustomersFromSupabase().then(ok => { if (ok) renderClientes(); }); }
       if (name === 'descuentos')   { renderDescuentos(); if (typeof syncDiscountCodesFromSupabase === 'function') syncDiscountCodesFromSupabase().then(ok => { if (ok) renderDescuentos(); }); }
       if (name === 'pagos')      { renderPagos(); loadPaymentConfig(); }
     }

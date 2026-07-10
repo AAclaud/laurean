@@ -1031,12 +1031,88 @@ function saveCustomer(customer) {
     list.push(customer);
   }
   saveCustomers(list);
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('customers').upsert({
+      id: customer.id, name: customer.name || null, phone: customer.phone || null,
+      email: customer.email || null, address: customer.address || null, notes: customer.notes || null,
+      order_count: customer.orderCount || 0, total_spent_gtq: customer.totalSpent_gtq || 0,
+      first_order_at: customer.firstOrderAt || null, last_order_at: customer.lastOrderAt || null,
+      created_at: customer.createdAt || new Date().toISOString(), created_by: customer.createdBy || null,
+    }).then(({ error }) => { if (error) console.warn('[supabase] customer upsert:', error.message); });
+  }
   return customer;
 }
 
 function deleteCustomer(id) {
   saveCustomers(getCustomers().filter(c => c.id !== id));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('customers').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] customer delete:', error.message); });
 }
+
+// Recalcula clientes desde los pedidos (dedup por teléfono). Reusa el id existente si
+// ya hay cliente con ese teléfono; si no, cust_<telefono>. Conserva notes/email manuales.
+function reconcileCustomersFromOrders() {
+  const orders = getOrders();
+  const agg = {};
+  orders.forEach(o => {
+    if (!o) return;
+    const phone = String(o.customerPhone || '').replace(/\D/g, '');
+    if (!phone) return;
+    if (o.status === 'cancelado') return;
+    const when = o.createdAt || new Date().toISOString();
+    if (!agg[phone]) agg[phone] = { phone, name: '', address: null, orderCount: 0, totalSpent_gtq: 0, firstOrderAt: when, lastOrderAt: when };
+    const a = agg[phone];
+    a.orderCount++;
+    a.totalSpent_gtq += Number(o.total_gtq) || 0;
+    if (o.customerName) a.name = o.customerName;
+    if (o.address) a.address = o.address;
+    if (when < a.firstOrderAt) a.firstOrderAt = when;
+    if (when > a.lastOrderAt) a.lastOrderAt = when;
+  });
+  let touched = 0;
+  Object.values(agg).forEach(a => {
+    const existing = findCustomerByPhone(a.phone);
+    const id = (existing && existing.id) || ('cust_' + a.phone);
+    const merged = {
+      ...(existing || {}), id, phone: a.phone,
+      name: a.name || (existing && existing.name) || '',
+      address: a.address || (existing && existing.address) || null,
+      notes: (existing && existing.notes) || '', email: (existing && existing.email) || null,
+      orderCount: a.orderCount, totalSpent_gtq: a.totalSpent_gtq,
+      firstOrderAt: a.firstOrderAt, lastOrderAt: a.lastOrderAt,
+      createdAt: (existing && existing.createdAt) || new Date().toISOString(),
+      createdBy: (existing && existing.createdBy) || 'system',
+    };
+    saveCustomer(merged);   // guarda local + dual-write
+    touched++;
+  });
+  return touched;
+}
+window.reconcileCustomersFromOrders = reconcileCustomersFromOrders;
+
+async function syncCustomersFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('customers')
+    .select('id,name,phone,email,address,notes,order_count,total_spent_gtq,first_order_at,last_order_at,created_at,created_by')
+    .order('last_order_at', { ascending: false }).limit(5000);
+  if (error || !data) { console.warn('[supabase] sync customers:', error && error.message); return false; }
+  const byId = {};
+  getCustomers().forEach(c => { if (c && c.id) byId[c.id] = c; });
+  data.forEach(r => {
+    byId[r.id] = {
+      ...(byId[r.id] || {}),
+      id: r.id, name: r.name, phone: r.phone, email: r.email, address: r.address, notes: r.notes,
+      orderCount: r.order_count || 0, totalSpent_gtq: Number(r.total_spent_gtq) || 0,
+      firstOrderAt: r.first_order_at, lastOrderAt: r.last_order_at, createdAt: r.created_at, createdBy: r.created_by,
+    };
+  });
+  saveCustomers(Object.values(byId));
+  return true;
+}
+window.syncCustomersFromSupabase = syncCustomersFromSupabase;
+window.getCustomers = getCustomers;
+window.saveCustomer = saveCustomer;
+window.deleteCustomer = deleteCustomer;
 
 function upsertCustomerFromOrder(order) {
   if (!order.customerPhone) return;

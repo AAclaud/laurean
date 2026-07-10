@@ -752,6 +752,33 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
+-- Clientes (antes solo localStorage). Se reconcilian desde los pedidos (dedup por
+-- teléfono, id determinístico cust_<telefono>). Datos personales → RLS solo admin
+-- (no lectura pública). El admin también puede editarlos manualmente.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.customers (
+  id              text primary key,
+  name            text,
+  phone           text,
+  email           text,
+  address         text,
+  notes           text,
+  order_count     int not null default 0,
+  total_spent_gtq numeric not null default 0,
+  first_order_at  timestamptz,
+  last_order_at   timestamptz,
+  created_at      timestamptz default now(),
+  created_by      text
+);
+create index if not exists idx_customer_phone on public.customers(phone);
+alter table public.customers enable row level security;
+do $$ begin
+  drop policy if exists "admin_all" on public.customers;
+  create policy "admin_all" on public.customers for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════
