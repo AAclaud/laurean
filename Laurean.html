@@ -4009,12 +4009,25 @@
       return { subtotal, refDisc, manDisc, codeDisc, shipping, total };
     }
 
-    function applyStoreDscCode() {
+    async function applyStoreDscCode() {
       const codeStr = (document.getElementById('co-dsc-code')?.value || '').trim().toUpperCase();
       const msgEl   = document.getElementById('co-dsc-msg');
       if (!codeStr) { msgEl.style.color = '#c62828'; msgEl.textContent = 'Ingresa un código.'; return; }
       const subtotal = cart.reduce((s, i) => s + i.price_gtq * i.qty, 0);
-      const result   = applyDiscountCode(codeStr, subtotal);
+
+      let result = applyDiscountCode(codeStr, subtotal);
+      // Invitado sin códigos en localStorage: validar contra Supabase (RPC pública).
+      if (!result.ok && window.LAUREAN_DB) {
+        msgEl.style.color = '#9B8E7F'; msgEl.textContent = 'Validando…';
+        try {
+          const { data, error } = await window.LAUREAN_DB.rpc('validate_discount_code', { p_code: codeStr, p_subtotal: subtotal });
+          if (!error && Array.isArray(data) && data.length) {
+            const r = data[0];
+            result = { ok: true, code: { id: r.id, code: r.code, type: r.type, value: Number(r.value) || 0 }, discountGtq: Math.round(Number(r.discount_gtq) || 0) };
+          }
+        } catch (e) { /* red u otros: queda inválido abajo */ }
+      }
+
       if (!result.ok) {
         msgEl.style.color = '#c62828';
         msgEl.textContent = result.error || 'Código inválido.';

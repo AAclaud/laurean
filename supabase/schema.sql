@@ -641,6 +641,66 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
+-- Códigos de descuento (antes solo localStorage). Fuente de verdad en la web:
+-- el admin los gestiona (RLS admin) y el checkout los valida por RPC pública
+-- (no exponemos SELECT a anon; el RPC security-definer devuelve solo lo necesario).
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.discount_codes (
+  id           text primary key,
+  code         text not null,
+  type         text not null default 'pct',   -- 'pct' | 'fixed'
+  value        numeric not null default 0,
+  active       boolean not null default true,
+  valid_from   timestamptz,
+  valid_until  timestamptz,
+  usage_limit  int,
+  used_count   int not null default 0,
+  created_at   timestamptz default now(),
+  created_by   uuid
+);
+create unique index if not exists idx_discount_code_upper on public.discount_codes (upper(code));
+alter table public.discount_codes enable row level security;
+do $$ begin
+  drop policy if exists "admin_all" on public.discount_codes;
+  create policy "admin_all" on public.discount_codes for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- Validación pública de un código de descuento en el checkout (invitados incluidos).
+create or replace function public.validate_discount_code(p_code text, p_subtotal numeric default 0)
+returns table(id text, code text, type text, value numeric, discount_gtq numeric)
+language sql
+security definer
+set search_path = public
+as $$
+  select d.id, d.code, d.type, d.value,
+    case when d.type = 'pct'   then round(p_subtotal * d.value / 100)
+         when d.type = 'fixed' then least(d.value, p_subtotal)
+         else 0 end as discount_gtq
+  from public.discount_codes d
+  where upper(d.code) = upper(trim(p_code))
+    and d.active = true
+    and (d.valid_from  is null or now() >= d.valid_from)
+    and (d.valid_until is null or now() <= d.valid_until)
+    and (d.usage_limit is null or d.used_count < d.usage_limit)
+  limit 1;
+$$;
+revoke all on function public.validate_discount_code(text, numeric) from public;
+grant execute on function public.validate_discount_code(text, numeric) to anon, authenticated;
+
+-- Incremento atómico del contador de usos (al confirmar un pedido con código).
+create or replace function public.increment_discount_usage(p_id text)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.discount_codes set used_count = used_count + 1 where id = p_id;
+$$;
+revoke all on function public.increment_discount_usage(text) from public;
+grant execute on function public.increment_discount_usage(text) to anon, authenticated;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════

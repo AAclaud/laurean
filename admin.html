@@ -2536,6 +2536,9 @@
           .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
           .then(() => { renderCategories(); renderProducts(); renderCategoriesView(); renderDashboard(); });
       }
+      if (typeof syncDiscountCodesFromSupabase === 'function') {
+        syncDiscountCodesFromSupabase().then(() => { const a = document.querySelector('.view.active'); if (a && a.id === 'view-descuentos' && typeof renderDescuentos === 'function') renderDescuentos(); });
+      }
       // Cambiar vista al cambiar hash
       window.addEventListener('hashchange', () => {
         const h = (window.location.hash || '').replace('#','').trim();
@@ -2637,7 +2640,7 @@
         if (typeof syncVendorAppsFromSupabase === 'function') syncVendorAppsFromSupabase().then(() => renderSolicitudes());
       }
       if (name === 'clientes')     renderClientes();
-      if (name === 'descuentos')   renderDescuentos();
+      if (name === 'descuentos')   { renderDescuentos(); if (typeof syncDiscountCodesFromSupabase === 'function') syncDiscountCodesFromSupabase().then(ok => { if (ok) renderDescuentos(); }); }
       if (name === 'pagos')      { renderPagos(); loadPaymentConfig(); }
     }
 

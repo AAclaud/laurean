@@ -1016,11 +1016,22 @@ function saveDiscountCode(code) {
     list.push(code);
   }
   saveDiscountCodes(list);
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('discount_codes').upsert({
+      id: code.id, code: code.code, type: code.type || 'pct', value: Number(code.value) || 0,
+      active: code.active !== false,
+      valid_from: code.validFrom || null, valid_until: code.validUntil || null,
+      usage_limit: (code.usageLimit != null ? code.usageLimit : null),
+      used_count: code.usedCount || 0,
+      created_at: code.createdAt || new Date().toISOString(),
+    }).then(({ error }) => { if (error) console.warn('[supabase] discount upsert:', error.message); });
+  }
   return code;
 }
 
 function deleteDiscountCode(id) {
   saveDiscountCodes(getDiscountCodes().filter(c => c.id !== id));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('discount_codes').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] discount delete:', error.message); });
 }
 
 function validateDiscountCode(codeStr) {
@@ -1050,7 +1061,36 @@ function incrementCodeUsage(id) {
   const list = getDiscountCodes();
   const idx  = list.findIndex(c => c.id === id);
   if (idx !== -1) { list[idx].usedCount = (list[idx].usedCount || 0) + 1; saveDiscountCodes(list); }
+  if (window.LAUREAN_DB) window.LAUREAN_DB.rpc('increment_discount_usage', { p_id: id }).then(({ error }) => { if (error) console.warn('[supabase] discount usage:', error.message); });
 }
+
+async function syncDiscountCodesFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('discount_codes')
+    .select('id,code,type,value,active,valid_from,valid_until,usage_limit,used_count,created_at')
+    .order('created_at', { ascending: false });
+  if (error || !data) { console.warn('[supabase] sync discount_codes:', error && error.message); return false; }
+  const byId = {};
+  getDiscountCodes().forEach(c => { if (c && c.id) byId[c.id] = c; });
+  data.forEach(r => {
+    byId[r.id] = {
+      ...(byId[r.id] || {}),
+      id: r.id, code: r.code, type: r.type, value: Number(r.value) || 0,
+      active: r.active !== false, validFrom: r.valid_from || null, validUntil: r.valid_until || null,
+      usageLimit: (r.usage_limit != null ? r.usage_limit : null), usedCount: r.used_count || 0,
+      createdAt: r.created_at,
+    };
+  });
+  saveDiscountCodes(Object.values(byId));
+  return true;
+}
+
+window.syncDiscountCodesFromSupabase = syncDiscountCodesFromSupabase;
+window.validateDiscountCode = validateDiscountCode;
+window.applyDiscountCode = applyDiscountCode;
+window.incrementCodeUsage = incrementCodeUsage;
+window.getDiscountCodes = getDiscountCodes;
 
 // ─── Stock bajo ────────────────────────────────────────────────────────────────
 function getLowStockItems() {
