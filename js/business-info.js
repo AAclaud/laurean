@@ -7,7 +7,7 @@
     razon_social: 'Laurean',
     nit: 'en actualización',
     correo: 'escríbenos por WhatsApp',
-    telefono: '+502 3667 2415',
+    telefono: '+502 4136 4466',
     direccion: 'Guatemala',
     horario: 'Atención por WhatsApp',
     plazo_cambios: '',

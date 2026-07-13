@@ -21,7 +21,7 @@
   window.CHANNEL_ICONS = CHANNEL_ICONS;
 
   var YEAR = new Date().getFullYear();
-  var DEFAULT_WHATSAPP = '50236672415';
+  var DEFAULT_WHATSAPP = '50241364466';
   var FAB_BLOCKED_PATHS = ['admin', 'pos', 'login', 'revision-cliente', 'arquitectura-laurean'];
 
   function css() {
@@ -100,7 +100,7 @@
       + '      <li><a href="cambios-devoluciones.html">Cambios y devoluciones</a></li>'
       + '      <li><a href="faq.html">Preguntas frecuentes</a></li>'
       + '      <li><a href="contacto.html">Contacto</a></li>'
-      + '      <li><a href="https://wa.me/50236672415" target="_blank" rel="noopener">WhatsApp</a></li>'
+      + '      <li><a href="https://wa.me/50241364466" target="_blank" rel="noopener">WhatsApp</a></li>'
       + '    </ul>'
       + '  </div>'
       + '  <div>'

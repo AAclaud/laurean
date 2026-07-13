@@ -72,7 +72,7 @@ const KEYS = {
 // Lectura pública; el admin lo edita en "Contenido del sitio".
 const DEFAULT_SITE_SETTINGS = {
   marquee: ['Pagos seguros', 'Visa', 'Mastercard', 'Pago QR', 'Precios en Q'],
-  whatsapp: '50236672415',
+  whatsapp: '50241364466',
   social_links: [
     { type: 'instagram', url: '', label: 'Instagram', visible: false },
     { type: 'facebook',  url: '', label: 'Facebook',  visible: false },

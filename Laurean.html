@@ -27,7 +27,7 @@
   "description":"Marca de moda guatemalteca con ropa para mujer, hombre y niños.",
   "foundingDate":"2019","areaServed":{"@type":"Country","name":"Guatemala"},
   "currenciesAccepted":"GTQ","paymentAccepted":"Tarjeta, Transferencia, QR, Contra entrega",
-  "contactPoint":{"@type":"ContactPoint","telephone":"+502-3667-2415","contactType":"customer service","areaServed":"GT","availableLanguage":"Spanish"} }
+  "contactPoint":{"@type":"ContactPoint","telephone":"+502-4136-4466","contactType":"customer service","areaServed":"GT","availableLanguage":"Spanish"} }
 </script>
 <script type="application/ld+json">
 { "@context":"https://schema.org","@type":"WebSite","name":"Laurean","url":"https://laureans.com/","inLanguage":"es-GT" }
@@ -37,7 +37,7 @@
   {"@type":"Question","name":"¿Qué es Laurean?","acceptedAnswer":{"@type":"Answer","text":"Laurean es una marca de moda guatemalteca con ropa para mujer, hombre y niños, con estética premium y precios accesibles."}},
   {"@type":"Question","name":"¿Hacen envíos a toda Guatemala?","acceptedAnswer":{"@type":"Answer","text":"Sí, enviamos a todos los departamentos de Guatemala. El costo y tiempo dependen del método de envío seleccionado en el checkout."}},
   {"@type":"Question","name":"¿Qué métodos de pago aceptan?","acceptedAnswer":{"@type":"Answer","text":"Aceptamos tarjeta, transferencia bancaria, pago con QR y contra entrega."}},
-  {"@type":"Question","name":"¿Cómo compro?","acceptedAnswer":{"@type":"Answer","text":"Agrega productos al carrito y completa el checkout, o escríbenos por WhatsApp al +502 3667 2415 para pedir asesoría."}},
+  {"@type":"Question","name":"¿Cómo compro?","acceptedAnswer":{"@type":"Answer","text":"Agrega productos al carrito y completa el checkout, o escríbenos por WhatsApp al +502 4136 4466 para pedir asesoría."}},
   {"@type":"Question","name":"¿Puedo revender Laurean?","acceptedAnswer":{"@type":"Answer","text":"Sí. Tenemos un programa de mayoreo y reventa sin inversión ni stock, con comisiones para vendedoras. Más info en la página Vende Laurean."}}
 ]}
 </script>
@@ -2676,7 +2676,7 @@
         <p class="hero-subtitle">Elegancia y practicidad que conviven de forma natural. Para vestirte bien sin complicaciones ni riesgos.</p>
         <div class="hero-cta">
           <a href="#catalogo" class="btn-outline">Explorar colección →</a>
-          <a href="https://wa.me/50236672415" target="_blank" rel="noopener" class="btn-outline" onclick="if (window.track) window.track('whatsapp_click', { location:'hero' });">Pedir por WhatsApp</a>
+          <a href="https://wa.me/50241364466" target="_blank" rel="noopener" class="btn-outline" onclick="if (window.track) window.track('whatsapp_click', { location:'hero' });">Pedir por WhatsApp</a>
           <span class="hero-price">Desde Q149</span>
         </div>
       </div>
@@ -3047,7 +3047,7 @@
           Te contactaremos por WhatsApp para coordinar tu envío y resolver cualquier duda.
         </p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
-          <a href="https://wa.me/50236672415" target="_blank" rel="noopener" class="btn-outline">Escríbenos por WhatsApp</a>
+          <a href="https://wa.me/50241364466" target="_blank" rel="noopener" class="btn-outline">Escríbenos por WhatsApp</a>
           <button class="btn-outline" onclick="closeCheckout()">Seguir comprando</button>
         </div>
       </div>
@@ -3766,7 +3766,7 @@
       const p = getProductById(id);
       let wa = '';
       try { wa = ((getSiteSettings() || {}).whatsapp || '').replace(/[^0-9]/g, ''); } catch (e) {}
-      if (!wa) wa = '50236672415';
+      if (!wa) wa = '50241364466';
       const txt = encodeURIComponent('Hola Laurean, me interesa un pedido de mayoreo' + (p ? ' del producto: ' + p.name + ' (' + p.id + ')' : '') + '. ¿Me pueden dar precios por volumen?');
       window.open('https://wa.me/' + wa + '?text=' + txt, '_blank', 'noopener');
     }
@@ -4442,7 +4442,7 @@
           const success = document.getElementById('co-success');
           if (!success) return;
           removePendingPaymentWhatsappCta();
-          let wa = '50236672415';
+          let wa = '50241364466';
           try {
             const settingsWa = ((getSiteSettings() || {}).whatsapp || '').replace(/[^0-9]/g, '');
             if (settingsWa) wa = settingsWa;
