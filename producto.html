@@ -428,6 +428,10 @@
         <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
         <span class="fav-badge" id="fav-badge">0</span>
       </button>
+      <a href="Laurean.html?cart=1" class="nav-btn" aria-label="Ver carrito">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="fav-badge" id="cart-badge" style="display:none">0</span>
+      </a>
       <a href="login.html" class="nav-btn" aria-label="Iniciar sesión">
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </a>
@@ -825,6 +829,7 @@
     });
     document.addEventListener('DOMContentLoaded', function() {
       installFooterShareButton();
+      updateCartBadge();
       setTimeout(installFooterShareButton, 250);
     });
 
@@ -1023,6 +1028,16 @@
     /* Laurean.html maneja su carrito en memoria. Para agregar desde una página
        externa, escribimos el item en laurean_pending_cart; Laurean.html puede
        consumir esta clave en su DOMContentLoaded (Fase E). */
+    function updateCartBadge() {
+      var badge = document.getElementById('cart-badge');
+      if (!badge) return;
+      var cart = [];
+      try { cart = JSON.parse(localStorage.getItem('laurean_pending_cart') || '[]'); } catch (e) {}
+      var n = cart.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
+      badge.style.display = n > 0 ? '' : 'none';
+      badge.textContent = String(n);
+    }
+
     function addToCart(product, priceObj) {
       var CART_KEY = 'laurean_pending_cart';
       var cart = [];
@@ -1041,6 +1056,7 @@
         });
       }
       localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      updateCartBadge();
     }
 
     /* ─── Ver precio vendedor ────────────────────────────────────────────────── */

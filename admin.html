@@ -2513,6 +2513,16 @@
       if (pendApps > 0) document.getElementById('sb-notify-dot').style.display = '';
 
       startOrderNotifPolling();
+      // Si el token de Supabase murió (races de refresh multi-pestaña), las escrituras
+      // fallan en silencio. Detectarlo y pedir re-login.
+      if (window.LAUREAN_DB && SESSION && String(SESSION.userId || '').indexOf('local-') !== 0) {
+        window.LAUREAN_DB.auth.getSession().then(({ data }) => {
+          if (!data || !data.session) {
+            alert('Tu sesión expiró. Vuelve a iniciar sesión para que los cambios se guarden en la nube.');
+            window.location.href = 'login.html';
+          }
+        });
+      }
       if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
       if (typeof syncPriceOverridesFromSupabase === 'function') syncPriceOverridesFromSupabase();
       if (typeof syncPriceHistoryFromSupabase === 'function') syncPriceHistoryFromSupabase();
@@ -2540,6 +2550,7 @@
             const c = document.querySelector('.view.active');
             if (c && c.id === 'view-clientes' && typeof renderClientes === 'function') renderClientes();
           });
+          if (typeof pushLocalOrdersToSupabase === 'function') pushLocalOrdersToSupabase().then(n => { if (n > 0 && typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); if (typeof checkNewOrders === 'function') checkNewOrders(); }); });
         });
       }
       if (typeof syncVendorAppsFromSupabase === 'function') {
@@ -2687,7 +2698,7 @@
         if (typeof syncInventoryMovementsFromSupabase === 'function') syncInventoryMovementsFromSupabase().then(() => { if (typeof renderInventarioMovimientos === 'function') renderInventarioMovimientos(); });
       }
       if (name === 'vendedores')   { renderUsers(); if (window.syncUsersFromSupabase) syncUsersFromSupabase().then(ok => { if (ok) renderUsers(); }); }
-      if (name === 'pedidos')      { renderOrders(); if (typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); }); clearOrdersNotif(); }
+      if (name === 'pedidos')      { renderOrders(); if (typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); }); checkNewOrders(); }
       if (name === 'comisiones')   { renderCommissions(); if (typeof syncCommissionsFromSupabase === 'function') syncCommissionsFromSupabase().then(ok => { if (ok) renderCommissions(); }); }
       if (name === 'estadisticas') renderEstadisticas();
       if (name === 'analytics')     renderAnalytics();
@@ -4262,20 +4273,15 @@
       window.print();
     }
 
-    function clearOrdersNotif() {
-      setLastSeenOrderCount(getOrders().length);
-      const dot = document.getElementById('sb-orders-pulse');
-      if (dot) { dot.style.display = 'none'; dot.textContent = '0'; }
-    }
-
     // ─── Notificaciones pulsantes ─────────────────────────────────────────────
     function startOrderNotifPolling() {
       setLastSeenOrderCount(getOrders().length);
+      checkNewOrders();
       setInterval(() => { checkNewOrders(); checkLowStockAlert(); }, 8000);
     }
 
     function checkNewOrders() {
-      const n   = getNewOrderCount();
+      const n   = getOrders().filter(o => o && o.status === 'pendiente').length;
       const dot = document.getElementById('sb-orders-pulse');
       if (dot) { dot.style.display = n > 0 ? '' : 'none'; dot.textContent = String(n); }
     }

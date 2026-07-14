@@ -737,15 +737,20 @@ async function syncOrdersFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
   const { data, error } = await sb.from('orders')
-    .select('id,order_number,customer_name,customer_phone,customer_email,customer_address,customer_township_code,customer_department,customer_city,subtotal_gtq,discount_gtq,shipping_gtq,total_gtq,items,notes,status,payment_method,payment_status,origin,channel,shipping_method,referral_code,bodega_id,forza_guide_number,forza_tracking_status,created_at')
+    .select('id,local_id,order_number,customer_name,customer_phone,customer_email,customer_address,customer_township_code,customer_department,customer_city,subtotal_gtq,discount_gtq,shipping_gtq,total_gtq,items,notes,status,payment_method,payment_status,origin,channel,shipping_method,referral_code,bodega_id,forza_guide_number,forza_tracking_status,created_at')
     .order('created_at', { ascending: false })
     .limit(1000);
   if (error || !data) { console.warn('[supabase] sync orders:', error && error.message); return false; }
   const local = getOrders();
   const byRemote = {};
+  const localById = {};
+  const linkedLocalIds = new Set();
   local.forEach(o => { if (o.supabase_id) byRemote[o.supabase_id] = o; });
+  local.forEach(o => { if (o && o.id && !o.supabase_id) localById[o.id] = o; });
   data.forEach(r => {
-    const prev = byRemote[r.id] || {};
+    const linkedLocal = r.local_id && localById[r.local_id];
+    const prev = byRemote[r.id] || linkedLocal || {};
+    if (!byRemote[r.id] && linkedLocal && linkedLocal.id) linkedLocalIds.add(linkedLocal.id);
     const mapped = {
       ...prev,
       id:            prev.id || ('ord_sb_' + r.id.slice(0, 8)),
@@ -778,13 +783,55 @@ async function syncOrdersFromSupabase() {
     };
     byRemote[r.id] = mapped;
   });
-  const localOnly = local.filter(o => !o.supabase_id);
+  const localOnly = local.filter(o => !o.supabase_id && !linkedLocalIds.has(o.id));
   const merged = [...localOnly, ...Object.values(byRemote)];
   saveOrders(merged);
   document.dispatchEvent(new CustomEvent('laurean:orders-synced'));
   return true;
 }
 window.syncOrdersFromSupabase = syncOrdersFromSupabase;
+
+// Re-empuja pedidos de tienda que quedaron solo en localStorage (insert original
+// fallido, p.ej. por token vencido). Requiere sesión admin para el SELECT de dedup;
+// el INSERT va por el cliente anónimo (política anon_insert_store).
+async function pushLocalOrdersToSupabase() {
+  const sb = window.LAUREAN_DB;
+  const anonDb = window.LAUREAN_DB_ANON;
+  if (!sb || !anonDb) return 0;
+  const candidates = getOrders().filter(o =>
+    o && !o.supabase_id && (o.origin || 'store') === 'store' && o.channel !== 'pos'
+    && o.status === 'pendiente' && (o.payment_status || 'pendiente') === 'pendiente'
+    && o.pay_method !== 'card' && o.payment_method !== 'card');
+  if (!candidates.length) return 0;
+  const { data: existing, error } = await sb.from('orders').select('id,local_id').not('local_id', 'is', null).limit(2000);
+  if (error) { console.warn('[supabase] push orders (select):', error.message); return 0; }
+  const have = new Set((existing || []).map(r => r.local_id));
+  let pushed = 0;
+  for (const o of candidates) {
+    if (have.has(o.id)) continue;
+    const items = (o.items || []).map(it => ({ id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq, image: it.image, cost_price: it.cost_price ?? 0 }));
+    const { data: row, error: e2 } = await anonDb.from('orders').insert({
+      local_id: o.id,
+      customer_name: o.customerName || o.userName || 'Cliente',
+      customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
+      customer_address: o.address || null, customer_township_code: o.customer_township_code || null,
+      customer_department: o.customerDepartment || null, customer_city: o.customerCity || null,
+      subtotal_gtq: o.subtotal_gtq || 0,
+      discount_gtq: (o.discount_gtq || 0) + (o.manual_discount_gtq || 0) + (o.discountCode_gtq || 0) + (o.referral_discount_gtq || 0),
+      shipping_gtq: o.shipping_gtq || 0, total_gtq: o.total_gtq || 0, items,
+      notes: o.notes || null, status: 'pendiente', payment_method: o.pay_method || o.payment_method || null,
+      payment_status: 'pendiente', origin: 'store', channel: o.channel || 'web',
+      shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
+      created_by: null, bodega_id: o.bodegaId || null,
+    }).select('id,order_number').single();
+    if (e2) { console.warn('[supabase] push order:', e2.message); continue; }
+    const all = getOrders(); const idx = all.findIndex(x => x.id === o.id);
+    if (idx !== -1 && row) { all[idx].supabase_id = row.id; all[idx].order_number = row.order_number; saveOrders(all); }
+    pushed++;
+  }
+  return pushed;
+}
+window.pushLocalOrdersToSupabase = pushLocalOrdersToSupabase;
 
 // ─── Productos admin desde Supabase ───────────────────────────────────────────
 async function syncProductsFromSupabase() {
@@ -854,13 +901,16 @@ function createOrder(data) {
   // Excepción: en pago con TARJETA la orden la crea la Edge Function
   // `qpaypro-proxy` del lado servidor (service_role + revalidación de precio),
   // así que aquí se omite para no duplicarla.
-  if (window.LAUREAN_DB && data.pay_method !== 'card' && data.payment_method !== 'card') {
+  const isStoreOrder = (data.origin || 'store') === 'store' && data.channel !== 'pos';
+  const orderDb = isStoreOrder ? (window.LAUREAN_DB_ANON || window.LAUREAN_DB) : window.LAUREAN_DB;
+  if (orderDb && data.pay_method !== 'card' && data.payment_method !== 'card') {
     const items = (data.items || []).map(it => ({
       id: it.id, name: it.name, qty: it.qty,
       price_gtq: it.price_gtq, image: it.image,
       cost_price: it.cost_price ?? 0,
     }));
     const payload = {
+      local_id:                order.id,
       customer_name:          data.customerName || data.userName || 'Cliente',
       customer_phone:         data.customerPhone || data.userPhone || null,
       customer_email:         data.customerEmail || data.userEmail || null,
@@ -881,10 +931,10 @@ function createOrder(data) {
       channel:                data.channel || (data.origin === 'pos' ? 'pos' : 'web'),
       shipping_method:        data.shipping_method || null,
       referral_code:          data.referral_code || null,
-      created_by:             session ? session.userId : null,
+      created_by:             isStoreOrder ? null : (session ? session.userId : null),
       bodega_id:              data.bodegaId || null,
     };
-    window.LAUREAN_DB.from('orders').insert(payload).select('id,order_number').single()
+    orderDb.from('orders').insert(payload).select('id,order_number').single()
       .then(({ data: row, error }) => {
         if (error) { console.warn('[supabase] order insert failed:', error.message); return; }
         // Guardar el order_number / supabase_id en la versión local para enlazar luego

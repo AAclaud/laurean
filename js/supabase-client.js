@@ -30,6 +30,12 @@
     window.LAUREAN_DB = createClient(URL, ANON, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     });
+    // Cliente anónimo SIN sesión: los pedidos de la tienda se insertan con él
+    // (política anon_insert_store) para no depender del estado del token del
+    // usuario logueado — un JWT vencido hacía perder pedidos en silencio.
+    window.LAUREAN_DB_ANON = createClient(URL, ANON, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
     window.LAUREAN_SUPABASE_READY = true;
 
     // Helpers públicos

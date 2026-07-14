@@ -556,6 +556,11 @@ end $$;
 -- Pedidos de la TIENDA por visitantes anónimos (transferencia/QR): insert público
 -- pero SOLO con valores seguros (pendiente, sin created_by). Los de tarjeta los crea
 -- qpaypro-proxy con service_role; los de POS pasan por auth_insert.
+-- id del pedido en localStorage (ord_...) para deduplicar al re-empujar
+-- pedidos que quedaron solo-locales (insert fallido por sesión rota).
+alter table public.orders add column if not exists local_id text;
+create index if not exists idx_orders_local on public.orders(local_id);
+
 do $$ begin
   drop policy if exists "anon_insert_store" on public.orders;
   create policy "anon_insert_store" on public.orders for insert with check (

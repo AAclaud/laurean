@@ -2951,7 +2951,7 @@
           </div>
 
           <!-- PIN de descuento especial -->
-          <div class="co-discount-special">
+          <div class="co-discount-special" id="co-discount-special" style="display:none">
             <button class="co-discount-toggle" onclick="toggleDiscountPinBox()">¿Aplicar descuento especial?</button>
             <div class="co-discount-pin-box" id="co-discount-pin-box">
               <div class="co-discount-pin-row">
@@ -4133,6 +4133,11 @@
       if (pinMsg) { pinMsg.textContent = ''; pinMsg.className = 'co-pin-msg'; }
       if (dscInp) dscInp.value = '';
       if (dscMsg) dscMsg.textContent = '';
+      const sp = document.getElementById('co-discount-special');
+      if (sp) {
+        const role = SESSION_LOCAL && SESSION_LOCAL.role;
+        sp.style.display = (role === 'admin' || role === 'superuser') ? '' : 'none';
+      }
 
       document.getElementById('co-items-list').innerHTML = cart.map(i =>
         `<div class="co-summary-item">
