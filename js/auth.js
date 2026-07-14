@@ -810,7 +810,7 @@ async function pushLocalOrdersToSupabase() {
   for (const o of candidates) {
     if (have.has(o.id)) continue;
     const items = (o.items || []).map(it => ({ id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq, image: it.image, cost_price: it.cost_price ?? 0 }));
-    const { data: row, error: e2 } = await anonDb.from('orders').insert({
+    const { error: e2 } = await anonDb.from('orders').insert({
       local_id: o.id,
       customer_name: o.customerName || o.userName || 'Cliente',
       customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
@@ -823,10 +823,10 @@ async function pushLocalOrdersToSupabase() {
       payment_status: 'pendiente', origin: 'store', channel: o.channel || 'web',
       shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
       created_by: null, bodega_id: o.bodegaId || null,
-    }).select('id,order_number').single();
+    });
     if (e2) { console.warn('[supabase] push order:', e2.message); continue; }
     const all = getOrders(); const idx = all.findIndex(x => x.id === o.id);
-    if (idx !== -1 && row) { all[idx].supabase_id = row.id; all[idx].order_number = row.order_number; saveOrders(all); }
+    if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
     pushed++;
   }
   return pushed;
@@ -845,7 +845,7 @@ async function retryPendingOrderPushes() {
   let pushed = 0;
   for (const o of candidates) {
     const items = (o.items || []).map(it => ({ id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq, image: it.image, cost_price: it.cost_price ?? 0 }));
-    const { data: row, error } = await anonDb.from('orders').insert({
+    const { error } = await anonDb.from('orders').insert({
       local_id: o.id,
       customer_name: o.customerName || o.userName || 'Cliente',
       customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
@@ -858,7 +858,7 @@ async function retryPendingOrderPushes() {
       payment_status: 'pendiente', origin: 'store', channel: o.channel || 'web',
       shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
       created_by: null, bodega_id: o.bodegaId || null,
-    }).select('id,order_number').single();
+    });
     const all = getOrders(); const idx = all.findIndex(x => x.id === o.id);
     if (error) {
       // 23505 = ya existe (insert original sí entró): marcar y no reintentar más.
@@ -867,7 +867,7 @@ async function retryPendingOrderPushes() {
       } else { console.warn('[supabase] retry order:', error.message); }
       continue;
     }
-    if (idx !== -1 && row) { all[idx].supabase_id = row.id; all[idx].order_number = row.order_number; all[idx].push_done = true; saveOrders(all); }
+    if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
     pushed++;
   }
   return pushed;
@@ -975,19 +975,28 @@ function createOrder(data) {
       created_by:             isStoreOrder ? null : (session ? session.userId : null),
       bodega_id:              data.bodegaId || null,
     };
-    orderDb.from('orders').insert(payload).select('id,order_number').single()
-      .then(({ data: row, error }) => {
+    if (isStoreOrder) {
+      orderDb.from('orders').insert(payload).then(({ error }) => {
         if (error) { console.warn('[supabase] order insert failed:', error.message); return; }
-        // Guardar el order_number / supabase_id en la versión local para enlazar luego
         const all = getOrders();
-        const idx = all.findIndex(o => o.id === order.id);
-        if (idx !== -1 && row) {
-          all[idx].supabase_id   = row.id;
-          all[idx].order_number  = row.order_number;
-          all[idx].push_done     = true;
-          saveOrders(all);
-        }
+        const idx = all.findIndex(o2 => o2.id === order.id);
+        if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
       });
+    } else {
+      orderDb.from('orders').insert(payload).select('id,order_number').single()
+        .then(({ data: row, error }) => {
+          if (error) { console.warn('[supabase] order insert failed:', error.message); return; }
+          // Guardar el order_number / supabase_id en la versión local para enlazar luego
+          const all = getOrders();
+          const idx = all.findIndex(o => o.id === order.id);
+          if (idx !== -1 && row) {
+            all[idx].supabase_id   = row.id;
+            all[idx].order_number  = row.order_number;
+            all[idx].push_done     = true;
+            saveOrders(all);
+          }
+        });
+    }
   }
 
   return order;
