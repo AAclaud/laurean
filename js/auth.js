@@ -539,7 +539,17 @@ function savePriceOverride(id, data) {
   const overrides = getPriceOverrides();
   overrides[id] = { ...overrides[id], ...data };
   localStorage.setItem(KEYS.PRICES, JSON.stringify(overrides));
-  if (window.LAUREAN_DB) window.LAUREAN_DB.from('price_overrides').upsert({ product_id: id, data: overrides[id], updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] price override:', error.message); });
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('price_overrides').upsert({ product_id: id, data: overrides[id], updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] price override:', error.message); });
+    // El precio PUBLICO vive en products (es lo que ve el cliente invitado):
+    // mantenerlo alineado con lo que el admin guardo.
+    const pub = {};
+    if (data.public_gtq != null) pub.price_gtq = Number(data.public_gtq) || 0;
+    if (data.public_usd != null) pub.price_usd = Number(data.public_usd) || 0;
+    if (Object.keys(pub).length) {
+      window.LAUREAN_DB.from('products').update(pub).eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] product price:', error.message); });
+    }
+  }
 }
 
 // Retorna { gtq, usd } según el rol del usuario.
