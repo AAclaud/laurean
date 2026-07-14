@@ -35,7 +35,7 @@ window.LAUREAN_DATA = {
       name:  'Mujer',
       image: 'images/laurean_category_ella.jpg',
       subcats: ['novedades','blusas','conjuntos','vestidos'],
-      starting_price_gtq: 749,
+      starting_price_gtq: 150,
       starting_price_usd: 97,
     },
     {
@@ -43,7 +43,7 @@ window.LAUREAN_DATA = {
       name:  'Hombre',
       image: 'images/laurean_category_el.jpg',
       subcats: ['tshirt','boxer'],
-      starting_price_gtq: 799,
+      starting_price_gtq: 150,
       starting_price_usd: 104,
     },
     {
@@ -51,7 +51,7 @@ window.LAUREAN_DATA = {
       name:  'Laurean Kids',
       image: 'images/laurean_category_ninos.jpg',
       subcats: ['nina-pijamas','nina-licra','nino-pijamas'],
-      starting_price_gtq: 549,
+      starting_price_gtq: 150,
       starting_price_usd: 71,
     },
     {
@@ -59,7 +59,7 @@ window.LAUREAN_DATA = {
       name:  'Ofertas',
       image: 'images/laurean_category_ella.jpg',
       subcats: ['flash','promociones'],
-      starting_price_gtq: 199,
+      starting_price_gtq: 150,
       starting_price_usd: 26,
     },
   ],
@@ -93,10 +93,10 @@ window.LAUREAN_DATA = {
   // admin.html getAllProducts() y renderProducts() en Laurean.html lo usaban.
   // Migrar a products[] cuando se actualicen esas funciones.
   categories: [
-    { id: 'mujer',  name: 'Mujer',         image: 'images/laurean_category_ella.jpg',  starting_price_gtq: 749,  starting_price_usd: 97  },
-    { id: 'hombre', name: 'Hombre',        image: 'images/laurean_category_el.jpg',    starting_price_gtq: 799,  starting_price_usd: 104 },
-    { id: 'kids',   name: 'Laurean Kids',  image: 'images/laurean_category_ninos.jpg', starting_price_gtq: 549,  starting_price_usd: 71  },
-    { id: 'ofertas',name: 'Ofertas',       image: 'images/laurean_category_ella.jpg',  starting_price_gtq: 199,  starting_price_usd: 26  },
+    { id: 'mujer',  name: 'Mujer',         image: 'images/laurean_category_ella.jpg',  starting_price_gtq: 150,  starting_price_usd: 97  },
+    { id: 'hombre', name: 'Hombre',        image: 'images/laurean_category_el.jpg',    starting_price_gtq: 150,  starting_price_usd: 104 },
+    { id: 'kids',   name: 'Laurean Kids',  image: 'images/laurean_category_ninos.jpg', starting_price_gtq: 150,  starting_price_usd: 71  },
+    { id: 'ofertas',name: 'Ofertas',       image: 'images/laurean_category_ella.jpg',  starting_price_gtq: 150,  starting_price_usd: 26  },
   ],
   sweaters: [], // migrado a products[]
 

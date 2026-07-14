@@ -106,7 +106,7 @@
     // 2) Esperar Supabase (máximo 1.5s)
     if (!window.LAUREAN_SUPABASE_READY && window.LAUREAN_CONFIG) {
       await new Promise(r => {
-        const t = setTimeout(r, 1500);
+        const t = setTimeout(r, 4000);
         document.addEventListener('laurean:supabase-ready', () => { clearTimeout(t); r(); }, { once: true });
       });
     }
@@ -155,6 +155,16 @@
   window.addEventListener('focus', () => rehydrateIfStale(30000));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) rehydrateIfStale(30000); });
   setInterval(() => { if (!document.hidden) rehydrateIfStale(90000); }, 90000);
+
+  // Si el primer pull de Supabase no se logró (conexión lenta o corte), reintentar
+  // cada 5s hasta conseguirlo (máx 12 intentos) para no quedarnos con la data
+  // estática de respaldo (grilla vacía / precios desactualizados).
+  let _bootTries = 0;
+  const _bootRetry = setInterval(() => {
+    if (_lastPull > 0 || _bootTries >= 12) { clearInterval(_bootRetry); return; }
+    _bootTries++;
+    hydrate();
+  }, 5000);
 
   let _rt = null;
   function subscribeRealtime() {
