@@ -4288,9 +4288,11 @@
       const address = document.getElementById('co-address').value.trim();
       const notes   = document.getElementById('co-notes').value.trim();
       const errEl   = document.getElementById('co-error');
+      const deptSel = document.getElementById('co-department');
+      const twSel   = document.getElementById('co-township');
 
-      if (!name || !phone || !address) {
-        errEl.textContent = 'Completa nombre, teléfono y dirección.';
+      if (!name || !phone || !address || !deptSel || !deptSel.value || !twSel || !twSel.value) {
+        errEl.textContent = 'Completa nombre, teléfono, departamento, municipio y dirección.';
         errEl.classList.add('show');
         return;
       }
@@ -4308,8 +4310,6 @@
         return;
       }
 
-      const deptSel = document.getElementById('co-department');
-      const twSel   = document.getElementById('co-township');
       const deptOpt = deptSel && deptSel.selectedOptions[0];
       const twOpt   = twSel && twSel.selectedOptions[0];
       const departmentName = deptOpt ? (deptOpt.dataset.name || deptOpt.text) : null;

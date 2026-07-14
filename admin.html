@@ -4167,6 +4167,7 @@
             const resolved = await envResolveOrderForGuide(orderId);
             const source = resolved?.dbOrder || resolved?.localOrder || order;
             const draft = envBuildGuideDraftFromOrder(source, orderId);
+            await envEnsureTownshipCode(draft, source);
             if (draft.missing.length) throw new Error('Faltan datos: ' + draft.missing.join(', '));
             const result = await envCreateGuideWithData(draft);
             ok.push({ order, result });
@@ -7873,6 +7874,46 @@
       return list;
     }
 
+    // Resuelve el código Forza de municipio a partir de los NOMBRES capturados en el
+    // checkout (departamento + municipio), normalizando tildes/mayúsculas.
+    async function envResolveTownshipByName(deptName, muniName) {
+      if (!deptName || !muniName) return null;
+      const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      try {
+        const deps = await envLoadDepartments();
+        const d = deps.find(x => norm(x.ProvinceName || x.Description || x.Name) === norm(deptName));
+        if (!d) return null;
+        const provCode = d.HeaderCode || d.IdProvince || '';
+        const towns = await envLoadTownships(provCode);
+        const t = towns.find(x => norm(x.TownshipName || x.Description || x.Name) === norm(muniName));
+        if (!t) return null;
+        return { code: t.HeaderCodeTownship || t.IdTownship || '', name: t.TownshipName || muniName, provCode, provName: d.ProvinceName || deptName };
+      } catch (e) { return null; }
+    }
+
+    // Completa el código Forza de un draft de guía usando los nombres del pedido y
+    // lo persiste en el pedido (para que la próxima vez sea directo).
+    async function envEnsureTownshipCode(draft, order) {
+      if (draft.townshipCode || !order) return draft;
+      const deptName = order.customer_department || order.customerDepartment || null;
+      const muniName = order.customer_city || order.customerCity || null;
+      const hit = await envResolveTownshipByName(deptName, muniName);
+      if (!hit || !hit.code) return draft;
+      draft.townshipCode = hit.code;
+      draft.townshipName = hit.name;
+      draft.toTownCode = hit.code;
+      draft.toTownName = hit.name;
+      draft.provCode = hit.provCode;
+      draft.provName = hit.provName;
+      draft.missing = draft.missing.filter(m => m !== 'municipio Forza');
+      // Persistir en el pedido para no re-resolver
+      if (window.LAUREAN_DB && draft.orderId && /^[0-9a-f-]{36}$/i.test(String(draft.orderId))) {
+        window.LAUREAN_DB.from('orders').update({ customer_township_code: hit.code }).eq('id', draft.orderId)
+          .then(({ error }) => { if (error) console.warn('[supabase] township persist:', error.message); });
+      }
+      return draft;
+    }
+
     function envFillSelect(el, items, labelKey, valueKey) {
       el.innerHTML = '<option value="">Selecciona…</option>' +
         items.map(it => {
@@ -8536,6 +8577,7 @@
       if (!o) return alert('Pedido no encontrado.');
       if (isPosOrder(o)) return alert('Los pedidos POS no generan guía Forza.');
       const draft = envBuildGuideDraftFromOrder(o, dbOrder?.id || localOrder?.supabase_id || o.id || orderId);
+      await envEnsureTownshipCode(draft, o);
 
       showView('envios');
       // Esperar a que la vista monte
@@ -8552,6 +8594,7 @@
         document.getElementById('ec-date').value    = draft.dateVal;
         if (draft.townshipCode) {
           // Si tenemos código de municipio (capturado en el checkout), setearlo directo
+          if (draft.provCode) document.getElementById('ec-prov').value = draft.provCode;
           document.getElementById('ec-town').innerHTML = `<option value="${escapeAttr(draft.townshipCode)}" selected>${escapeHtml(draft.townshipName)}</option>`;
           document.getElementById('ec-town').disabled = false;
         } else {
