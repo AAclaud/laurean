@@ -1014,6 +1014,23 @@
     if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
     if (typeof syncCombosFromSupabase === 'function') syncCombosFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });
     if (typeof syncPriceOverridesFromSupabase === 'function') syncPriceOverridesFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });
+    // Sincronización continua: precios/stock/combos cambiados en otro equipo llegan solos.
+    if (typeof startLiveSync === 'function') {
+      startLiveSync({
+        tables: ['products', 'inventory_stock', 'price_overrides', 'combos', 'site_settings'],
+        sync: [
+          () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
+          () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
+          () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
+          () => (typeof syncCombosFromSupabase === 'function' ? syncCombosFromSupabase() : null),
+        ],
+      });
+      document.addEventListener('laurean:live-synced', () => {
+        const ae = document.activeElement;
+        if (ae && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(ae.tagName) !== -1) return;
+        if (typeof renderPosProducts === 'function') renderPosProducts();
+      });
+    }
     document.getElementById('pos-bodega-select').style.display = 'none';
     document.getElementById('pos-app').classList.add('visible');
     document.getElementById('pos-user-name').textContent = POS_SESSION.name.split(' ')[0];

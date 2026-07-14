@@ -1889,6 +1889,55 @@ async function syncInventoryMovementsFromSupabase() {
 window.syncInventoryMovementsFromSupabase = syncInventoryMovementsFromSupabase;
 window.getInventoryMovements = getInventoryMovements;
 
+// ─── Live sync ──────────────────────────────────────────────────────────────
+// Mantiene los datos sincronizados entre navegadores/equipos con 3 capas:
+// 1) Realtime de Supabase (push al cambiar una tabla publicada)
+// 2) Re-sync al recuperar el foco/visibilidad la pestaña
+// 3) Intervalo de resguardo (default 60s, solo con la pestaña visible)
+// Emite `laurean:live-synced` al terminar cada ronda para que la UI re-renderice.
+function startLiveSync(opts = {}) {
+  const syncFns = Array.isArray(opts.sync) ? opts.sync : [];
+  const tables  = Array.isArray(opts.tables) ? opts.tables : [];
+  const every   = opts.intervalMs || 60000;
+  let running = false;
+  let queued  = false;
+
+  async function resync(reason) {
+    if (running) { queued = true; return; }
+    running = true;
+    try {
+      for (const fn of syncFns) {
+        try { await fn(); } catch (e) { /* sin red u otro fallo puntual: seguir */ }
+      }
+      document.dispatchEvent(new CustomEvent('laurean:live-synced', { detail: { reason } }));
+    } finally {
+      running = false;
+      if (queued) { queued = false; resync('queued'); }
+    }
+  }
+
+  let _t = null;
+  function resyncSoon(reason) { clearTimeout(_t); _t = setTimeout(() => resync(reason), 400); }
+
+  window.addEventListener('focus', () => resyncSoon('focus'));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resyncSoon('visible'); });
+  setInterval(() => { if (!document.hidden) resync('interval'); }, every);
+
+  function subscribeRealtime() {
+    if (!window.LAUREAN_DB || !tables.length) return;
+    try {
+      const ch = window.LAUREAN_DB.channel('laurean-live-' + Math.random().toString(36).slice(2, 7));
+      tables.forEach(tb => ch.on('postgres_changes', { event: '*', schema: 'public', table: tb }, () => resyncSoon('realtime:' + tb)));
+      ch.subscribe();
+    } catch (e) { console.warn('[live-sync] realtime no disponible:', e && e.message); }
+  }
+  if (window.LAUREAN_DB) subscribeRealtime();
+  else document.addEventListener('laurean:supabase-ready', (ev) => { if (ev && ev.detail && ev.detail.ok) subscribeRealtime(); }, { once: true });
+
+  return resync;
+}
+window.startLiveSync = startLiveSync;
+
 // Arrancar siempre que se cargue este script
 initStore();
 

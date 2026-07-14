@@ -2559,6 +2559,56 @@
       if (typeof syncCombosFromSupabase === 'function') {
         syncCombosFromSupabase().then(() => { const a = document.querySelector('.view.active'); if (a && a.id === 'view-combos' && typeof renderCombos === 'function') renderCombos(); });
       }
+      // Sincronización continua: cambios hechos en otros equipos llegan solos
+      // (realtime + re-sync al enfocar la pestaña + intervalo de resguardo).
+      if (typeof startLiveSync === 'function') {
+        startLiveSync({
+          tables: ['products','categories','subcategories','price_overrides','inventory_stock','inventory_items','combos','site_settings','orders','discount_codes','vendor_applications','commissions','customers'],
+          sync: [
+            () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
+            () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
+            () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
+            () => (typeof syncOrdersFromSupabase === 'function' ? syncOrdersFromSupabase() : null),
+            () => (typeof syncCommissionsFromSupabase === 'function' ? syncCommissionsFromSupabase() : null),
+            () => (typeof syncCustomersFromSupabase === 'function' ? syncCustomersFromSupabase() : null),
+            () => (typeof syncDiscountCodesFromSupabase === 'function' ? syncDiscountCodesFromSupabase() : null),
+            () => (typeof syncCombosFromSupabase === 'function' ? syncCombosFromSupabase() : null),
+            () => (typeof syncVendorAppsFromSupabase === 'function' ? syncVendorAppsFromSupabase() : null),
+            () => (typeof syncUsersFromSupabase === 'function' ? syncUsersFromSupabase() : null),
+            () => (typeof syncInventoryMovementsFromSupabase === 'function' ? syncInventoryMovementsFromSupabase() : null),
+            () => (typeof hydrateSiteSettings === 'function' ? hydrateSiteSettings() : null),
+          ],
+        });
+        document.addEventListener('laurean:live-synced', () => {
+          // No pisar al usuario mientras edita: si hay un modal abierto o un
+          // input con foco, saltar este re-render (el próximo lo recogerá).
+          const modalOpen = Array.prototype.some.call(
+            document.querySelectorAll('.modal-overlay'),
+            (m) => m.classList.contains('open') || (m.style.display && m.style.display !== 'none')
+          );
+          if (modalOpen) return;
+          const ae = document.activeElement;
+          if (ae && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(ae.tagName) !== -1) return;
+          const v = document.querySelector('.view.active');
+          if (!v) return;
+          const name = (v.id || '').replace('view-', '');
+          const renders = {
+            dashboard:    () => renderDashboard(),
+            productos:    () => { renderCategories(); renderProducts(); },
+            pedidos:      () => renderOrders(),
+            comisiones:   () => renderCommissions(),
+            clientes:     () => renderClientes(),
+            descuentos:   () => renderDescuentos(),
+            solicitudes:  () => renderSolicitudes(),
+            vendedores:   () => renderUsers(),
+            categorias:   () => renderCategoriesView(),
+            combos:       () => renderCombos(),
+            inventario:   () => { if (typeof renderInventarioStock === 'function') renderInventarioStock(); },
+            estadisticas: () => renderEstadisticas(),
+          };
+          try { if (renders[name]) renders[name](); } catch (e) { /* vista a medio montar */ }
+        });
+      }
       // Cambiar vista al cambiar hash
       window.addEventListener('hashchange', () => {
         const h = (window.location.hash || '').replace('#','').trim();

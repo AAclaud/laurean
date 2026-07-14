@@ -40,7 +40,7 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch {}
   }
 
-  async function fetchFromSupabase() {
+  let fetchFromSupabase = async function () {
     if (!window.LAUREAN_DB) return null;
     try {
       const [cats, subs] = await Promise.all([
@@ -96,7 +96,7 @@
       console.warn('[catalog] fetch exception:', err);
       return null;
     }
-  }
+  };
 
   async function hydrate() {
     // 1) Caché rápida para UI instantánea
@@ -137,6 +137,39 @@
     _retried = true;
     hydrate();
   }, { once: true });
+
+  // ── Refresco continuo ─────────────────────────────────────
+  // 1) al recuperar foco/visibilidad (si el último pull tiene >30s)
+  // 2) intervalo de resguardo (90s, solo pestaña visible)
+  // 3) realtime: push instantáneo cuando cambia el catálogo en Supabase
+  let _lastPull = 0;
+  const _origFetch = fetchFromSupabase;
+  fetchFromSupabase = async function () {
+    const r = await _origFetch();
+    if (r) _lastPull = Date.now();
+    return r;
+  };
+  function rehydrateIfStale(minMs) {
+    if (Date.now() - _lastPull > (minMs || 30000)) hydrate();
+  }
+  window.addEventListener('focus', () => rehydrateIfStale(30000));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) rehydrateIfStale(30000); });
+  setInterval(() => { if (!document.hidden) rehydrateIfStale(90000); }, 90000);
+
+  let _rt = null;
+  function subscribeRealtime() {
+    if (!window.LAUREAN_DB) return;
+    try {
+      const ch = window.LAUREAN_DB.channel('catalog-live');
+      ['products', 'categories', 'subcategories'].forEach(tb =>
+        ch.on('postgres_changes', { event: '*', schema: 'public', table: tb }, () => {
+          clearTimeout(_rt); _rt = setTimeout(hydrate, 500);
+        }));
+      ch.subscribe();
+    } catch (e) { /* realtime opcional */ }
+  }
+  if (window.LAUREAN_SUPABASE_READY) subscribeRealtime();
+  else document.addEventListener('laurean:supabase-ready', (ev) => { if (ev && ev.detail && ev.detail.ok) subscribeRealtime(); }, { once: true });
 
   window.LAUREAN_CATALOG_HYDRATE = hydrate; // refresh manual
 })();
