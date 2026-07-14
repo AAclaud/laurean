@@ -559,7 +559,8 @@ end $$;
 -- id del pedido en localStorage (ord_...) para deduplicar al re-empujar
 -- pedidos que quedaron solo-locales (insert fallido por sesión rota).
 alter table public.orders add column if not exists local_id text;
-create index if not exists idx_orders_local on public.orders(local_id);
+-- ÚNICO: hace idempotente el re-push de pedidos (un duplicado falla limpio).
+create unique index if not exists idx_orders_local_uniq on public.orders(local_id) where local_id is not null;
 
 do $$ begin
   drop policy if exists "anon_insert_store" on public.orders;

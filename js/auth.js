@@ -833,6 +833,47 @@ async function pushLocalOrdersToSupabase() {
 }
 window.pushLocalOrdersToSupabase = pushLocalOrdersToSupabase;
 
+// Reintento guest-safe: re-empuja pedidos de tienda solo-locales SIN necesitar sesión
+// (insert anónimo + índice único en local_id → un duplicado falla limpio y se marca).
+async function retryPendingOrderPushes() {
+  const anonDb = window.LAUREAN_DB_ANON;
+  if (!anonDb) return 0;
+  const candidates = getOrders().filter(o =>
+    o && !o.supabase_id && !o.push_done && (o.origin || 'store') === 'store' && o.channel !== 'pos'
+    && o.status === 'pendiente' && (o.payment_status || 'pendiente') === 'pendiente'
+    && o.pay_method !== 'card' && o.payment_method !== 'card');
+  let pushed = 0;
+  for (const o of candidates) {
+    const items = (o.items || []).map(it => ({ id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq, image: it.image, cost_price: it.cost_price ?? 0 }));
+    const { data: row, error } = await anonDb.from('orders').insert({
+      local_id: o.id,
+      customer_name: o.customerName || o.userName || 'Cliente',
+      customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
+      customer_address: o.address || null, customer_township_code: o.customer_township_code || null,
+      customer_department: o.customerDepartment || null, customer_city: o.customerCity || null,
+      subtotal_gtq: o.subtotal_gtq || 0,
+      discount_gtq: (o.discount_gtq || 0) + (o.manual_discount_gtq || 0) + (o.discountCode_gtq || 0) + (o.referral_discount_gtq || 0),
+      shipping_gtq: o.shipping_gtq || 0, total_gtq: o.total_gtq || 0, items,
+      notes: o.notes || null, status: 'pendiente', payment_method: o.pay_method || o.payment_method || null,
+      payment_status: 'pendiente', origin: 'store', channel: o.channel || 'web',
+      shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
+      created_by: null, bodega_id: o.bodegaId || null,
+    }).select('id,order_number').single();
+    const all = getOrders(); const idx = all.findIndex(x => x.id === o.id);
+    if (error) {
+      // 23505 = ya existe (insert original sí entró): marcar y no reintentar más.
+      if (String(error.code) === '23505' || /duplicate/i.test(error.message || '')) {
+        if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
+      } else { console.warn('[supabase] retry order:', error.message); }
+      continue;
+    }
+    if (idx !== -1 && row) { all[idx].supabase_id = row.id; all[idx].order_number = row.order_number; all[idx].push_done = true; saveOrders(all); }
+    pushed++;
+  }
+  return pushed;
+}
+window.retryPendingOrderPushes = retryPendingOrderPushes;
+
 // ─── Productos admin desde Supabase ───────────────────────────────────────────
 async function syncProductsFromSupabase() {
   const sb = window.LAUREAN_DB;
@@ -943,6 +984,7 @@ function createOrder(data) {
         if (idx !== -1 && row) {
           all[idx].supabase_id   = row.id;
           all[idx].order_number  = row.order_number;
+          all[idx].push_done     = true;
           saveOrders(all);
         }
       });

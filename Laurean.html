@@ -5106,6 +5106,10 @@
 
       // Contenido del sitio (marquee, redes): pull fresco + re-render al cambiar.
       if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
+      // Recuperar pedidos que quedaron solo-locales (p.ej. insert fallido sin red).
+      const _retryOrders = () => { if (typeof retryPendingOrderPushes === 'function') retryPendingOrderPushes(); };
+      if (window.LAUREAN_DB_ANON) _retryOrders();
+      else document.addEventListener('laurean:supabase-ready', _retryOrders, { once: true });
       document.addEventListener('laurean:site-settings-ready', () => { renderMarquee(); renderFooterContent(); });
       document.addEventListener('laurean:site-settings-changed', () => { renderMarquee(); renderFooterContent(); });
 
