@@ -4774,7 +4774,17 @@
       const role = SESSION_LOCAL ? SESSION_LOCAL.role : 'guest';
 
       // ── Parent category tabs + hero images ──────────────────────────────────
-      const parentCats = [...(data.parentCategories || data.categories || []), ...getCustomCategories()];
+      // Categorías: base (Supabase) + personalizadas locales, deduplicadas por id.
+      // En conflicto gana la base hidratada (las ediciones del admin ya viven en
+      // Supabase); las custom solo-locales se agregan al final.
+      const _customById = {};
+      getCustomCategories().forEach(c => { if (c && c.id) _customById[c.id] = c; });
+      const _baseCats = (data.parentCategories || data.categories || []).map(c => {
+        const custom = _customById[c.id];
+        if (custom) delete _customById[c.id];
+        return custom ? { ...custom, ...c } : c;
+      });
+      const parentCats = [..._baseCats, ...Object.values(_customById)];
       window._PARENT_CATS = parentCats;
 
       if (!_activeCatId && parentCats.length) _activeCatId = parentCats[0].id;
