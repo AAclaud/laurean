@@ -4187,11 +4187,14 @@
       if (window.Forza && typeof window.Forza.listDepartments === 'function') {
         try {
           const res = await window.Forza.listDepartments();
-          const arr = Array.isArray(res && (res.data || res.Result || res)) ? (res.data || res.Result || res) : [];
+          const inner = res?.data?.Response?.ObjectValue || res?.data?.Response || res?.data || {};
+          let arr = [];
+          for (const k of ['provinceLists', 'Provinces', 'Departments']) if (Array.isArray(inner?.[k])) { arr = inner[k]; break; }
+          if (!arr.length && Array.isArray(inner)) arr = inner;
           if (arr.length) {
             sel.innerHTML = '<option value="">Selecciona…</option>' + arr.map(d => {
               const code = d.HeaderCode || d.Code || d.code || d.id;
-              const name = d.Name || d.name || d.Description || code;
+              const name = d.ProvinceName || d.Name || d.name || d.Description || code;
               return `<option value="forza:${escapeHtml(String(code))}" data-name="${escapeHtml(String(name))}">${escapeHtml(String(name))}</option>`;
             }).join('');
             sel.dataset.source = 'forza';
@@ -4223,10 +4226,14 @@
         twSel.innerHTML = '<option value="">Cargando…</option>';
         try {
           const res = await window.Forza.listTownships(val.slice(6));
-          const arr = Array.isArray(res && (res.data || res.Result || res)) ? (res.data || res.Result || res) : [];
+          const inner = res?.data?.Response?.ObjectValue || res?.data?.Response || res?.data || {};
+          let arr = [];
+          for (const k of ['TownshipByHeaderCodes', 'townshipLists', 'Townships', 'Municipalities']) if (Array.isArray(inner?.[k])) { arr = inner[k]; break; }
+          if (!arr.length && Array.isArray(inner)) arr = inner;
+          arr.sort((a,b) => String(a.TownshipName||a.Name||'').localeCompare(String(b.TownshipName||b.Name||'')));
           twSel.innerHTML = '<option value="">Selecciona…</option>' + arr.map(t => {
-            const tcode = t.HeaderCode || t.Code || t.code || t.id;
-            const name  = t.Name || t.name || t.Description || tcode;
+            const tcode = t.HeaderCodeTownship || t.HeaderCode || t.Code || t.code || t.id;
+            const name  = t.TownshipName || t.Name || t.name || t.Description || tcode;
             return `<option value="forza:${escapeHtml(String(tcode))}" data-name="${escapeHtml(String(name))}">${escapeHtml(String(name))}</option>`;
           }).join('');
           twSel.disabled = false;
