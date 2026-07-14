@@ -2590,7 +2590,17 @@
             () => (typeof hydrateSiteSettings === 'function' ? hydrateSiteSettings() : null),
           ],
         });
+        // Edición en curso: si el usuario modificó cualquier campo de la vista y aún no
+        // guarda/navega, el live-sync NO repinta (le borraría lo escrito).
+        window._viewDirty = false;
+        document.addEventListener('input', (e) => {
+          const t = e.target;
+          if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') && t.closest && t.closest('.view.active')) {
+            window._viewDirty = true;
+          }
+        }, true);
         document.addEventListener('laurean:live-synced', () => {
+          if (window._viewDirty) return;
           // No pisar al usuario mientras edita: si hay un modal abierto o un
           // input con foco, saltar este re-render (el próximo lo recogerá).
           const modalOpen = Array.prototype.some.call(
@@ -2671,6 +2681,7 @@
     }
 
     function showView(name) {
+      window._viewDirty = false;
       if (SESSION && SESSION.role === 'agente_pedidos' && name !== 'pedidos') return;
       if (name === 'lookbook' && !lookbookCanManage()) {
         alert('Solo un superusuario puede gestionar el Lookbook.');
@@ -3113,6 +3124,7 @@
       LOOKBOOK_SLIDES = slides.map(normalizeLookbookSlide);
       LOOKBOOK_EDIT_INDEX = LOOKBOOK_SLIDES.length ? Math.min(LOOKBOOK_EDIT_INDEX || 0, LOOKBOOK_SLIDES.length - 1) : null;
       renderLookbook();
+      window._viewDirty = false;
       alert('Lookbook guardado.');
     }
 
@@ -3162,6 +3174,7 @@
         instructions: document.getElementById('pay-instructions').value.trim(),
       };
       if (typeof saveSiteSettings === 'function') saveSiteSettings({ payment_config });
+      window._viewDirty = false;
       alert('Métodos de pago guardados.');
     }
 
@@ -3649,6 +3662,7 @@
         });
         savePriceOverride(id, val);
       });
+      window._viewDirty = false;
       alert('Precios guardados correctamente.');
     }
 
@@ -4557,6 +4571,7 @@
       if (typeof saveSiteSettings === 'function') {
         saveSiteSettings({ shipping_rates });
       }
+      window._viewDirty = false;
       alert('Precios de envío guardados.');
     }
 
@@ -4605,6 +4620,7 @@
       if (typeof saveSiteSettings === 'function') {
         saveSiteSettings({ marquee, marquee_size, whatsapp, social_links });
       }
+      window._viewDirty = false;
       alert('Contenido del sitio guardado.');
     }
 
@@ -4644,6 +4660,7 @@
         fecha_revision: val('cfg-biz-fecha-revision'),
       };
       if (typeof saveSiteSettings === 'function') saveSiteSettings({ business });
+      window._viewDirty = false;
       alert('Datos del negocio guardados.');
     }
 
@@ -4656,6 +4673,7 @@
         discount_pin:      document.getElementById('cfg-discount-pin').value.trim(),
         seller_tiers:      collectTiers(),
       });
+      window._viewDirty = false;
       alert('Configuración guardada.');
     }
 
@@ -5986,6 +6004,7 @@
       }
       renderCategories();
       renderCategoriesView();
+      window._viewDirty = false;
       alert('Precios guardados.');
     }
 
@@ -6658,6 +6677,7 @@
         const usdInp   = document.querySelector(`#bpp-rows .bpp-usd[data-bodega="${bodegaId}"]`);
         saveBodegaPrice(_bppProductId, bodegaId, parseFloat(inp.value) || 0, parseFloat(usdInp.value) || 0);
       });
+      window._viewDirty = false;
       alert('Precios por bodega guardados.');
       closeBodegaPricesPanel();
     }
