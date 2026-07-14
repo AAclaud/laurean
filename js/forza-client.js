@@ -13,13 +13,25 @@
 
 (function () {
   async function call(endpoint, params) {
+    const PUBLIC_ENDPOINTS = ['GetListProvincesByHeaderCode', 'GetListTownshipByHeaderCode'];
+    const isPublicEndpoint = PUBLIC_ENDPOINTS.includes(endpoint);
     const sb = window.LAUREAN_DB;
-    if (!sb) return { ok: false, error: 'supabase_not_ready', message: 'Conecta Supabase primero.' };
-    const { data: sessionData } = await sb.auth.getSession();
-    const token = sessionData?.session?.access_token;
-    if (!token) return { ok: false, error: 'not_authenticated', message: 'Inicia sesión.' };
+    const config = window.LAUREAN_CONFIG;
+    let token;
 
-    const url = `${window.LAUREAN_CONFIG.SUPABASE_URL}/functions/v1/forza-proxy`;
+    if (sb) {
+      const { data: sessionData } = await sb.auth.getSession();
+      token = sessionData?.session?.access_token;
+    } else if (!isPublicEndpoint || !config) {
+      return { ok: false, error: 'supabase_not_ready', message: 'Conecta Supabase primero.' };
+    }
+
+    if (!token) {
+      if (!isPublicEndpoint) return { ok: false, error: 'not_authenticated', message: 'Inicia sesión.' };
+      token = config.SUPABASE_ANON;
+    }
+
+    const url = `${config.SUPABASE_URL}/functions/v1/forza-proxy`;
     let resp;
     try {
       resp = await fetch(url, {
@@ -27,7 +39,7 @@
         headers: {
           'Authorization': 'Bearer ' + token,
           'Content-Type':  'application/json',
-          'apikey':        window.LAUREAN_CONFIG.SUPABASE_ANON,
+          'apikey':        config.SUPABASE_ANON,
         },
         body: JSON.stringify({ endpoint, params: params || {} }),
       });
