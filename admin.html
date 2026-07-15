@@ -246,6 +246,17 @@
     .form-input::placeholder { color: rgba(155,142,127,0.5); }
     .form-hint-text { font-size: 11.5px; color: var(--warm-mid); margin-top: 2px; }
 
+    /* Celdas de talla: crecen con el contenido, nunca se montan */
+    .size-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+    .size-cell { flex: 0 1 auto; min-width: 54px; text-align: center; }
+    .size-cell .form-input {
+      width: 100%; min-width: 54px; padding: 6px 4px; text-align: center;
+      field-sizing: content;               /* crece con las cifras (Chrome/Edge) */
+      -moz-appearance: textfield;
+    }
+    .size-cell .form-input::-webkit-outer-spin-button,
+    .size-cell .form-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
     /* ─── Modal ───────────────────────────────────────────────────────────── */
     .modal-overlay {
       position: fixed; inset: 0;
@@ -2599,6 +2610,13 @@
             window._viewDirty = true;
           }
         }, true);
+        // Indicador visible de que el refresco automático está en pausa por edición.
+        const _dirtyPill = document.createElement('div');
+        _dirtyPill.id = 'sync-paused-pill';
+        _dirtyPill.textContent = '⏸ Sincronización en pausa — tienes cambios sin guardar';
+        _dirtyPill.style.cssText = 'display:none;position:fixed;bottom:14px;right:14px;z-index:9999;background:#1a1916;color:#f5efe6;padding:8px 14px;border-radius:20px;font-size:11.5px;letter-spacing:.02em;box-shadow:0 4px 18px rgba(0,0,0,.25);opacity:.92;pointer-events:none';
+        document.body.appendChild(_dirtyPill);
+        setInterval(() => { _dirtyPill.style.display = window._viewDirty ? '' : 'none'; }, 800);
         document.addEventListener('laurean:live-synced', () => {
           if (window._viewDirty) return;
           // No pisar al usuario mientras edita: si hay un modal abierto o un
@@ -4823,6 +4841,9 @@
         subs.map(s => `<option value="${escapeAttr(s.id)}">${escapeHtml(s.name)}</option>`).join('');
       sel.disabled = !parent;
       if (selected != null) sel.value = selected;
+      // Reordenar las celdas de talla de las variantes según la categoría elegida,
+      // preservando las cantidades ya escritas y las tallas personalizadas.
+      if (typeof reorderVariantSizeGrids === 'function') reorderVariantSizeGrids();
     }
 
     function openProductModal(id) {
@@ -5066,6 +5087,21 @@
     // ─── Editor de variantes (modal de producto) ────────────────────────────────
     let _variantSeq = 0;
     const STD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+    // Tallas por edad (niños): m = meses, a = años.
+    const KIDS_SIZES = ['12m', '18m', '24m', '1a', '2a', '4a', '6a', '8a', '10a', '12a', '16a'];
+    // Orden por categoría: Kids muestra edades primero; el resto, letras primero.
+    function sizeSetForCategory(catId) {
+      return String(catId || '') === 'kids' ? [...KIDS_SIZES, ...STD_SIZES] : [...STD_SIZES, ...KIDS_SIZES];
+    }
+    // Celda de talla (compartida): label arriba + input numérico que crece con el contenido.
+    function sizeCellHtml(sz, qty, inputClass, extraAttrs) {
+      return `
+        <div class="size-cell">
+          <label class="form-label" style="font-size:11px;display:block;margin-bottom:2px;white-space:nowrap">${escapeHtml(sz)}</label>
+          <input class="form-input ${inputClass}" data-size="${escapeAttr(sz)}" type="number" min="0" step="1"
+                 value="${qty != null ? qty : ''}" placeholder="0" inputmode="numeric" ${extraAttrs || ''} />
+        </div>`;
+    }
 
     // Opciones de imagen — MISMA lógica que producto.html:
     // si hay galería se usa la galería; si no, la imagen principal.
@@ -5101,13 +5137,12 @@
       // Mapa talla→cantidad de la variante existente
       const sizeQty = {};
       if (Array.isArray(v.sizes)) v.sizes.forEach(s => { sizeQty[s.size] = s.qty; });
-      const sizeCells = STD_SIZES.map(sz => `
-        <div style="text-align:center;flex:0 0 auto;width:72px">
-          <label class="form-label" style="font-size:11px;display:block;margin-bottom:2px">${sz}</label>
-          <input class="form-input mpv-size-qty" data-size="${sz}" type="number" min="0" step="1"
-                 value="${sizeQty[sz] != null ? sizeQty[sz] : ''}" placeholder="0"
-                 style="padding:6px;text-align:center" />
-        </div>`).join('');
+      const catId = (document.getElementById('mp-category') || {}).value || '';
+      const baseSet = sizeSetForCategory(catId);
+      // Conservar tallas personalizadas ya guardadas que no estén en el set
+      const extra = Object.keys(sizeQty).filter(sz => !baseSet.includes(sz));
+      const allSizes = [...baseSet, ...extra];
+      const sizeCells = allSizes.map(sz => sizeCellHtml(sz, sizeQty[sz], 'mpv-size-qty')).join('');
       row.innerHTML = `
         <button type="button" title="Quitar" onclick="document.getElementById('${vid}').remove()"
           style="position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;color:var(--warm-mid);font-size:16px;line-height:1">×</button>
@@ -5127,9 +5162,38 @@
         </div>
         <div class="form-group" style="margin:8px 0 0">
           <label class="form-label" style="font-size:11px">Cantidad por talla</label>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px">${sizeCells}</div>
+          <div class="size-grid">${sizeCells}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+            <input class="form-input mpv-newsize" placeholder="Talla # (ej: 3a, 38, 7-8a)" style="max-width:170px;padding:6px 8px;font-size:12px" />
+            <button type="button" class="btn btn-light" style="padding:6px 10px;font-size:11px" onclick="addCustomSizeCell(this)">+ Agregar talla</button>
+          </div>
         </div>`;
       document.getElementById('mp-variants').appendChild(row);
+    }
+
+    function addCustomSizeCell(btn) {
+      const rowEl = btn.closest('.mp-variant') || btn.closest('.inv-line');
+      const inp = rowEl.querySelector('.mpv-newsize, .inv-newsize');
+      const grid = rowEl.querySelector('.size-grid');
+      const sz = (inp.value || '').trim();
+      if (!sz || !grid) return;
+      if (grid.querySelector(`input[data-size="${CSS.escape(sz)}"]`)) { inp.value = ''; return; }
+      const qtyClass = grid.querySelector('input.inv-line-size-qty') ? 'inv-line-size-qty' : 'mpv-size-qty';
+      const extra = qtyClass === 'inv-line-size-qty' ? 'oninput="syncInvLineQtyFromSizes(this)"' : '';
+      grid.insertAdjacentHTML('beforeend', sizeCellHtml(sz, null, qtyClass, extra));
+      inp.value = '';
+      grid.lastElementChild.querySelector('input').focus();
+    }
+
+    function reorderVariantSizeGrids() {
+      const catId = (document.getElementById('mp-category') || {}).value || '';
+      const baseSet = sizeSetForCategory(catId);
+      document.querySelectorAll('#mp-variants .mp-variant .size-grid').forEach(grid => {
+        const current = {};
+        grid.querySelectorAll('input[data-size]').forEach(inp => { current[inp.dataset.size] = inp.value; });
+        const extra = Object.keys(current).filter(sz => !baseSet.includes(sz));
+        grid.innerHTML = [...baseSet, ...extra].map(sz => sizeCellHtml(sz, current[sz] !== '' ? current[sz] : null, 'mpv-size-qty')).join('');
+      });
     }
 
     // Refresca las opciones de foto en las variantes existentes al cambiar la galería
@@ -7093,13 +7157,12 @@
         </div>
         <div class="form-group" style="margin:8px 0 0">
           <label class="form-label" style="font-size:11px">Cantidad por talla <span style="color:var(--warm-mid)">(opcional — si las llenas, suman la cantidad total)</span></label>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px">
-            ${STD_SIZES.map(sz => `
-              <div style="text-align:center;flex:0 0 auto;width:72px">
-                <label class="form-label" style="font-size:11px;display:block;margin-bottom:2px">${sz}</label>
-                <input class="form-input inv-line-size-qty" data-size="${sz}" type="number" min="0" step="1" placeholder="0"
-                       style="padding:6px;text-align:center" oninput="syncInvLineQtyFromSizes(this)" />
-              </div>`).join('')}
+          <div class="size-grid">
+            ${sizeSetForCategory('').map(sz => sizeCellHtml(sz, null, 'inv-line-size-qty', 'oninput="syncInvLineQtyFromSizes(this)"')).join('')}
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+            <input class="form-input inv-newsize" placeholder="Talla # (ej: 3a, 38)" style="max-width:150px;padding:6px 8px;font-size:12px" />
+            <button type="button" class="btn btn-light" style="padding:6px 10px;font-size:11px" onclick="addCustomSizeCell(this)">+ Agregar talla</button>
           </div>
         </div>`;
       document.getElementById('inv-lines').appendChild(wrap);
