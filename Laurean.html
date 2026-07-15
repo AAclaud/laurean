@@ -4954,11 +4954,11 @@
           `<span style="font-size:12px;color:var(--warm-mid);">${escapeHtml(i.productName)} ×${escapeHtml(i.quantity)}</span>`
         ).join(' · ');
         return `
-          <div class="prod-grid-card" style="position:relative;">
+          <div class="prod-grid-card" onclick="openComboDetail('${jsAttr(combo.id)}')" style="position:relative;cursor:pointer;">
             <div style="position:absolute;top:12px;left:12px;background:var(--warm-dark);color:#fff;font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">COMBO</div>
             <div class="pg-img-wrap brand-img" style="min-height:200px;">
               ${combo.image ? `<img class="brand-img-photo" src="${escapeAttr(combo.image)}" alt="${escapeAttr(combo.name)}" loading="lazy" decoding="async" />` : ''}
-              <button class="pg-add" onclick="addComboToCart('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
+              <button class="pg-add" onclick="event.stopPropagation(); addComboToCart('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
             </div>
             <div class="pg-name">${escapeHtml(combo.name)}</div>
             ${combo.description ? `<div style="font-size:12px;color:var(--warm-mid);margin-top:2px;padding:0 4px;">${escapeHtml(combo.description)}</div>` : ''}
@@ -4991,6 +4991,46 @@
       });
       renderCart();
       showToast('Combo "' + combo.name + '" agregado al carrito');
+    }
+
+    function comboFanImages(combo) {
+      const imgs = [];
+      (combo.items || []).forEach(it => (it.displayImages || []).forEach(u => { if (u && !imgs.includes(u)) imgs.push(u); }));
+      // Respaldo: si el admin no eligió fotos, usar la portada del combo.
+      if (!imgs.length && combo.image) imgs.push(combo.image);
+      return imgs.slice(0, 8);
+    }
+
+    function openComboDetail(comboId) {
+      const combo = getCombos().find(c => c.id === comboId);
+      if (!combo) return;
+      const box = document.getElementById('combo-detail-box');
+      const overlay = document.getElementById('combo-detail-overlay');
+      const fan = comboFanImages(combo);
+      const n = fan.length;
+      const fanHtml = fan.map((url, i) => {
+        const angle = (i - (n - 1) / 2) * 10;
+        const lift  = Math.abs(i - (n - 1) / 2) * 8;
+        return `<div style="width:96px;height:128px;border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(26,25,22,.22);margin:0 -18px;transform:rotate(${angle}deg) translateY(${lift}px);flex:0 0 auto;"><img src="${escapeAttr(url)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" /></div>`;
+      }).join('');
+      const itemsHtml = (combo.items || []).map(i => `<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--piedra,#e8e3dc);"><span>${escapeHtml(i.productName)} ×${escapeHtml(i.quantity)}</span></div>`).join('');
+      box.innerHTML = `
+        <button onclick="closeComboDetail()" aria-label="Cerrar" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;line-height:1;color:var(--carbon,#1a1916)">×</button>
+        <div style="font-family:var(--fd,serif);font-size:24px;font-weight:300;margin-bottom:4px;">${escapeHtml(combo.name)}</div>
+        ${combo.description ? `<div style="font-size:13px;color:var(--warm-mid);margin-bottom:14px;">${escapeHtml(combo.description)}</div>` : ''}
+        <div style="display:flex;align-items:flex-end;justify-content:center;min-height:150px;margin:10px 0 18px;">${fanHtml || '<span style="color:var(--warm-mid);font-size:13px">Sin fotos</span>'}</div>
+        <div style="margin-bottom:16px;">${itemsHtml}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <strong style="font-size:20px;">Q${(combo.totalPrice_gtq||0).toLocaleString()}</strong>
+          <button class="pg-add" style="position:static;opacity:1;transform:none;" onclick="addComboToCart('${jsAttr(combo.id)}'); closeComboDetail();">+ Agregar combo al carrito</button>
+        </div>`;
+      overlay.style.display = 'flex';
+      if (typeof lockBodyScroll === 'function') lockBodyScroll();
+    }
+
+    function closeComboDetail() {
+      const o = document.getElementById('combo-detail-overlay'); if (o) o.style.display = 'none';
+      if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
     }
 
     // ─── Category selectors ────────────────────────────────────────────────────
@@ -5220,5 +5260,8 @@
 
   <script src="js/site-footer.js"></script>
   <script defer src="js/cursor.js"></script>
+  <div class="combo-detail-overlay" id="combo-detail-overlay" onclick="if(event.target===this)closeComboDetail()" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(26,25,22,.55);align-items:center;justify-content:center;padding:20px;">
+    <div id="combo-detail-box" style="background:var(--crema,#f5efe6);max-width:560px;width:100%;max-height:88vh;overflow-y:auto;border-radius:16px;padding:28px;position:relative;"></div>
+  </div>
 </body>
 </html>

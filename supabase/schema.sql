@@ -830,6 +830,35 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
+-- Proveedores y cotizaciones (antes solo localStorage → no viajaban entre
+-- equipos). Datos internos: RLS solo admin. Se guardan como jsonb flexible.
+-- ════════════════════════════════════════════════════════════
+create table if not exists public.suppliers (
+  id         text primary key,
+  data       jsonb not null,
+  updated_at timestamptz default now()
+);
+alter table public.suppliers enable row level security;
+do $$ begin
+  drop policy if exists "admin_all" on public.suppliers;
+  create policy "admin_all" on public.suppliers for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+create table if not exists public.quotes (
+  id         text primary key,
+  data       jsonb not null,
+  status     text,
+  updated_at timestamptz default now()
+);
+alter table public.quotes enable row level security;
+do $$ begin
+  drop policy if exists "admin_all" on public.quotes;
+  create policy "admin_all" on public.quotes for all
+    using (public.is_admin()) with check (public.is_admin());
+end $$;
+
+-- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════

@@ -1635,6 +1635,17 @@ function getProveedores() {
   return JSON.parse(localStorage.getItem('laurean_proveedores') || '[]');
 }
 
+async function syncProveedoresFromSupabase() {
+  const sb = window.LAUREAN_DB; if (!sb) return false;
+  const { data, error } = await sb.from('suppliers').select('id,data');
+  if (error || !data) { console.warn('[supabase] sync suppliers:', error && error.message); return false; }
+  const byId = {}; getProveedores().forEach(p => { if (p && p.id) byId[p.id] = p; });
+  data.forEach(r => { if (r && r.data) byId[r.id] = { ...(byId[r.id]||{}), ...r.data, id: r.id }; });
+  localStorage.setItem('laurean_proveedores', JSON.stringify(Object.values(byId)));
+  return true;
+}
+window.syncProveedoresFromSupabase = syncProveedoresFromSupabase;
+
 function saveProveedor(proveedor) {
   const list = getProveedores();
   if (proveedor.id) {
@@ -1647,13 +1658,19 @@ function saveProveedor(proveedor) {
     list.push(proveedor);
   }
   localStorage.setItem('laurean_proveedores', JSON.stringify(list));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('suppliers').upsert({ id: proveedor.id, data: proveedor, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] supplier upsert:', error.message); });
   return proveedor;
 }
 
 function deleteProveedor(id) {
   const list = getProveedores().filter(p => p.id !== id);
   localStorage.setItem('laurean_proveedores', JSON.stringify(list));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('suppliers').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] supplier delete:', error.message); });
 }
+
+window.getProveedores = getProveedores;
+window.saveProveedor = saveProveedor;
+window.deleteProveedor = deleteProveedor;
 
 // ─── Bodegas ───────────────────────────────────────────────────────────────────
 function getBodegas() {
@@ -1737,6 +1754,17 @@ function getCotizaciones() {
   return JSON.parse(localStorage.getItem('laurean_cotizaciones') || '[]');
 }
 
+async function syncCotizacionesFromSupabase() {
+  const sb = window.LAUREAN_DB; if (!sb) return false;
+  const { data, error } = await sb.from('quotes').select('id,data');
+  if (error || !data) { console.warn('[supabase] sync quotes:', error && error.message); return false; }
+  const byId = {}; getCotizaciones().forEach(c => { if (c && c.id) byId[c.id] = c; });
+  data.forEach(r => { if (r && r.data) byId[r.id] = { ...(byId[r.id]||{}), ...r.data, id: r.id }; });
+  localStorage.setItem('laurean_cotizaciones', JSON.stringify(Object.values(byId)));
+  return true;
+}
+window.syncCotizacionesFromSupabase = syncCotizacionesFromSupabase;
+
 function saveCotizacion(cotizacion) {
   const list = getCotizaciones();
   if (cotizacion.id) {
@@ -1750,13 +1778,18 @@ function saveCotizacion(cotizacion) {
     list.push(cotizacion);
   }
   localStorage.setItem('laurean_cotizaciones', JSON.stringify(list));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('quotes').upsert({ id: cotizacion.id, data: cotizacion, status: cotizacion.status || null, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] quote upsert:', error.message); });
   return cotizacion;
 }
 
 function deleteCotizacion(id) {
   const list = getCotizaciones().filter(c => c.id !== id);
   localStorage.setItem('laurean_cotizaciones', JSON.stringify(list));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('quotes').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] quote delete:', error.message); });
 }
+
+window.getCotizaciones = getCotizaciones;
+window.saveCotizacion = saveCotizacion;
 
 // ─── Combos ────────────────────────────────────────────────────────────────────
 function getCombos() {
