@@ -2602,11 +2602,12 @@
       if (typeof syncCombosFromSupabase === 'function') {
         syncCombosFromSupabase().then(() => { const a = document.querySelector('.view.active'); if (a && a.id === 'view-combos' && typeof renderCombos === 'function') renderCombos(); });
       }
+      if (typeof syncBodegasFromSupabase === 'function') syncBodegasFromSupabase();
       // Sincronización continua: cambios hechos en otros equipos llegan solos
       // (realtime + re-sync al enfocar la pestaña + intervalo de resguardo).
       if (typeof startLiveSync === 'function') {
         startLiveSync({
-          tables: ['products','categories','subcategories','price_overrides','inventory_stock','inventory_items','combos','site_settings','orders','discount_codes','vendor_applications','commissions','customers'],
+          tables: ['products','categories','subcategories','price_overrides','inventory_stock','inventory_items','combos','bodegas','site_settings','orders','discount_codes','vendor_applications','commissions','customers'],
           sync: [
             () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
             () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
@@ -2616,6 +2617,7 @@
             () => (typeof syncCustomersFromSupabase === 'function' ? syncCustomersFromSupabase() : null),
             () => (typeof syncDiscountCodesFromSupabase === 'function' ? syncDiscountCodesFromSupabase() : null),
             () => (typeof syncCombosFromSupabase === 'function' ? syncCombosFromSupabase() : null),
+            () => (typeof syncBodegasFromSupabase === 'function' ? syncBodegasFromSupabase() : null),
             () => (typeof syncVendorAppsFromSupabase === 'function' ? syncVendorAppsFromSupabase() : null),
             () => (typeof syncUsersFromSupabase === 'function' ? syncUsersFromSupabase() : null),
             () => (typeof syncInventoryMovementsFromSupabase === 'function' ? syncInventoryMovementsFromSupabase() : null),
@@ -2762,6 +2764,7 @@
       }
       if (name === 'bodegas')      {
         renderBodegas();
+        if (typeof syncBodegasFromSupabase === 'function') syncBodegasFromSupabase().then(ok => { if (ok) renderBodegas(); });
         syncProductsAndStockFromSupabase().then(() => renderBodegas());
       }
       if (name === 'cotizaciones') renderCotizaciones();
@@ -7597,6 +7600,7 @@
       _comboImage = combo?.image || '';
 
       if (typeof ensureDefaultBodegas === 'function') ensureDefaultBodegas();
+      if (typeof syncBodegasFromSupabase === 'function') syncBodegasFromSupabase();
       const bodegas    = getBodegas();
       const assignedTo = combo?.assignedTo || [];
       document.getElementById('combo-assign-checks').innerHTML = [

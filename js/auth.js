@@ -1676,6 +1676,26 @@ function ensureDefaultBodegas() {
   return list;
 }
 
+async function syncBodegasFromSupabase() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return false;
+  const { data, error } = await sb.from('bodegas').select('id,name,address,city,township_code,active');
+  if (error || !data) { console.warn('[supabase] sync bodegas:', error && error.message); return false; }
+  const byId = {};
+  getBodegas().forEach(b => { if (b && b.id) byId[b.id] = b; });
+  data.forEach(r => {
+    byId[r.id] = {
+      ...(byId[r.id] || {}),
+      id: r.id, name: r.name, address: r.address || null, city: r.city || null,
+      township_code: r.township_code || null, active: r.active !== false,
+    };
+  });
+  localStorage.setItem('laurean_bodegas', JSON.stringify(Object.values(byId)));
+  ensureDefaultBodegas();
+  return true;
+}
+window.syncBodegasFromSupabase = syncBodegasFromSupabase;
+
 function saveBodega(bodega) {
   const list = getBodegas();
   if (bodega.id) {
@@ -1688,6 +1708,14 @@ function saveBodega(bodega) {
     list.push(bodega);
   }
   localStorage.setItem('laurean_bodegas', JSON.stringify(list));
+  if (window.LAUREAN_DB) {
+    window.LAUREAN_DB.from('bodegas').upsert({
+      id: bodega.id, name: bodega.name || '',
+      address: bodega.address || null, city: bodega.city || null,
+      township_code: bodega.township_code || bodega.townshipCode || null,
+      active: bodega.active !== false,
+    }).then(({ error }) => { if (error) console.warn('[supabase] bodega upsert:', error.message); });
+  }
   return bodega;
 }
 
@@ -1696,7 +1724,13 @@ function deleteBodega(id) {
   if (target && target.protected) return;
   const list = getBodegas().filter(b => b.id !== id);
   localStorage.setItem('laurean_bodegas', JSON.stringify(list));
+  if (window.LAUREAN_DB) window.LAUREAN_DB.from('bodegas').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] bodega delete:', error.message); });
 }
+
+window.ensureDefaultBodegas = ensureDefaultBodegas;
+window.getBodegas = getBodegas;
+window.saveBodega = saveBodega;
+window.deleteBodega = deleteBodega;
 
 // ─── Cotizaciones ──────────────────────────────────────────────────────────────
 function getCotizaciones() {
