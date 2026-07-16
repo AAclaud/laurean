@@ -1581,6 +1581,35 @@ function deleteCustomCategory(id) {
   }
 }
 
+async function syncCategoriesFromSupabase() {
+  const sb = window.LAUREAN_DB; if (!sb) return false;
+  const [cats, subs] = await Promise.all([
+    sb.from('categories').select('id,name,image_url,starting_price_gtq,starting_price_usd,display_order').order('display_order'),
+    sb.from('subcategories').select('id,parent_id,name,display_order').order('parent_id'),
+  ]);
+  if (cats.error || subs.error || !cats.data) {
+    console.warn('[supabase] sync categories:', (cats.error || subs.error) && (cats.error || subs.error).message);
+    return false;
+  }
+  window.LAUREAN_DATA = window.LAUREAN_DATA || {};
+  const mappedParents = (cats.data || []).map(c => ({
+    id:                 c.id,
+    name:               c.name,
+    image:              c.image_url || '',
+    starting_price_gtq: c.starting_price_gtq,
+    starting_price_usd: c.starting_price_usd,
+    subcats:            (subs.data || []).filter(s => s.parent_id === c.id).map(s => s.id),
+  }));
+  const mappedSubs = (subs.data || []).map(s => ({ id: s.id, parent: s.parent_id, name: s.name }));
+  // Escribir en AMBAS claves: getBaseCategoriesForAdmin lee parentCategories Y categories
+  // (y `categories`, iterado al final, gana en colisión de id) — por eso las dos con lo fresco.
+  window.LAUREAN_DATA.parentCategories = mappedParents;
+  window.LAUREAN_DATA.categories       = mappedParents;
+  window.LAUREAN_DATA.subcategories    = mappedSubs;
+  return true;
+}
+window.syncCategoriesFromSupabase = syncCategoriesFromSupabase;
+
 // ─── Productos personalizados ──────────────────────────────────────────────────
 function getCustomProducts() {
   return JSON.parse(localStorage.getItem('laurean_custom_products') || '[]');

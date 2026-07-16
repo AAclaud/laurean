@@ -2615,6 +2615,7 @@
           tables: ['products','categories','subcategories','price_overrides','inventory_stock','inventory_items','combos','bodegas','suppliers','quotes','site_settings','orders','discount_codes','vendor_applications','commissions','customers'],
           sync: [
             () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
+            () => (typeof syncCategoriesFromSupabase === 'function' ? syncCategoriesFromSupabase() : null),
             () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
             () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
             () => (typeof syncOrdersFromSupabase === 'function' ? syncOrdersFromSupabase() : null),
@@ -2747,9 +2748,9 @@
       closeSidebar();
 
       if (name === 'dashboard')    renderDashboard();
-      if (name === 'productos')    { renderCategories(); renderProducts(); }
+      if (name === 'productos')    { renderCategories(); renderProducts(); if (typeof syncCategoriesFromSupabase === 'function') syncCategoriesFromSupabase().then(ok => { if (ok) { renderCategories(); renderProducts(); } }); }
       if (name === 'lookbook')     loadLookbookConfig();
-      if (name === 'categorias')   renderCategoriesView();
+      if (name === 'categorias')   { renderCategoriesView(); if (typeof syncCategoriesFromSupabase === 'function') syncCategoriesFromSupabase().then(ok => { if (ok) renderCategoriesView(); }); }
       if (name === 'combos')       { renderCombos(); if (typeof syncCombosFromSupabase === 'function') syncCombosFromSupabase().then(ok => { if (ok) renderCombos(); }); }
       if (name === 'inventario')   {
         renderInventario();
