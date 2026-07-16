@@ -741,8 +741,8 @@ end $$;
 
 -- ════════════════════════════════════════════════════════════
 -- Combos (antes solo localStorage). El combo se guarda como jsonb (objeto anidado)
--- + columna `active` para filtrar. Los usan el admin y el POS (usuarios autenticados),
--- no la tienda pública: lectura para autenticados, escritura solo admin.
+-- + columna `active` para filtrar. Los combos ACTIVOS son públicos (la tienda los
+-- muestra a invitados); los inactivos/borradores solo los ve el admin. Escritura admin.
 -- ════════════════════════════════════════════════════════════
 create table if not exists public.combos (
   id         text primary key,
@@ -753,9 +753,12 @@ create table if not exists public.combos (
 create index if not exists idx_combo_active on public.combos(active);
 alter table public.combos enable row level security;
 do $$ begin
-  drop policy if exists "read_auth"   on public.combos;
-  drop policy if exists "write_admin" on public.combos;
-  create policy "read_auth"   on public.combos for select using (auth.uid() is not null);
+  drop policy if exists "read_auth"          on public.combos;
+  drop policy if exists "read_active_public" on public.combos;
+  drop policy if exists "write_admin"        on public.combos;
+  -- El invitado ve solo combos activos; el admin ve todos (incluye borradores).
+  create policy "read_active_public" on public.combos for select
+    using (active = true or public.is_admin());
   create policy "write_admin" on public.combos for all
     using (public.is_admin()) with check (public.is_admin());
 end $$;

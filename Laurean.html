@@ -5170,6 +5170,19 @@
         }
       });
 
+      // Combos: sync continuo (realtime + focus + intervalo), igual que el catálogo.
+      // La tienda pública ya trae combos ACTIVOS de Supabase, así todo visitante ve
+      // el mismo combo (no solo el equipo que lo creó).
+      if (typeof syncCombosFromSupabase === 'function') {
+        const pullCombos = () => syncCombosFromSupabase().then(ok => { if (ok) renderStoreCombos(); });
+        if (window.LAUREAN_DB) pullCombos();
+        else document.addEventListener('laurean:supabase-ready', (ev) => { if (ev?.detail?.ok) pullCombos(); }, { once: true });
+        if (typeof startLiveSync === 'function') {
+          startLiveSync({ tables: ['combos'], sync: [syncCombosFromSupabase], intervalMs: 90000 });
+          document.addEventListener('laurean:live-synced', renderStoreCombos);
+        }
+      }
+
       // Retorno de QPayPro (Hosted Page): ?pago=ok|cancel|error&order=...
       handlePaymentReturn();
 
