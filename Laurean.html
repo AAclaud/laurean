@@ -4842,8 +4842,8 @@
         if (catNameEl) catNameEl.textContent = 'Combos';
         if (catPriceEl) catPriceEl.textContent = 'Precio especial';
         if (collLink) collLink.style.display = 'none';
-        if (catImgWrap && _storeCombos[0].image) {
-          catImgWrap.innerHTML = `<img class="cat-hero-img active" src="${escapeAttr(_storeCombos[0].image)}"
+        if (catImgWrap) {
+          catImgWrap.innerHTML = `<img class="cat-hero-img active" src="${escapeAttr(_storeCombos[0].image || DEFAULT_COMBO_COVER)}"
             alt="${escapeAttr(_storeCombos[0].name)}"
             onerror="this.style.background='rgba(255,255,255,0.08)';this.removeAttribute('src')" />`;
         }
@@ -4986,6 +4986,9 @@
     }
 
     // Markup de UNA tarjeta de combo (idéntico al que ya usaba renderStoreCombos)
+    // Portada por defecto para combos sin imagen propia (collage Mujer/Hombre/Kids).
+    const DEFAULT_COMBO_COVER = 'images/combos/portada-combos.jpg';
+
     function comboCardHtml(combo) {
       const items    = combo.items || [];
       const totalGtq = combo.totalPrice_gtq || 0;
@@ -4996,7 +4999,7 @@
         <div class="prod-grid-card" onclick="openComboDetail('${jsAttr(combo.id)}')" style="position:relative;cursor:pointer;">
           <div style="position:absolute;top:12px;left:12px;background:var(--warm-dark);color:#fff;font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">COMBO</div>
           <div class="pg-img-wrap brand-img" style="min-height:200px;">
-            ${combo.image ? `<img class="brand-img-photo" src="${escapeAttr(combo.image)}" alt="${escapeAttr(combo.name)}" loading="lazy" decoding="async" />` : ''}
+            <img class="brand-img-photo" src="${escapeAttr(combo.image || DEFAULT_COMBO_COVER)}" alt="${escapeAttr(combo.name)}" loading="lazy" decoding="async" />
             <button class="pg-add" onclick="event.stopPropagation(); addComboToCart('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
           </div>
           <div class="pg-name">${escapeHtml(combo.name)}</div>
@@ -5046,8 +5049,8 @@
     function comboFanImages(combo) {
       const imgs = [];
       (combo.items || []).forEach(it => (it.displayImages || []).forEach(u => { if (u && !imgs.includes(u)) imgs.push(u); }));
-      // Respaldo: si el admin no eligió fotos, usar la portada del combo.
-      if (!imgs.length && combo.image) imgs.push(combo.image);
+      // Respaldo: portada propia del combo o, si no hay, el collage por defecto.
+      if (!imgs.length) imgs.push(combo.image || DEFAULT_COMBO_COVER);
       return imgs.slice(0, 8);
     }
 
