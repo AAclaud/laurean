@@ -2673,7 +2673,11 @@
             vendedores:   () => renderUsers(),
             categorias:   () => renderCategoriesView(),
             combos:       () => renderCombos(),
-            inventario:   () => { if (typeof renderInventarioStock === 'function') renderInventarioStock(); },
+            inventario:   () => {
+              if (typeof renderInventarioStock === 'function') renderInventarioStock();
+              const mayoreoPanel = document.getElementById('inv-panel-mayoreo');
+              if (mayoreoPanel && mayoreoPanel.style.display !== 'none' && typeof renderMayoreo === 'function') renderMayoreo();
+            },
             estadisticas: () => renderEstadisticas(),
           };
           try { if (renders[name]) renders[name](); } catch (e) { /* vista a medio montar */ }

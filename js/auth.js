@@ -1606,6 +1606,22 @@ async function syncCategoriesFromSupabase() {
   window.LAUREAN_DATA.parentCategories = mappedParents;
   window.LAUREAN_DATA.categories       = mappedParents;
   window.LAUREAN_DATA.subcategories    = mappedSubs;
+  // Autoridad de Supabase: quitar copias locales que ya existen en la nube (no deben
+  // ensombrecer a la base fresca). Se conservan solo las locales-only (aún no en Supabase).
+  try {
+    const remoteCatIds = new Set(mappedParents.map(c => c.id));
+    const localCats = JSON.parse(localStorage.getItem('laurean_custom_categories') || '[]');
+    const keepCats = localCats.filter(c => c && c.id && !remoteCatIds.has(c.id));
+    if (keepCats.length !== localCats.length) {
+      localStorage.setItem('laurean_custom_categories', JSON.stringify(keepCats));
+    }
+    const remoteSubIds = new Set(mappedSubs.map(s => s.id));
+    const localSubs = JSON.parse(localStorage.getItem('laurean_custom_subcats') || '[]');
+    const keepSubs = localSubs.filter(s => s && s.id && !remoteSubIds.has(s.id));
+    if (keepSubs.length !== localSubs.length) {
+      localStorage.setItem('laurean_custom_subcats', JSON.stringify(keepSubs));
+    }
+  } catch (e) { /* noop */ }
   return true;
 }
 window.syncCategoriesFromSupabase = syncCategoriesFromSupabase;
