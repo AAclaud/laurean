@@ -146,7 +146,7 @@
       <li><a href="#pos">Cómo opera el POS</a></li>
       <li><a href="#envios">Envíos — integración Forza Delivery</a></li>
       <li><a href="#logos">Logos e imágenes — cómo reemplazarlos</a></li>
-      <li><a href="#deploy">Deploy y dominio (Vercel + GoDaddy)</a></li>
+      <li><a href="#deploy">Deploy y dominio (Cloudflare Pages + GoDaddy)</a></li>
       <li><a href="#config">Configuración global</a></li>
       <li><a href="#estructura">Mapa de estructura del proyecto</a></li>
       <li><a href="#soporte">Mantenimiento y soporte</a></li>
@@ -158,7 +158,7 @@
   <section class="section" id="intro">
     <div class="eyebrow">Capítulo 01</div>
     <h2>Arquitectura <em>real del sistema</em></h2>
-    <p class="intro">Laurean Shop es un sitio estático (HTML, CSS y JavaScript sin framework de frontend) con Supabase como backend en la nube y deploy en Vercel. No requiere instalar nada en el equipo del usuario más allá de un navegador moderno.</p>
+    <p class="intro">Laurean Shop es un sitio estático (HTML, CSS y JavaScript sin framework de frontend) con Supabase como backend en la nube y deploy en Cloudflare Pages. No requiere instalar nada en el equipo del usuario más allá de un navegador moderno.</p>
 
     <h3>Las páginas del sistema</h3>
     <div class="modules">
@@ -178,14 +178,14 @@
     </div>
     <div class="callout green">
       <h4>PWA — acceso sin conexion</h4>
-      <p>El service worker (<code>sw.js</code>) cachea imágenes, CSS y fuentes por 7 días. La tienda puede mostrar el catálogo sin conexion usando el caché local. Requiere HTTPS (Vercel lo provee automáticamente).</p>
+      <p>El service worker (<code>sw.js</code>) cachea imágenes, CSS y fuentes por 7 días. La tienda puede mostrar el catálogo sin conexion usando el caché local. Requiere HTTPS (Cloudflare lo provee automáticamente).</p>
     </div>
 
     <h3>Pila tecnológica</h3>
     <ul>
       <li><b>Frontend:</b> HTML, CSS, JavaScript vanilla. Sin React, Vue ni bundler.</li>
       <li><b>Backend:</b> Supabase (Auth + Postgres + Storage + Edge Functions en Deno).</li>
-      <li><b>Deploy:</b> Vercel. El "build" solo ejecuta <code>node scripts/gen-config.js</code> para generar <code>js/config.js</code> con las variables de entorno.</li>
+      <li><b>Deploy:</b> Cloudflare Pages. El "build" ejecuta <code>node scripts/gen-config.js &amp;&amp; node scripts/gen-sitemap.js</code> para generar <code>js/config.js</code> (variables de entorno) y el sitemap. Cada push a <code>main</code> dispara un deploy automático.</li>
       <li><b>Estilos de marca:</b> <code>css/brand.css</code> define los tokens de color (<code>:root</code> variables) compartidos entre todas las páginas.</li>
       <li><b>Envíos:</b> Forza Delivery, vía Edge Function <code>forza-proxy</code> que firma HMAC y protege la SecretKey.</li>
     </ul>
@@ -407,7 +407,7 @@
 
     <div class="callout green">
       <h4>Como reemplazar un logo</h4>
-      <p>Para cambiar el logo del navbar, guarda tu archivo SVG con el nombre exacto <code>logo-navbar.svg</code> y súbelo a la carpeta <code>images/brand/</code> reemplazando el existente. El sistema lo tomará automáticamente en todas las páginas que lo usan. Mismo principio para <code>favicon.svg</code>, <code>loader.svg</code> y <code>logo-oscuro.svg</code>. Luego hacer commit y push para que el deploy de Vercel tome el nuevo archivo.</p>
+      <p>Para cambiar el logo del navbar, guarda tu archivo SVG con el nombre exacto <code>logo-navbar.svg</code> y súbelo a la carpeta <code>images/brand/</code> reemplazando el existente. El sistema lo tomará automáticamente en todas las páginas que lo usan. Mismo principio para <code>favicon.svg</code>, <code>loader.svg</code> y <code>logo-oscuro.svg</code>. Luego hacer commit y push para que el deploy de Cloudflare tome el nuevo archivo.</p>
     </div>
 
     <h3>Fotos de productos del catálogo</h3>
@@ -422,32 +422,28 @@
   <!-- 8 -->
   <section class="section" id="deploy">
     <div class="eyebrow">Capítulo 08</div>
-    <h2>Deploy y dominio <em>(Vercel + GoDaddy)</em></h2>
-    <p class="intro">El sitio se despliega en Vercel. El único paso de "build" es generar <code>js/config.js</code> con las variables de entorno de Supabase. No hay bundler ni transpilación.</p>
+    <h2>Deploy y dominio <em>(Cloudflare Pages + GoDaddy)</em></h2>
+    <p class="intro">El sitio se despliega en Cloudflare Pages, conectado al repositorio de GitHub: cada push a <code>main</code> dispara un deploy automático. El único paso de "build" genera <code>js/config.js</code> (variables de Supabase) y el sitemap. No hay bundler ni transpilación. La configuración de cabeceras y redirecciones vive en <code>_headers</code> y <code>_redirects</code> (no se usa <code>vercel.json</code>).</p>
 
-    <h3>Pasos de deploy en Vercel</h3>
+    <h3>Pasos de deploy en Cloudflare Pages</h3>
     <ul>
-      <li><b>Paso 1:</b> Conectar el repositorio GitHub a Vercel (Add New → Project → Import).</li>
-      <li><b>Paso 2:</b> Framework Preset: <i>Other</i>. El Build Command y Output ya vienen configurados en <code>vercel.json</code> (<code>node scripts/gen-config.js</code>, output <code>.</code>). No cambiar nada.</li>
-      <li><b>Paso 3:</b> En Project → Settings → Environment Variables agregar para <i>Production</i>:
+      <li><b>Paso 1:</b> En Cloudflare → Workers &amp; Pages → Create → Pages, conectar el repositorio de GitHub.</li>
+      <li><b>Paso 2:</b> Framework preset: <i>None</i>. Build command: <code>node scripts/gen-config.js &amp;&amp; node scripts/gen-sitemap.js</code>. Output directory: <code>/</code>.</li>
+      <li><b>Paso 3:</b> En Settings → Environment variables (Production) agregar:
         <ul>
           <li><code>SUPABASE_URL</code> = la URL de tu proyecto Supabase (<code>https://&lt;proyecto&gt;.supabase.co</code>).</li>
           <li><code>SUPABASE_ANON</code> = la anon/public key (Supabase → Settings → API). Esta clave es pública por diseño; RLS la protege.</li>
+          <li><code>NODE_VERSION</code> = <code>18</code>.</li>
         </ul>
       </li>
-      <li><b>Paso 4:</b> Deploy. La raíz (<code>/</code>) redirige automáticamente a <code>/Laurean.html</code>.</li>
+      <li><b>Paso 4:</b> Guardar y desplegar. Queda en vivo en <code>&lt;proyecto&gt;.pages.dev</code>. La raíz (<code>/</code>) redirige automáticamente a <code>/Laurean.html</code>. De ahí en adelante, cada push a <code>main</code> re-despliega solo.</li>
     </ul>
 
     <h3>Dominio GoDaddy</h3>
     <ul>
-      <li>Vercel → Project → Settings → Domains → agregar tu dominio.</li>
-      <li>En GoDaddy → DNS Management configurar:
-        <ul>
-          <li>Dominio raíz (<code>tudominio.com</code>): registro <b>A</b> apuntando a <code>76.76.21.21</code>.</li>
-          <li>Subdominio (<code>www</code>): registro <b>CNAME</b> apuntando a <code>cname.vercel-dns.com</code>.</li>
-        </ul>
-      </li>
-      <li>Esperar propagación DNS (minutos a ~1 hora). Vercel emite el certificado HTTPS automáticamente.</li>
+      <li>En Cloudflare → Add a site, agregar tu dominio (plan Free) y, en GoDaddy, cambiar los <b>nameservers</b> por los que Cloudflare te indique. Desactivar DNSSEC en GoDaddy si está activo.</li>
+      <li>En el proyecto de Pages → Custom domains, agregar el dominio raíz (<code>tudominio.com</code>) y <code>www</code>; Cloudflare crea los registros DNS automáticamente.</li>
+      <li>Esperar la propagación de nameservers (minutos a algunas horas). Cloudflare emite el certificado HTTPS automáticamente.</li>
     </ul>
 
     <h3>Restringir CORS tras fijar el dominio</h3>
@@ -465,7 +461,7 @@
 
     <div class="callout">
       <h4>Service Worker y HTTPS</h4>
-      <p>El service worker (<code>sw.js</code>) requiere HTTPS para activarse. Vercel lo provee automáticamente. Al publicar una nueva versión de assets, actualizar la variable <code>VERSION</code> en <code>sw.js</code> para invalidar el caché viejo en los navegadores de los usuarios.</p>
+      <p>El service worker (<code>sw.js</code>) requiere HTTPS para activarse. Cloudflare lo provee automáticamente. Al publicar una nueva versión de assets, actualizar la variable <code>VERSION</code> en <code>sw.js</code> para invalidar el caché viejo en los navegadores de los usuarios.</p>
     </div>
   </section>
 
