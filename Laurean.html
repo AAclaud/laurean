@@ -2172,6 +2172,7 @@
     .cat-selector-section[data-cat="accesorios"] { --cat-amb-bg: #531F23; }
     .cat-selector-section[data-cat="ofertas"]    { --cat-amb-bg: #8F3833; }
     .cat-selector-section[data-cat="hombre"]     { --cat-amb-bg: #192729; }
+    .cat-selector-section[data-cat="__combos__"] { --cat-amb-bg: #531F23; }
     .cat-selector-section[data-cat="kids"] {
       --cat-amb-bg: #A5CAD6;
       --cat-amb-fg: #192729;
@@ -4798,20 +4799,30 @@
         return custom ? { ...custom, ...c } : c;
       });
       const parentCats = [..._baseCats, ...Object.values(_customById)];
+      const _storeCombos = getStoreCombos();
       window._PARENT_CATS = parentCats;
 
       if (!_activeCatId && parentCats.length) _activeCatId = parentCats[0].id;
+      if (_activeCatId === '__combos__' && !_storeCombos.length) {
+        _activeCatId = parentCats.length ? parentCats[0].id : null;
+      }
 
       const catTabs    = document.getElementById('cat-tabs');
       const catImgWrap = document.getElementById('cat-hero-img-wrap');
       const catNameEl  = document.getElementById('cat-hero-name');
       const catPriceEl = document.getElementById('cat-hero-price');
+      const collLink   = document.getElementById('cat-hero-collection-link');
+      const subtabsBar = document.querySelector('.cat-subtabs-bar');
 
       if (catTabs) {
         catTabs.innerHTML = parentCats.map((c, i) =>
           `<button class="cat-tab${c.id === _activeCatId ? ' active' : ''}"
                    onclick="selectCategory('${jsAttr(c.id)}')">${escapeHtml(c.name)}</button>`
         ).join('');
+      }
+      if (catTabs && _storeCombos.length) {
+        catTabs.innerHTML += `<button class="cat-tab${_activeCatId === '__combos__' ? ' active' : ''}"
+          onclick="selectCategory('__combos__')">Combos</button>`;
       }
       if (catImgWrap) {
         catImgWrap.innerHTML = parentCats.map(c =>
@@ -4820,6 +4831,39 @@
                 onerror="this.style.background='rgba(255,255,255,0.08)';this.removeAttribute('src')" />`
         ).join('');
       }
+
+      if (subtabsBar) subtabsBar.style.display = '';
+      if (collLink) collLink.style.display = '';
+
+      if (_activeCatId === '__combos__') {
+        const subtabsEl = document.getElementById('cat-subtabs');
+        if (subtabsEl) subtabsEl.innerHTML = '';
+        if (subtabsBar) subtabsBar.style.display = 'none';
+        if (catNameEl) catNameEl.textContent = 'Combos';
+        if (catPriceEl) catPriceEl.textContent = 'Precio especial';
+        if (collLink) collLink.style.display = 'none';
+        if (catImgWrap && _storeCombos[0].image) {
+          catImgWrap.innerHTML = `<img class="cat-hero-img active" src="${escapeAttr(_storeCombos[0].image)}"
+            alt="${escapeAttr(_storeCombos[0].name)}"
+            onerror="this.style.background='rgba(255,255,255,0.08)';this.removeAttribute('src')" />`;
+        }
+        const selSection = document.querySelector('.cat-selector-section');
+        if (selSection) selSection.setAttribute('data-cat', '__combos__');
+        const grid = document.getElementById('products-grid');
+        if (grid) {
+          grid.innerHTML = _storeCombos.map(comboCardHtml).join('');
+          if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+        }
+        const titleEl = document.getElementById('products-section-title');
+        const countEl = document.getElementById('products-count');
+        if (titleEl) titleEl.textContent = 'Combos especiales';
+        if (countEl) countEl.textContent = _storeCombos.length + ' combo' + (_storeCombos.length !== 1 ? 's' : '');
+        const combosSection = document.getElementById('combos-section');
+        if (combosSection) combosSection.style.display = 'none';
+        observeReveal();
+        return;
+      }
+
       const activeCat = parentCats.find(c => c.id === _activeCatId) || parentCats[0];
       if (catNameEl && activeCat)  catNameEl.textContent  = activeCat.name;
       if (catPriceEl && activeCat) catPriceEl.textContent =
@@ -4829,7 +4873,6 @@
       if (selSection && activeCat) selSection.setAttribute('data-cat', activeCat.id);
       // "Ver colección" → página dedicada de la submarca si existe; si no, coleccion.html?cat=
       const SUBMARCA_PAGE = { mujer: 'laurean-women.html', hombre: 'laurean-men.html', kids: 'laurean-kids.html' };
-      const collLink = document.getElementById('cat-hero-collection-link');
       if (collLink && activeCat) collLink.href = SUBMARCA_PAGE[activeCat.id] ||
         ('coleccion.html?cat=' + encodeURIComponent(activeCat.id));
 
@@ -4937,8 +4980,34 @@
     }
 
     // ─── Combos en tienda ─────────────────────────────────────────────────────
+    // Combos activos visibles en la tienda (activos + asignados a store/all)
+    function getStoreCombos() {
+      return getCombos().filter(c => c.active && (c.assignedTo || []).some(a => a === 'all' || a === 'store'));
+    }
+
+    // Markup de UNA tarjeta de combo (idéntico al que ya usaba renderStoreCombos)
+    function comboCardHtml(combo) {
+      const items    = combo.items || [];
+      const totalGtq = combo.totalPrice_gtq || 0;
+      const itemsHtml = items.slice(0, 4).map(i =>
+        `<span style="font-size:12px;color:var(--warm-mid);">${escapeHtml(i.productName)} ×${escapeHtml(i.quantity)}</span>`
+      ).join(' · ');
+      return `
+        <div class="prod-grid-card" onclick="openComboDetail('${jsAttr(combo.id)}')" style="position:relative;cursor:pointer;">
+          <div style="position:absolute;top:12px;left:12px;background:var(--warm-dark);color:#fff;font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">COMBO</div>
+          <div class="pg-img-wrap brand-img" style="min-height:200px;">
+            ${combo.image ? `<img class="brand-img-photo" src="${escapeAttr(combo.image)}" alt="${escapeAttr(combo.name)}" loading="lazy" decoding="async" />` : ''}
+            <button class="pg-add" onclick="event.stopPropagation(); addComboToCart('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
+          </div>
+          <div class="pg-name">${escapeHtml(combo.name)}</div>
+          ${combo.description ? `<div style="font-size:12px;color:var(--warm-mid);margin-top:2px;padding:0 4px;">${escapeHtml(combo.description)}</div>` : ''}
+          <div style="margin-top:6px;padding:0 4px;">${itemsHtml}</div>
+          <div class="pg-price" style="margin-top:8px;">Q${totalGtq.toLocaleString()}</div>
+        </div>`;
+    }
+
     function renderStoreCombos() {
-      const combos  = getCombos().filter(c => c.active && (c.assignedTo || []).some(a => a === 'all' || a === 'store'));
+      const combos  = getStoreCombos();
       const section = document.getElementById('combos-section');
       const grid    = document.getElementById('combos-grid');
       if (!section || !grid) return;
@@ -4946,26 +5015,7 @@
       if (!combos.length) { section.style.display = 'none'; return; }
       section.style.display = '';
 
-      grid.innerHTML = combos.map(combo => {
-        const items    = combo.items || [];
-        const totalGtq = combo.totalPrice_gtq || 0;
-        const totalUsd = combo.totalPrice_usd || 0;
-        const itemsHtml = items.slice(0, 4).map(i =>
-          `<span style="font-size:12px;color:var(--warm-mid);">${escapeHtml(i.productName)} ×${escapeHtml(i.quantity)}</span>`
-        ).join(' · ');
-        return `
-          <div class="prod-grid-card" onclick="openComboDetail('${jsAttr(combo.id)}')" style="position:relative;cursor:pointer;">
-            <div style="position:absolute;top:12px;left:12px;background:var(--warm-dark);color:#fff;font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">COMBO</div>
-            <div class="pg-img-wrap brand-img" style="min-height:200px;">
-              ${combo.image ? `<img class="brand-img-photo" src="${escapeAttr(combo.image)}" alt="${escapeAttr(combo.name)}" loading="lazy" decoding="async" />` : ''}
-              <button class="pg-add" onclick="event.stopPropagation(); addComboToCart('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
-            </div>
-            <div class="pg-name">${escapeHtml(combo.name)}</div>
-            ${combo.description ? `<div style="font-size:12px;color:var(--warm-mid);margin-top:2px;padding:0 4px;">${escapeHtml(combo.description)}</div>` : ''}
-            <div style="margin-top:6px;padding:0 4px;">${itemsHtml}</div>
-            <div class="pg-price" style="margin-top:8px;">Q${totalGtq.toLocaleString()}</div>
-          </div>`;
-      }).join('');
+      grid.innerHTML = combos.map(comboCardHtml).join('');
       if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
     }
 
