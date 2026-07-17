@@ -428,10 +428,10 @@
         <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>
         <span class="fav-badge" id="fav-badge">0</span>
       </button>
-      <a href="Laurean.html?cart=1" class="nav-btn" aria-label="Ver carrito">
+      <button class="nav-btn" aria-label="Ver carrito" onclick="openProductoCart()">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="fav-badge" id="cart-badge" style="display:none">0</span>
-      </a>
+      </button>
       <a href="login.html" class="nav-btn" aria-label="Iniciar sesión">
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </a>
@@ -452,6 +452,17 @@
         <p>Aún no tienes favoritos</p>
       </div>
     </div>
+  </aside>
+
+  <div class="fav-overlay" id="cart-overlay" onclick="closeProductoCart()"></div>
+  <aside class="fav-drawer" id="cart-drawer">
+    <div class="fav-head">
+      <span class="fav-head-title">Carrito</span>
+      <button class="fav-close" onclick="closeProductoCart()" aria-label="Cerrar carrito">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="fav-body" id="cart-body"></div>
   </aside>
 
   <!-- Estado: cargando -->
@@ -1059,6 +1070,59 @@
       updateCartBadge();
     }
 
+    function renderProductoCart() {
+      var body = document.getElementById('cart-body');
+      if (!body) return;
+      var cart = [];
+      try { cart = JSON.parse(localStorage.getItem('laurean_pending_cart') || '[]'); } catch (e) { cart = []; }
+      if (!Array.isArray(cart) || !cart.length) {
+        body.innerHTML = '<div class="fav-empty"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg><p>Tu carrito está vacío</p></div>';
+        return;
+      }
+
+      var subtotal = cart.reduce(function(sum, item) {
+        return sum + (Number(item.price_gtq) || 0) * (Number(item.qty) || 1);
+      }, 0);
+      body.innerHTML = cart.map(function(item) {
+        var image = item.image
+          ? '<img class="fav-item-img" src="' + esc(item.image) + '" alt="' + esc(item.name) + '" onerror="this.style.opacity=.15" />'
+          : '<div class="fav-item-img" aria-hidden="true"></div>';
+        return '<div class="fav-item">'
+          + image
+          + '<div>'
+          + '<div class="fav-item-name">' + esc(item.name) + '</div>'
+          + '<div class="fav-item-meta">Cantidad: ' + (Number(item.qty) || 1) + '</div>'
+          + '<button class="fav-item-action" onclick="removeFromProductoCart(\'' + jsAttr(item.id) + '\')">Quitar</button>'
+          + '</div>'
+          + '<div class="fav-item-price">Q' + (Number(item.price_gtq) || 0).toLocaleString() + '</div>'
+          + '</div>';
+      }).join('')
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 0;font-size:14px"><span>Subtotal</span><strong>Q' + subtotal.toLocaleString() + '</strong></div>'
+        + '<button class="btn-primary" onclick="window.location.href=\'Laurean.html?cart=1\'">Finalizar compra</button>';
+    }
+
+    function openProductoCart() {
+      renderProductoCart();
+      document.getElementById('cart-drawer').classList.add('open');
+      document.getElementById('cart-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProductoCart() {
+      document.getElementById('cart-drawer').classList.remove('open');
+      document.getElementById('cart-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function removeFromProductoCart(id) {
+      var cart = [];
+      try { cart = JSON.parse(localStorage.getItem('laurean_pending_cart') || '[]'); } catch (e) { cart = []; }
+      cart = Array.isArray(cart) ? cart.filter(function(item) { return String(item.id) !== String(id); }) : [];
+      localStorage.setItem('laurean_pending_cart', JSON.stringify(cart));
+      renderProductoCart();
+      updateCartBadge();
+    }
+
     /* ─── Ver precio vendedor ────────────────────────────────────────────────── */
     function handleVerPrecioVendedor() {
       var session = (typeof getSession === 'function') ? getSession() : null;
@@ -1267,7 +1331,7 @@
       addToCart(_product, priceObj);
       showToast(
         esc(_product.name) + ' agregado al carrito'
-          + '<a href="Laurean.html?cart=1">Ver carrito →</a>',
+          + '<a href="#" onclick="openProductoCart();return false">Ver carrito →</a>',
         true
       );
 

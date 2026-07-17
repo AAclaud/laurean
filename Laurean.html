@@ -2170,9 +2170,19 @@
     @media (prefers-reduced-motion: reduce) { .page-splash { display: none !important; } }
     .cat-selector-section[data-cat="mujer"]      { --cat-amb-bg: #531F23; }
     .cat-selector-section[data-cat="accesorios"] { --cat-amb-bg: #531F23; }
-    .cat-selector-section[data-cat="ofertas"]    { --cat-amb-bg: #8F3833; }
+    .cat-selector-section[data-cat="ofertas"] {
+      --cat-amb-bg: #EBC372;
+      --cat-amb-fg: #192729;
+      --cat-amb-fg-soft: rgba(25, 39, 41, 0.62);
+      --cat-amb-fg-faint: rgba(25, 39, 41, 0.18);
+    }
     .cat-selector-section[data-cat="hombre"]     { --cat-amb-bg: #192729; }
-    .cat-selector-section[data-cat="__combos__"] { --cat-amb-bg: #531F23; }
+    .cat-selector-section[data-cat="__combos__"] {
+      --cat-amb-bg: #E6BAC2;
+      --cat-amb-fg: #192729;
+      --cat-amb-fg-soft: rgba(25, 39, 41, 0.62);
+      --cat-amb-fg-faint: rgba(25, 39, 41, 0.18);
+    }
     .cat-selector-section[data-cat="kids"] {
       --cat-amb-bg: #A5CAD6;
       --cat-amb-fg: #192729;
@@ -2694,7 +2704,7 @@
 
       <!-- Category hero selector — parent tabs + image morph -->
       <div class="cat-selector-section">
-        <div class="cat-splash" id="cat-splash" aria-hidden="true"><img id="cat-splash-logo" src="" alt="" /></div>
+        <div class="cat-splash" id="cat-splash" aria-hidden="true"><img id="cat-splash-logo" src="" alt="" onerror="this.style.display='none'" /></div>
         <div class="cat-selector">
           <div class="cat-tabs" id="cat-tabs">
             <!-- Rendered by renderProducts() -->
@@ -3732,7 +3742,13 @@
           document.body.style.left = '';
           document.body.style.right = '';
           document.body.style.overflow = '';
-          if (wasLocked) window.scrollTo(0, _lockScrollY);
+          if (wasLocked) {
+            const _html = document.documentElement;
+            const _prevSB = _html.style.scrollBehavior;
+            _html.style.scrollBehavior = 'auto';   // evita la animación smooth en el restore
+            window.scrollTo(0, _lockScrollY);
+            _html.style.scrollBehavior = _prevSB;
+          }
         }
 
         function openFavorites() {
@@ -5091,6 +5107,8 @@
       mujer:  { logo: 'images/categorias/logo-women.jpg', bg: '#531F23' },
       hombre: { logo: 'images/categorias/logo-men.jpg',   bg: '#1A1A18' },
       kids:   { logo: 'images/categorias/logo-kids.jpg',  bg: '#A4C8D4' },
+      ofertas:      { logo: 'images/categorias/logo-ofertas.jpg', bg: '#EBC372' },
+      '__combos__': { logo: 'images/categorias/logo-combos.jpg',  bg: '#E6BAC2' },
     };
     // Precarga de lockups para que el splash no parpadee la primera vez
     Object.keys(CAT_LOCKUP).forEach(function(k){ var i = new Image(); i.src = CAT_LOCKUP[k].logo; });
@@ -5106,6 +5124,7 @@
 
       if (lock && splash && splashLogo && !reduce) {
         // "Entrando a Laurean <submarca>": el lockup sobre su color aparece antes que la imagen
+        splashLogo.style.display = '';   // reset por si un 404 previo lo ocultó
         splashLogo.src = lock.logo;
         splash.style.background = lock.bg;
         splash.classList.add('show');
