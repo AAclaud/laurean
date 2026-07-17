@@ -1002,13 +1002,14 @@
     .combo-config-row.invalid .combo-size-select { border-color: var(--warm-dark); box-shadow: 0 0 0 2px rgba(83,31,35,.1); }
     .combo-config-error { display: none; color: var(--warm-dark); font-size: 12px; margin-top: 10px; }
     .combo-config-error.show { display: block; }
-    .combo-config-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 20px; }
+    .combo-config-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 20px;
+      position: sticky; bottom: 0; background: var(--crema, #F1ECE8); padding: 14px 0 4px; border-top: 1px solid var(--piedra, #E8E3DC); z-index: 3; }
     .combo-config-total { font-family: var(--fd); font-size: 24px; }
     .combo-config-submit {
-      border: 0; border-radius: 999px; padding: 13px 22px; background: var(--warm-dark);
-      color: var(--crema); font: 600 11px var(--fb); letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+      border: 0; border-radius: 999px; padding: 14px 26px; background: var(--warm-dark, #531F23);
+      color: var(--crema, #F1ECE8); font: 600 11px var(--fb); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; white-space: nowrap;
     }
-    .combo-config-submit:hover { background: var(--warm-mid); }
+    .combo-config-submit:hover { background: var(--warm-mid, #8F3833); }
     @media (max-width: 640px) {
       .combo-config-box { padding: 22px 16px !important; }
       .combo-config-footer { align-items: stretch; flex-direction: column; }
