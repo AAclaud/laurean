@@ -976,6 +976,45 @@
       .vitrina-header { margin-bottom: 48px; }
     }
 
+    /* ─── Configurador de combos ───────────────────────────────────────────── */
+    .combo-config-box { max-width: 980px !important; color: var(--carbon); }
+    .combo-config-title { font-family: var(--fd); font-size: 28px; font-weight: 300; padding-right: 38px; }
+    .combo-config-subtitle { color: var(--warm-mid); font-size: 13px; margin: 5px 0 20px; }
+    .combo-config-table-wrap { overflow-x: auto; border: 1px solid var(--piedra); border-radius: 12px; }
+    .combo-config-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
+    .combo-config-table th {
+      background: rgba(190, 135, 142, 0.18); color: var(--carbon); padding: 12px;
+      text-align: left; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    }
+    .combo-config-table td { padding: 12px; border-top: 1px solid var(--piedra); vertical-align: middle; }
+    .combo-config-product { display: flex; align-items: center; gap: 10px; min-width: 190px; }
+    .combo-config-thumb { width: 48px; height: 58px; border-radius: 8px; object-fit: cover; background: var(--piedra); }
+    .combo-config-preview { width: 54px; height: 66px; border-radius: 8px; object-fit: cover; background: var(--piedra); }
+    .combo-color-options { display: flex; flex-wrap: wrap; gap: 8px; min-width: 86px; }
+    .combo-color-swatch {
+      width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--crema); cursor: pointer;
+      box-shadow: 0 0 0 1px var(--piedra); transition: box-shadow .2s, transform .2s;
+    }
+    .combo-color-swatch:hover { transform: scale(1.08); }
+    .combo-color-swatch.selected { box-shadow: 0 0 0 2px var(--warm-dark), 0 0 0 4px var(--crema); }
+    .combo-size-select { min-width: 112px; padding: 9px 30px 9px 10px; border: 1px solid var(--piedra); border-radius: 8px; background: #fff; color: var(--carbon); }
+    .combo-config-row.invalid td { background: rgba(164, 50, 58, .08); }
+    .combo-config-row.invalid .combo-size-select { border-color: var(--warm-dark); box-shadow: 0 0 0 2px rgba(83,31,35,.1); }
+    .combo-config-error { display: none; color: var(--warm-dark); font-size: 12px; margin-top: 10px; }
+    .combo-config-error.show { display: block; }
+    .combo-config-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 20px; }
+    .combo-config-total { font-family: var(--fd); font-size: 24px; }
+    .combo-config-submit {
+      border: 0; border-radius: 999px; padding: 13px 22px; background: var(--warm-dark);
+      color: var(--crema); font: 600 11px var(--fb); letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+    }
+    .combo-config-submit:hover { background: var(--warm-mid); }
+    @media (max-width: 640px) {
+      .combo-config-box { padding: 22px 16px !important; }
+      .combo-config-footer { align-items: stretch; flex-direction: column; }
+      .combo-config-submit { width: 100%; }
+    }
+
     /* ─── Trust bar ────────────────────────────────────────────────────────── */
     .trust-bar {
       background: var(--piedra);
@@ -4831,14 +4870,15 @@
       const subtabsBar = document.querySelector('.cat-subtabs-bar');
 
       if (catTabs) {
-        catTabs.innerHTML = parentCats.map((c, i) =>
-          `<button class="cat-tab${c.id === _activeCatId ? ' active' : ''}"
-                   onclick="selectCategory('${jsAttr(c.id)}')">${escapeHtml(c.name)}</button>`
-        ).join('');
-      }
-      if (catTabs && _storeCombos.length) {
-        catTabs.innerHTML += `<button class="cat-tab${_activeCatId === '__combos__' ? ' active' : ''}"
+        const _oferta = parentCats.find(c => c.id === 'ofertas');
+        const _rest   = parentCats.filter(c => c.id !== 'ofertas');
+        const _tabHtml = c => `<button class="cat-tab${c.id === _activeCatId ? ' active' : ''}"
+                   onclick="selectCategory('${jsAttr(c.id)}')">${escapeHtml(c.name)}</button>`;
+        let _html = _rest.map(_tabHtml).join('');
+        if (_storeCombos.length) _html += `<button class="cat-tab${_activeCatId === '__combos__' ? ' active' : ''}"
           onclick="selectCategory('__combos__')">Combos</button>`;
+        if (_oferta) _html += _tabHtml(_oferta);
+        catTabs.innerHTML = _html;
       }
       if (catImgWrap) {
         catImgWrap.innerHTML = parentCats.map(c =>
@@ -5016,7 +5056,7 @@
           <div style="position:absolute;top:12px;left:12px;background:var(--warm-dark);color:#fff;font-size:10px;padding:3px 10px;border-radius:20px;letter-spacing:.06em;">COMBO</div>
           <div class="pg-img-wrap brand-img" style="min-height:200px;">
             <img class="brand-img-photo" src="${escapeAttr(combo.image || DEFAULT_COMBO_COVER)}" alt="${escapeAttr(combo.name)}" loading="lazy" decoding="async" />
-            <button class="pg-add" onclick="event.stopPropagation(); addComboToCart('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
+            <button class="pg-add" onclick="event.stopPropagation(); openComboConfig('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
           </div>
           <div class="pg-name">${escapeHtml(combo.name)}</div>
           ${combo.description ? `<div style="font-size:12px;color:var(--warm-mid);margin-top:2px;padding:0 4px;">${escapeHtml(combo.description)}</div>` : ''}
@@ -5062,6 +5102,162 @@
       showToast('Combo "' + combo.name + '" agregado al carrito');
     }
 
+    let _comboConfig = null;
+
+    function comboConfigVariantImage(product, colorIdx) {
+      const variants = Array.isArray(product && product.variants) ? product.variants : [];
+      const variant = variants[colorIdx] || null;
+      const gallery = Array.isArray(product && product.gallery) ? product.gallery : [];
+      return (variant && gallery[variant.imageIndex]) || (product && product.image) || '';
+    }
+
+    function comboConfigSizes(product, colorIdx) {
+      const variants = Array.isArray(product && product.variants) ? product.variants : [];
+      const variant = variants[colorIdx] || null;
+      const normSize = sz => (typeof sz === 'string') ? { size: sz, qty: null } : (sz || {});
+      return variant && Array.isArray(variant.sizes) ? variant.sizes.map(normSize).filter(s => s.size) : [];
+    }
+
+    function openComboConfig(comboId) {
+      const combo = getCombos().find(c => c.id === comboId);
+      if (!combo || !combo.active) return;
+      const units = [];
+      (combo.items || []).forEach((item, itemIndex) => {
+        const product = getProductById(item.productId);
+        const quantity = Math.max(1, Number(item.quantity) || 1);
+        for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
+          units.push({ itemIndex, unitIndex, productId: item.productId, colorIdx: 0, size: '', invalid: false, product });
+        }
+      });
+      _comboConfig = { comboId, combo, units };
+      renderComboConfig();
+      const overlay = document.getElementById('combo-detail-overlay');
+      if (overlay) overlay.style.display = 'flex';
+      if (typeof lockBodyScroll === 'function') lockBodyScroll();
+    }
+
+    function renderComboConfig() {
+      if (!_comboConfig) return;
+      const combo = _comboConfig.combo;
+      const box = document.getElementById('combo-detail-box');
+      if (!box) return;
+      box.className = 'combo-config-box';
+      let unitOffset = 0;
+      const rows = (combo.items || []).map((item, itemIndex) => {
+        const product = getProductById(item.productId) || {};
+        const quantity = Math.max(1, Number(item.quantity) || 1);
+        const productImage = product.image || (item.displayImages || [])[0] || '';
+        let groupRows = '';
+        for (let unitIndex = 0; unitIndex < quantity; unitIndex++) {
+          const stateIndex = unitOffset + unitIndex;
+          const state = _comboConfig.units[stateIndex];
+          const variants = Array.isArray(product.variants) ? product.variants : [];
+          if (state.colorIdx >= variants.length && variants.length) state.colorIdx = 0;
+          const sizes = comboConfigSizes(product, state.colorIdx);
+          const preview = comboConfigVariantImage(product, state.colorIdx) || productImage;
+          const colorHtml = variants.length ? `<div class="combo-color-options">${variants.map((variant, colorIdx) =>
+            `<button type="button" class="combo-color-swatch${colorIdx === state.colorIdx ? ' selected' : ''}"
+              style="background:${escapeAttr(variant.hex || '#d8d2ca')}" title="${escapeAttr(variant.label || 'Color')}"
+              aria-label="${escapeAttr(variant.label || 'Color')}" onclick="selectComboUnitColor(${stateIndex},${colorIdx})"></button>`
+          ).join('')}</div>` : '<span>Único</span>';
+          const sizeHtml = sizes.length ? `<select class="combo-size-select" onchange="selectComboUnitSize(${stateIndex},this.value)">
+              <option value="">Selecciona</option>${sizes.map(sz => {
+                const available = sz.qty == null || Number(sz.qty) > 0;
+                return `<option value="${escapeAttr(sz.size)}"${state.size === String(sz.size) ? ' selected' : ''}${available ? '' : ' disabled'}>${escapeHtml(sz.size)}${available ? '' : ' — agotada'}</option>`;
+              }).join('')}</select>` : '<span>Única</span>';
+          groupRows += `<tr class="combo-config-row${state.invalid ? ' invalid' : ''}" data-combo-unit="${stateIndex}">
+            ${unitIndex === 0 ? `<td rowspan="${quantity}"><div class="combo-config-product">
+              ${productImage ? `<img class="combo-config-thumb" src="${escapeAttr(productImage)}" alt="" />` : '<span class="combo-config-thumb"></span>'}
+              <div><strong>${escapeHtml(item.productName || product.name || 'Prenda')}</strong><br><small>×${quantity} ${quantity === 1 ? 'unidad' : 'unidades'}</small></div>
+            </div></td>` : ''}
+            <td>Unidad ${unitIndex + 1}</td><td>${colorHtml}</td><td>${sizeHtml}</td>
+            <td>${preview ? `<img class="combo-config-preview" src="${escapeAttr(preview)}" alt="Vista previa" />` : '<span>Sin imagen</span>'}</td>
+          </tr>`;
+        }
+        unitOffset += quantity;
+        return groupRows;
+      }).join('');
+      box.innerHTML = `
+        <button onclick="closeComboConfig()" aria-label="Cerrar" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;line-height:1;color:var(--carbon)">×</button>
+        <div class="combo-config-title">${escapeHtml(combo.name)}</div>
+        <div class="combo-config-subtitle">Selecciona talla y color para cada prenda</div>
+        <div class="combo-config-table-wrap"><table class="combo-config-table">
+          <thead><tr><th>Prenda</th><th>Unidad</th><th>Color</th><th>Talla</th><th>Vista previa</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+        <div class="combo-config-error${_comboConfig.hasError ? ' show' : ''}">Selecciona una talla disponible en las filas resaltadas.</div>
+        <div class="combo-config-footer">
+          <div><small>Total del combo</small><div class="combo-config-total">Q${Number(combo.totalPrice_gtq || 0).toLocaleString()}</div></div>
+          <button class="combo-config-submit" onclick="addConfiguredComboToCart()">Agregar combo al carrito →</button>
+        </div>`;
+    }
+
+    function selectComboUnitColor(stateIndex, colorIdx) {
+      if (!_comboConfig || !_comboConfig.units[stateIndex]) return;
+      const state = _comboConfig.units[stateIndex];
+      state.colorIdx = colorIdx;
+      state.size = '';
+      state.invalid = false;
+      _comboConfig.hasError = false;
+      renderComboConfig();
+    }
+
+    function selectComboUnitSize(stateIndex, size) {
+      if (!_comboConfig || !_comboConfig.units[stateIndex]) return;
+      _comboConfig.units[stateIndex].size = size;
+      _comboConfig.units[stateIndex].invalid = false;
+      const row = document.querySelector(`[data-combo-unit="${stateIndex}"]`);
+      if (row) row.classList.remove('invalid');
+    }
+
+    function addConfiguredComboToCart() {
+      if (!_comboConfig) return;
+      const combo = _comboConfig.combo;
+      let invalid = false;
+      _comboConfig.units.forEach(state => {
+        const product = getProductById(state.productId);
+        const availableSizes = comboConfigSizes(product, state.colorIdx).filter(sz => sz.qty == null || Number(sz.qty) > 0);
+        state.invalid = availableSizes.length > 0 && !state.size;
+        if (state.invalid) invalid = true;
+      });
+      if (invalid) {
+        _comboConfig.hasError = true;
+        renderComboConfig();
+        const firstInvalid = document.querySelector('.combo-config-row.invalid');
+        if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      _comboConfig.units.forEach(state => {
+        const item = combo.items[state.itemIndex];
+        const product = getProductById(state.productId) || {};
+        const variants = Array.isArray(product.variants) ? product.variants : [];
+        const variant = variants[state.colorIdx] || null;
+        const color = variant ? (variant.label || '') : '';
+        const details = [color, state.size].filter(Boolean).join(' · ');
+        cart.push({
+          id: state.productId + '_combo_' + combo.id + '_' + state.itemIndex + '_' + state.unitIndex,
+          name: item.productName + ' (Combo: ' + combo.name + ')' + (details ? ' · ' + details : ''),
+          price_gtq: item.comboPrice_gtq,
+          price_usd: item.comboPrice_usd,
+          qty: 1,
+          color,
+          size: state.size || '',
+          _comboId: combo.id,
+          _comboName: combo.name,
+        });
+      });
+      renderCart();
+      showToast('Combo "' + combo.name + '" agregado al carrito');
+      closeComboConfig();
+    }
+
+    function closeComboConfig() {
+      _comboConfig = null;
+      const box = document.getElementById('combo-detail-box');
+      if (box) box.className = '';
+      closeComboDetail();
+    }
+
     function comboFanImages(combo) {
       const imgs = [];
       (combo.items || []).forEach(it => (it.displayImages || []).forEach(u => { if (u && !imgs.includes(u)) imgs.push(u); }));
@@ -5091,7 +5287,7 @@
         <div style="margin-bottom:16px;">${itemsHtml}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <strong style="font-size:20px;">Q${(combo.totalPrice_gtq||0).toLocaleString()}</strong>
-          <button class="pg-add" style="position:static;opacity:1;transform:none;" onclick="addComboToCart('${jsAttr(combo.id)}'); closeComboDetail();">+ Agregar combo al carrito</button>
+          <button class="pg-add" style="position:static;opacity:1;transform:none;" onclick="openComboConfig('${jsAttr(combo.id)}')">+ Agregar combo al carrito</button>
         </div>`;
       overlay.style.display = 'flex';
       if (typeof lockBodyScroll === 'function') lockBodyScroll();
@@ -5099,6 +5295,8 @@
 
     function closeComboDetail() {
       const o = document.getElementById('combo-detail-overlay'); if (o) o.style.display = 'none';
+      _comboConfig = null;
+      const box = document.getElementById('combo-detail-box'); if (box) box.className = '';
       if (typeof unlockBodyScroll === 'function') unlockBodyScroll();
     }
 
