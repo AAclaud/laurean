@@ -3311,10 +3311,18 @@
     }
 
     function originBadge(o) {
-      if (isPosOrder(o)) {
-        return `<span class="badge badge-pos">POS${o.bodegaName ? ' · ' + escapeHtml(o.bodegaName) : ''}</span>`;
+      let bodega = o.bodegaName || o.bodega_name || '';
+      if (!bodega) {
+        const bid = o.bodegaId || o.bodega_id;
+        if (bid && typeof getBodegas === 'function') {
+          const b = getBodegas().find(x => x.id === bid);
+          if (b) bodega = b.name;
+        }
       }
-      return `<span class="badge badge-tienda">Tienda</span>`;
+      if (isPosOrder(o)) {
+        return `<span class="badge badge-pos">POS${bodega ? ' · ' + escapeHtml(bodega) : ''}</span>`;
+      }
+      return `<span class="badge badge-tienda">Tienda${bodega ? ' · ' + escapeHtml(bodega) : ''}</span>`;
     }
 
     // ─── Cumpleaños de equipo + regalo ──────────────────────────────────────────
@@ -4288,13 +4296,28 @@
         ${o.notes ? `<div style="grid-column:1/-1"><div class="od-label">Notas</div><div>${escapeHtml(o.notes)}</div></div>` : ''}
         ${o.referral_code ? `<div><div class="od-label">Código referido</div><div><span class="code-chip">${escapeHtml(o.referral_code)}</span></div></div>` : ''}
       `;
-      document.getElementById('od-items').innerHTML = (o.items||[]).map(item => `
-        <tr style="border-bottom:1px solid rgba(232,227,220,0.3)">
-          <td style="padding:7px 0">${escapeHtml(item.name || item.id)}</td>
-          <td style="padding:7px 8px;text-align:right">${item.qty}</td>
-          <td style="padding:7px 8px;text-align:right">${fmtQ(item.price_gtq || 0)}</td>
-          <td style="padding:7px 0;text-align:right">${fmtQ((item.price_gtq||0)*(item.qty||1))}</td>
-        </tr>`).join('');
+      let itemsHtml = '';
+      let previousComboId = null;
+      for (const item of (o.items || [])) {
+        if (item._comboId && item._comboId !== previousComboId) {
+          itemsHtml += `
+            <tr style="background:rgba(143,56,51,0.06);font-weight:700">
+              <td colspan="4" style="padding:7px 8px">Combo · ${escapeHtml(item._comboName || '')}</td>
+            </tr>`;
+        }
+        const itemName = item._comboId
+          ? String(item.name || '').replace(/\s*\(Combo:[^)]*\)/, '')
+          : (item.name || item.id);
+        itemsHtml += `
+          <tr style="border-bottom:1px solid rgba(232,227,220,0.3)">
+            <td style="padding:7px 0${item._comboId ? ';padding-left:12px' : ''}">${escapeHtml(itemName)}</td>
+            <td style="padding:7px 8px;text-align:right">${item.qty}</td>
+            <td style="padding:7px 8px;text-align:right">${fmtQ(item.price_gtq || 0)}</td>
+            <td style="padding:7px 0;text-align:right">${fmtQ((item.price_gtq||0)*(item.qty||1))}</td>
+          </tr>`;
+        previousComboId = item._comboId || null;
+      }
+      document.getElementById('od-items').innerHTML = itemsHtml;
       let totalsHtml = `<div class="od-totals-row"><span>Subtotal</span><span>${fmtQ(o.subtotal_gtq||0)}</span></div>`;
       if (o.referral_discount_gtq) totalsHtml += `<div class="od-totals-row" style="color:#388E3C"><span>Descuento referido</span><span>−${fmtQ(o.referral_discount_gtq)}</span></div>`;
       if (o.manual_discount_gtq)   totalsHtml += `<div class="od-totals-row" style="color:#388E3C"><span>Descuento manual (${o.manual_discount_pct||0}%)</span><span>−${fmtQ(o.manual_discount_gtq)}</span></div>`;

@@ -949,6 +949,8 @@ function createOrder(data) {
       id: it.id, name: it.name, qty: it.qty,
       price_gtq: it.price_gtq, image: it.image,
       cost_price: it.cost_price ?? 0,
+      _comboId: it._comboId || null, _comboName: it._comboName || null,
+      color: it.color || null, size: it.size || null,
     }));
     const payload = {
       local_id:                order.id,

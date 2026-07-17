@@ -1006,10 +1006,12 @@
       position: sticky; bottom: 0; background: var(--crema, #F1ECE8); padding: 14px 0 4px; border-top: 1px solid var(--piedra, #E8E3DC); z-index: 3; }
     .combo-config-total { font-family: var(--fd); font-size: 24px; }
     .combo-config-submit {
-      border: 0; border-radius: 999px; padding: 14px 26px; background: var(--warm-dark, #531F23);
-      color: var(--crema, #F1ECE8); font: 600 11px var(--fb); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      border: 0; border-radius: 6px; padding: 16px 30px; background: var(--carbon, #192729);
+      color: #fff; font: 600 12.5px var(--fb); letter-spacing: .14em; text-transform: uppercase; cursor: pointer; white-space: nowrap;
+      transition: background .22s;
     }
-    .combo-config-submit:hover { background: var(--warm-mid, #8F3833); }
+    .combo-config-submit:hover { background: #0f1a1b; }
     @media (max-width: 640px) {
       .combo-config-box { padding: 22px 16px !important; }
       .combo-config-footer { align-items: stretch; flex-direction: column; }
@@ -4392,7 +4394,8 @@
         customerCity:              townshipName,
         customer_township_code:    townshipCode,
         notes,
-        items:                cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price_gtq: i.price_gtq, cost_price: i.cost_price || 0 })),
+        items:                cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price_gtq: i.price_gtq, cost_price: i.cost_price || 0,
+                                _comboId: i._comboId || null, _comboName: i._comboName || null, color: i.color || null, size: i.size || null })),
         subtotal_gtq:         subtotal,
         discount_gtq:         refDisc,
         manual_discount_pct:  manualDiscountPct,
@@ -4404,6 +4407,8 @@
         total_gtq:            total,
         referral_code:        appliedReferral ? appliedReferral.code : null,
         origin:               'store',
+        bodegaId:             'bdg_website',
+        bodegaName:           'Website',
         pay_method:           payMethod,
       };
 
