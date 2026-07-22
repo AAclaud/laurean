@@ -155,6 +155,21 @@
     .stat-value { font-family: var(--fd); font-size: 36px; font-weight: 300; color: var(--carbon); line-height: 1; }
     .stat-sub   { font-size: 12px; color: var(--warm-mid); margin-top: 4px; }
 
+    .dash-alerts { display:flex; flex-wrap:wrap; gap:12px; margin:18px 0 26px; }
+    .dash-alert {
+      display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:10px;
+      background:#fff; border:1px solid var(--piedra); cursor:pointer; min-width:170px;
+      transition:transform .12s, box-shadow .12s, border-color .12s;
+    }
+    .dash-alert:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(25,39,41,.08); }
+    .dash-alert.is-alert { border-color:#E0B34D; background:linear-gradient(0deg, rgba(212,160,23,.06), rgba(212,160,23,.06)), #fff; }
+    .dash-alert .da-count { font-family:var(--fd,serif); font-size:26px; font-weight:600; line-height:1; color:var(--carbon); min-width:30px; text-align:center; }
+    .dash-alert.is-alert .da-count { color:#9A6F00; }
+    .dash-alert .da-meta { display:flex; flex-direction:column; gap:2px; }
+    .dash-alert .da-label { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--warm-mid); }
+    .dash-alert .da-sub { font-size:11px; color:var(--warm-mid); }
+    .dash-alerts-ok { display:flex; align-items:center; gap:8px; padding:12px 16px; border-radius:10px; background:rgba(56,142,60,.08); color:#2E7D32; font-size:13px; }
+
     /* ─── Tablas ──────────────────────────────────────────────────────────── */
     .table-wrap { background: white; border: 1px solid var(--piedra); overflow-x: auto; }
     .table-head {
@@ -752,6 +767,7 @@
       <!-- ── DASHBOARD ──────────────────────────────────────────────────────── -->
       <div id="view-dashboard" class="view active">
         <h1 class="view-title">Bienvenido, <em id="dash-name">—</em></h1>
+        <div id="dash-alerts" class="dash-alerts"></div>
         <div class="stats-grid" id="stats-grid"></div>
         <div id="birthdays-widget" style="margin:0 0 24px;"></div>
         <div class="table-wrap">
@@ -3463,8 +3479,32 @@
       renderBirthdaysWidget();
     }
 
+    function renderDashAlerts() {
+      const el = document.getElementById('dash-alerts');
+      if (!el) return;
+      const pend = syncedPendingCount();
+      const nuevos = (typeof getNewOrderCount === 'function') ? getNewOrderCount() : 0;
+      const low  = (typeof getLowStockItems === 'function') ? getLowStockItems().length : 0;
+      const apps = getVendorApplications().filter(a => a.status === 'pendiente').length;
+      const com  = getCommissions().filter(c => c.status === 'pendiente').length;
+      const cards = [
+        { n: pend, label:'Pedidos pendientes', sub: nuevos>0 ? (nuevos+' nuevos') : 'Por atender', view:'pedidos' },
+        { n: low,  label:'Inventario bajo',    sub:'Bajo mínimo / agotado',      view:'inventario' },
+        { n: apps, label:'Solicitudes nuevas', sub:'Vendedoras por revisar',     view:'solicitudes' },
+        { n: com,  label:'Comisiones',         sub:'Por liquidar',               view:'comisiones' },
+      ];
+      const anyAlert = cards.some(c => c.n > 0);
+      if (!anyAlert) { el.innerHTML = `<div class="dash-alerts-ok">✓ Todo al día — sin alertas pendientes</div>`; return; }
+      el.innerHTML = cards.map(c => `
+        <div class="dash-alert${c.n>0?' is-alert':''}" onclick="showView('${c.view}')">
+          <div class="da-count">${c.n}</div>
+          <div class="da-meta"><span class="da-label">${escapeHtml(c.label)}</span><span class="da-sub">${escapeHtml(c.sub)}</span></div>
+        </div>`).join('');
+    }
+
     function renderDashboard() {
       renderBirthdaysWidget();
+      renderDashAlerts();
       const orders      = getOrders();
       const commissions = getCommissions();
       const users       = getUsers();
@@ -3479,7 +3519,7 @@
         <div class="stat-card${newOrders > 0 ? ' has-new' : ''}" style="cursor:pointer" onclick="showView('pedidos')">
           <div class="stat-label">Total pedidos</div>
           <div class="stat-value">${orders.length}</div>
-          <div class="stat-sub">${orders.filter(o => o.status === 'pendiente').length} pendientes${newOrders > 0 ? ` · <strong style="color:#9A6F00">${newOrders} nuevos</strong>` : ''}</div>
+          <div class="stat-sub">${syncedPendingCount()} pendientes${newOrders > 0 ? ` · <strong style="color:#9A6F00">${newOrders} nuevos</strong>` : ''}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Ingresos totales</div>
@@ -4475,8 +4515,13 @@
       setInterval(() => { checkNewOrders(); checkLowStockAlert(); }, 8000);
     }
 
+    // Pedidos confirmados en Supabase (tienen supabase_id). Base para conteos que deben
+    // coincidir en todas las PCs (los solo-locales que no subieron no cuentan).
+    function getSyncedOrders() { return getOrders().filter(o => o && o.supabase_id); }
+    function syncedPendingCount() { return getSyncedOrders().filter(o => o.status === 'pendiente').length; }
+
     function checkNewOrders() {
-      const n   = getOrders().filter(o => o && o.status === 'pendiente').length;
+      const n   = syncedPendingCount();
       const dot = document.getElementById('sb-orders-pulse');
       if (dot) { dot.style.display = n > 0 ? '' : 'none'; dot.textContent = String(n); }
     }
