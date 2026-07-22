@@ -2158,7 +2158,7 @@
         <div class="form-group">
           <label class="form-label">Bodegas asignadas</label>
           <div id="m-bodega-checks" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div>
-          <span class="form-hint-text">El usuario solo operará en estas bodegas.</span>
+          <span class="form-hint-text">Bodegas que este usuario podrá ver y operar en el POS.</span>
         </div>
       </div>
       <div class="form-row single" id="commission-group" style="display:none">
@@ -2170,7 +2170,7 @@
       </div>
       <div class="form-row single">
         <div class="form-group" style="flex-direction:row;align-items:center;gap:10px">
-          <input type="checkbox" id="m-can-pos" style="width:16px;height:16px;cursor:pointer" />
+          <input type="checkbox" id="m-can-pos" style="width:16px;height:16px;cursor:pointer" onchange="onPosAccessToggle()" />
           <label class="form-label" for="m-can-pos" style="margin:0;cursor:pointer">Puede acceder al POS</label>
         </div>
       </div>
@@ -3943,7 +3943,7 @@
         renderViewsChecklist(_rv ? u.allowedViews : []);
         document.getElementById('m-views-checks').style.display = _rv ? 'flex' : 'none';
         onRoleChange(true);
-        if (u.role === 'bodega') populateBodegaChecks(u.bodegaIds || []);
+        updateBodegasGroupVisibility(u.bodegaIds || []);
       } else {
         title.textContent = 'Nuevo usuario';
         document.getElementById('modal-user-id').value = '';
@@ -3963,15 +3963,28 @@
     function onRoleChange(keepPosValue) {
       const role = document.getElementById('m-role').value;
       document.getElementById('code-group').style.display    = (role === 'vendedor') ? '' : 'none';
-      document.getElementById('bodegas-group').style.display = (role === 'bodega') ? '' : 'none';
       document.getElementById('commission-group').style.display = (role === 'vendedor') ? '' : 'none';
       if (!keepPosValue) {
         const defaults = { vendedor: true, bodega: true, admin: true, superuser: true, agente_pedidos: false };
         document.getElementById('m-can-pos').checked = defaults[role] ?? false;
       }
-      if (role === 'bodega') populateBodegaChecks([]);
+      updateBodegasGroupVisibility();
       document.getElementById('views-group').style.display = (role === 'admin') ? '' : 'none';
     }
+
+    function updateBodegasGroupVisibility(preselect) {
+      const role   = document.getElementById('m-role').value;
+      const canPos = document.getElementById('m-can-pos').checked;
+      const show   = (role === 'bodega') || canPos;
+      document.getElementById('bodegas-group').style.display = show ? '' : 'none';
+      const wrap = document.getElementById('m-bodega-checks');
+      if (show) {
+        if (preselect || !wrap.children.length) populateBodegaChecks(preselect || []);
+      } else {
+        wrap.innerHTML = '';   // sin acceso al POS → sin bodegas asignadas (para que saveUser no las lea)
+      }
+    }
+    function onPosAccessToggle() { updateBodegasGroupVisibility(); }
 
     function populateBodegaChecks(selectedIds) {
       const bodegas = getBodegas();
@@ -6702,7 +6715,7 @@
 
     function closeBodegaModal() { document.getElementById('bodega-modal').style.display = 'none'; }
 
-    function saveBodegaForm() {
+    async function saveBodegaForm() {
       const data = {
         id:        document.getElementById('bodega-id').value || undefined,
         name:      document.getElementById('bodega-name').value.trim(),
@@ -6712,7 +6725,12 @@
         notes:     document.getElementById('bodega-notes').value.trim(),
       };
       if (!data.name) { alert('El nombre es requerido.'); return; }
-      saveBodega(data);
+      const res = await saveBodega(data);
+      if (res && res.ok === false) {
+        alert('La bodega se guardó localmente, pero NO se pudo guardar en Supabase: ' + res.error + '\nRevisa tu sesión e inténtalo de nuevo.');
+        renderBodegas();
+        return;
+      }
       closeBodegaModal();
       renderBodegas();
     }

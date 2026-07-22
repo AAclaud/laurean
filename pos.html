@@ -783,7 +783,7 @@
         <div class="pos-cat-filter">
           <button class="pos-filter-btn active" onclick="filterCat('all')" id="pf-all">Todo</button>
           <div id="pos-cat-btns"></div>
-          <button class="pos-filter-btn" onclick="filterCat('__combos__')" id="pf-combos" style="background:var(--warm-dark);color:#fff;border-color:var(--warm-dark);">Combos</button>
+          <button class="pos-filter-btn" onclick="filterCat('__combos__')" id="pf-combos" style="background:var(--warm-dark, #531F23);color:#fff;border-color:var(--warm-dark, #531F23);">Combos</button>
           <input class="pos-cat-search" id="pos-search" placeholder="Buscar producto…" oninput="renderPosProducts()" />
         </div>
         <div class="pos-product-grid" id="pos-product-grid"></div>
@@ -1117,7 +1117,7 @@
       if (!c.active) return false;
       if (isAdmin) return true;
       const assigned = c.assignedTo || [];
-      return assigned.includes('all') || assigned.includes('store');
+      return assigned.includes('all') || assigned.includes('store') || assigned.includes('pos');
     });
   }
 
@@ -1132,8 +1132,8 @@
       }
       grid.innerHTML = combos.map(c => `
         <div class="pos-prod-card" onclick="posAddComboToCart('${jsAttr(c.id)}')"
-             style="position:relative;border:2px solid var(--warm-dark);">
-          <div style="position:absolute;top:6px;left:6px;background:var(--warm-dark);color:#fff;font-size:9px;padding:2px 7px;border-radius:10px;">COMBO</div>
+             style="position:relative;border:2px solid var(--warm-dark, #531F23);">
+          <div style="position:absolute;top:6px;left:6px;background:var(--warm-dark, #531F23);color:#fff;font-size:9px;padding:2px 7px;border-radius:10px;">COMBO</div>
           <div class="pos-prod-img brand-img">${c.image ? `<img class="brand-img-photo" src="${escapeAttr(c.image)}" alt="${escapeAttr(c.name)}" loading="lazy" />` : ''}</div>
           <div class="pos-prod-name">${escapeHtml(c.name)}</div>
           <div style="font-size:10px;color:var(--warm-mid);padding:0 8px 4px;">${(c.items||[]).length} productos</div>

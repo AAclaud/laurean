@@ -1772,7 +1772,7 @@ async function syncBodegasFromSupabase() {
 }
 window.syncBodegasFromSupabase = syncBodegasFromSupabase;
 
-function saveBodega(bodega) {
+async function saveBodega(bodega) {
   const list = getBodegas();
   if (bodega.id) {
     const idx = list.findIndex(b => b.id === bodega.id);
@@ -1785,14 +1785,15 @@ function saveBodega(bodega) {
   }
   localStorage.setItem('laurean_bodegas', JSON.stringify(list));
   if (window.LAUREAN_DB) {
-    window.LAUREAN_DB.from('bodegas').upsert({
+    const { error } = await window.LAUREAN_DB.from('bodegas').upsert({
       id: bodega.id, name: bodega.name || '',
       address: bodega.address || null, city: bodega.city || null,
       township_code: bodega.township_code || bodega.townshipCode || null,
       active: bodega.active !== false,
-    }).then(({ error }) => { if (error) console.warn('[supabase] bodega upsert:', error.message); });
+    });
+    if (error) { console.warn('[supabase] bodega upsert:', error.message); return { ok: false, error: error.message, bodega }; }
   }
-  return bodega;
+  return { ok: true, bodega };
 }
 
 function deleteBodega(id) {
