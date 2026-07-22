@@ -563,6 +563,14 @@ function getProductPrice(productId, baseGtq, baseUsd, role, bodegaId = null) {
   const settings  = getSettings();
   const ov        = overrides[productId];
 
+  // Si se indica una bodega y hay precio específico para ella, ese precio manda,
+  // sin importar el rol (el POS con una bodega activa cobra el precio de esa bodega).
+  if (bodegaId && ov && ov.bodega_prices && ov.bodega_prices[bodegaId] &&
+      ov.bodega_prices[bodegaId].gtq != null) {
+    const bp = ov.bodega_prices[bodegaId];
+    return { gtq: bp.gtq, usd: bp.usd };
+  }
+
   if (role === 'bodega') {
     if (bodegaId && ov && ov.bodega_prices && ov.bodega_prices[bodegaId]) {
       const bp = ov.bodega_prices[bodegaId];

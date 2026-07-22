@@ -2452,7 +2452,7 @@
   <!-- ── MODAL SUBCATEGORÍA ──────────────────────────────────────────────────── -->
   <div class="modal-overlay" id="modal-subcategory-overlay" onclick="closeSubcategoryModalOutside(event)">
     <div class="modal">
-      <h2 class="modal-title">Nueva subcategoría</h2>
+      <h2 class="modal-title" id="modal-subcategory-title">Nueva subcategoría</h2>
       <div class="modal-error" id="modal-subcategory-error"></div>
       <div class="form-row single">
         <div class="form-group">
@@ -5599,15 +5599,25 @@
       window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
     }
 
-    function openSubcategoryModal() {
+    function openSubcategoryModal(id) {
       const overlay = document.getElementById('modal-subcategory-overlay');
       const errEl = document.getElementById('modal-subcategory-error');
       if (errEl) errEl.classList.remove('show');
       const parentSel = document.getElementById('msc-parent');
       parentSel.innerHTML = '<option value="">Selecciona categoría…</option>' +
         getAllCategoriesForSelect().map(c => `<option value="${escapeAttr(c.id)}">${escapeHtml(c.name)}</option>`).join('');
-      document.getElementById('msc-name').value = '';
-      document.getElementById('msc-id').value = '';
+      const titleEl = document.getElementById('modal-subcategory-title');
+      if (id) {
+        const sc = getNormalizedSubcatsForSelect().find(s => s.id === id);
+        if (titleEl) titleEl.textContent = 'Editar subcategoría';
+        document.getElementById('msc-parent').value = sc ? (sc.parent || sc.parent_id || '') : '';
+        document.getElementById('msc-name').value = sc ? (sc.name || '') : '';
+        document.getElementById('msc-id').value = id;
+      } else {
+        if (titleEl) titleEl.textContent = 'Nueva subcategoría';
+        document.getElementById('msc-name').value = '';
+        document.getElementById('msc-id').value = '';
+      }
       overlay.classList.add('open');
     }
 
@@ -5654,6 +5664,26 @@
       renderCategoriesView();
       renderCategories();
       fillCategoryOptions(document.getElementById('mp-category')?.value || '');
+      window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
+    }
+
+    async function deleteSubcategoryConfirm(id) {
+      if (window.SESSION && SESSION.readonly) return;
+      if (!id) return;
+      if (!confirm('¿Eliminar esta subcategoría? Los productos que la tengan quedarán sin subcategoría.')) return;
+      if (window.LAUREAN_DB) {
+        const { error } = await window.LAUREAN_DB.from('subcategories').delete().eq('id', id);
+        if (error) { alert('No se pudo eliminar en Supabase: ' + error.message); return; }
+      }
+      // Quitar de la copia local
+      const list = getCustomSubcategories().filter(s => s.id !== id);
+      localStorage.setItem('laurean_custom_subcats', JSON.stringify(list));
+      // Quitar del catálogo hidratado en memoria
+      if (window.LAUREAN_DATA && Array.isArray(LAUREAN_DATA.subcategories)) {
+        LAUREAN_DATA.subcategories = LAUREAN_DATA.subcategories.filter(s => s.id !== id);
+      }
+      renderCategoriesView();
+      renderCategories();
       window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();
     }
 
@@ -6194,9 +6224,18 @@
       const tbody = document.getElementById('cat-view-tbody');
       if (!tbody) return;
       tbody.innerHTML = cats.map(c => {
-        const childNames = subcats.filter(s => s.parent === c.id).map(s => s.name).filter(Boolean);
-        const childLine = childNames.length
-          ? `<br><span class="td-muted" style="font-size:11px">Subcategorías: ${escapeHtml(childNames.join(', '))}</span>`
+        const children = subcats.filter(s => s.parent === c.id && s.name);
+        const childLine = children.length
+          ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">` + children.map(s => `
+              <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;background:var(--piedra,#E8E3DC);border-radius:20px;padding:2px 4px 2px 10px">
+                ${escapeHtml(s.name)}
+                <button class="btn btn-icon" style="width:22px;height:22px;padding:0" title="Editar subcategoría" onclick="openSubcategoryModal('${jsAttr(s.id)}')">
+                  <svg viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="btn btn-icon btn-danger" style="width:22px;height:22px;padding:0" title="Eliminar subcategoría" onclick="deleteSubcategoryConfirm('${jsAttr(s.id)}')">
+                  <svg viewBox="0 0 24 24" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                </button>
+              </span>`).join('') + `</div>`
           : '';
         return `
         <tr>
@@ -6909,11 +6948,33 @@
 
       const panel = document.getElementById('bodega-prices-panel');
       panel.style.display = 'block';
+      // Reubicar el panel como fila justo debajo del producto que se edita.
+      const _old = document.getElementById('bpp-inline-row');
+      if (_old) _old.remove();
+      let _row = null;
+      try { _row = document.querySelector('#products-tbody tr[data-id="' + (window.CSS && CSS.escape ? CSS.escape(productId) : productId) + '"]'); } catch (e) { _row = null; }
+      if (_row) {
+        const _tr = document.createElement('tr');
+        _tr.id = 'bpp-inline-row';
+        const _td = document.createElement('td');
+        _td.colSpan = _row.children.length || 11;
+        _td.style.padding = '0';
+        _td.appendChild(panel);
+        _tr.appendChild(_td);
+        _row.after(_tr);
+      }
       panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function closeBodegaPricesPanel() {
-      document.getElementById('bodega-prices-panel').style.display = 'none';
+      const panel = document.getElementById('bodega-prices-panel');
+      if (panel) {
+        panel.style.display = 'none';
+        const view = document.getElementById('view-productos');
+        if (view) view.appendChild(panel);   // sacarlo de la fila para no perderlo al quitarla
+      }
+      const inline = document.getElementById('bpp-inline-row');
+      if (inline) inline.remove();
       _bppProductId = null;
     }
 
