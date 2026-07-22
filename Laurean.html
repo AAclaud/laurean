@@ -5523,6 +5523,16 @@
       updateFavoriteUi();
       renderFavorites();
       mergePendingCart();
+      // Llegada desde la lupa de otra página (?buscar=1): enfocar el buscador del catálogo.
+      try {
+        const _sp = new URLSearchParams(location.search);
+        if (_sp.get('buscar') === '1') {
+          if (typeof focusStoreSearch === 'function') focusStoreSearch();
+          _sp.delete('buscar');
+          const _ns = _sp.toString();
+          history.replaceState(null, '', location.pathname + (_ns ? '?' + _ns : '') + location.hash);
+        }
+      } catch (_) {}
       renderMarquee();
       renderFooterContent();
 
