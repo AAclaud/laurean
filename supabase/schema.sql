@@ -124,6 +124,8 @@ alter table public.profiles add column if not exists bank_account_type text;
 alter table public.profiles add column if not exists account_holder text;
 -- Nivel de vendedor (bronce/plata/oro/platino), derivado de ventas acumuladas; cacheable
 alter table public.profiles add column if not exists seller_level text;
+alter table public.profiles add column if not exists allowed_views jsonb;       -- apartados del dashboard visibles para este usuario (null = todos, según rol)
+alter table public.profiles add column if not exists readonly boolean default false; -- true = modo solo lectura en el dashboard (capa UI)
 
 -- RLS: el usuario puede ACTUALIZAR su propia fila de profiles (para guardar sus datos de depósito).
 -- La política limita filas; los GRANT de columnas más abajo limitan QUÉ columnas puede tocar.

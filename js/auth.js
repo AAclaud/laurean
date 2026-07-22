@@ -298,7 +298,7 @@ async function syncUsersFromSupabase() {
   if (!sb) return false;
   const { data, error } = await sb
     .from('profiles')
-    .select('id,email,name,role,phone,code,active,can_login_pos,bodega_ids,created_at');
+    .select('id,email,name,role,phone,code,active,can_login_pos,bodega_ids,created_at,allowed_views,readonly');
   if (error || !data) { console.warn('[supabase] sync profiles:', error?.message); return false; }
   // MERGE (no sobrescribir): la nube refresca/añade perfiles, pero conservamos los
   // usuarios locales que aún no están en `profiles` (recién creados sin sync) y los
@@ -312,6 +312,8 @@ async function syncUsersFromSupabase() {
       id: p.id, name: p.name || p.email, email: p.email, role: p.role,
       phone: p.phone || '', code: p.code || null,
       bodegaIds: p.bodega_ids || [], canLoginPOS: p.can_login_pos !== false,
+      allowedViews: p.allowed_views || null,
+      readonly: p.readonly === true,
       active: p.active !== false, createdAt: p.created_at || prev.createdAt,
     };
   });
@@ -374,7 +376,7 @@ async function loginSupabase(email, password) {
   // Leer perfil con role y metadata
   const { data: profile, error: pErr } = await sb
     .from('profiles')
-    .select('id,email,name,role,code,active,can_login_pos,bodega_ids')
+    .select('id,email,name,role,code,active,can_login_pos,bodega_ids,allowed_views,readonly')
     .eq('id', data.user.id)
     .single();
   if (pErr || !profile) {
@@ -394,6 +396,8 @@ async function loginSupabase(email, password) {
     code:        profile.code || null,
     bodegaIds:   profile.bodega_ids || [],
     canLoginPOS: profile.can_login_pos !== false,
+    allowedViews: profile.allowed_views || null,
+    readonly:     profile.readonly === true,
     supabase:    true,
     expiresAt:   data.session?.expires_at || null,  // unix segundos del access token
   };

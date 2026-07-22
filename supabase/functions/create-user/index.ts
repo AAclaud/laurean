@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
   try {
     if (action === 'create') {
       const { name, email, password, role, phone, code, bodega_ids, can_login_pos, commission_rate, birthday,
-        dpi, bank_name, bank_account, bank_account_type, account_holder } = body;
+        dpi, bank_name, bank_account, bank_account_type, account_holder, allowed_views, readonly } = body;
       if (!email || !password || !role) return json({ error: 'missing_fields' }, 400);
       if (!VALID_ROLES.includes(role))   return json({ error: 'invalid_role' }, 400);
       if (String(password).length < MIN_PASSWORD_LENGTH) return json({ error: 'weak_password' }, 400);
@@ -115,6 +115,8 @@ Deno.serve(async (req) => {
         birthday: birthday || null,
         dpi: dpi || null, bank_name: bank_name || null, bank_account: bank_account || null,
         bank_account_type: bank_account_type || null, account_holder: account_holder || null,
+        allowed_views: allowed_views ?? null,
+        readonly: readonly === true,
         active: true,
       });
       if (pErr) {
@@ -137,7 +139,8 @@ Deno.serve(async (req) => {
 
       const fields: Record<string, unknown> = {};
       ['name', 'phone', 'code', 'role', 'bodega_ids', 'commission_rate', 'birthday',
-       'dpi', 'bank_name', 'bank_account', 'bank_account_type', 'account_holder', 'gift'].forEach((k) => {
+       'dpi', 'bank_name', 'bank_account', 'bank_account_type', 'account_holder', 'gift',
+       'allowed_views', 'readonly'].forEach((k) => {
         if (body[k] !== undefined) fields[k] = body[k];
       });
       if (body.can_login_pos !== undefined) fields.can_login_pos = body.can_login_pos;

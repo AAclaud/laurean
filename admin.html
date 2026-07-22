@@ -609,6 +609,12 @@
       .form-row { grid-template-columns: 1fr; }
       .config-row { grid-template-columns: 1fr; }
     }
+    body.readonly-mode .view .btn-dark,
+    body.readonly-mode .view .btn-icon,
+    body.readonly-mode .view .btn-danger,
+    body.readonly-mode #orders-tbody .status-select,
+    body.readonly-mode #order-detail-overlay #od-status-select,
+    body.readonly-mode #order-detail-overlay .btn-dark { display: none !important; }
   </style>
 </head>
 <body>
@@ -1179,6 +1185,13 @@
         <div class="config-section" style="margin-top:24px">
           <div class="config-title">Pedidos por Estado</div>
           <div id="stats-status-bars" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+        <div class="config-section" style="margin-top:24px">
+          <div class="config-title">Cierres de caja <span style="font-weight:400;font-size:.78em;opacity:.6">por día y origen (POS · Tienda)</span></div>
+          <table class="tbl" style="margin-top:12px"><thead><tr>
+            <th>Día</th><th>Origen</th><th style="text-align:right">Ventas Q</th><th style="text-align:right">Transacc.</th><th style="text-align:right">Descuentos Q</th><th style="text-align:right">Ticket prom.</th>
+          </tr></thead>
+          <tbody id="stats-cierres"></tbody></table>
         </div>
       </div>
 
@@ -2161,6 +2174,20 @@
           <label class="form-label" for="m-can-pos" style="margin:0;cursor:pointer">Puede acceder al POS</label>
         </div>
       </div>
+      <div class="form-row single" id="views-group" style="display:none">
+        <div class="form-group">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <input type="checkbox" id="m-restrict-views" style="width:16px;height:16px;cursor:pointer" onchange="toggleViewsChecklist()" />
+            <label class="form-label" for="m-restrict-views" style="margin:0;cursor:pointer">Restringir apartados visibles del dashboard</label>
+          </div>
+          <span class="form-hint-text" style="margin-bottom:8px">Marca solo los módulos que este usuario podrá ver. Sin restringir = acceso completo de administrador.</span>
+          <div id="m-views-checks" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="checkbox" id="m-readonly" style="width:16px;height:16px;cursor:pointer" />
+            <label class="form-label" for="m-readonly" style="margin:0;cursor:pointer">Modo solo lectura (ver sin crear, editar ni eliminar)</label>
+          </div>
+        </div>
+      </div>
       <div class="form-row single">
         <div class="form-group">
           <label class="form-label">Cumpleaños (opcional)</label>
@@ -2509,6 +2536,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       SESSION = requireAuth(['superuser', 'admin', 'agente_pedidos']);
       if (!SESSION) return;
+      window.SESSION = SESSION;
 
       document.getElementById('sb-user-name').textContent  = SESSION.name;
       document.getElementById('sb-user-role').textContent  = roleLabel(SESSION.role);
@@ -2545,6 +2573,26 @@
         Array.from(select.options).forEach(o => { if (o.value === 'admin' || o.value === 'superuser') o.remove(); });
       }
 
+      // Restricción por usuario (allowedViews): capa UI sobre rol admin. Oculta del sidebar lo no permitido.
+      if (Array.isArray(SESSION.allowedViews) && SESSION.allowedViews.length) {
+        const allowed = SESSION.allowedViews;
+        document.querySelectorAll('.sb-nav .sb-link[data-view]').forEach(el => {
+          if (!allowed.includes(el.dataset.view)) el.style.display = 'none';
+        });
+        // Ocultar el enlace "Landing Vendedores" (sb-link sin data-view) para staff restringido.
+        document.querySelectorAll('.sb-nav a.sb-link').forEach(el => { el.style.display = 'none'; });
+        // Ocultar secciones (sb-section) que quedaron sin ningún link visible.
+        document.querySelectorAll('.sb-nav .sb-section').forEach(sec => {
+          let n = sec.nextElementSibling, anyVisible = false;
+          while (n && !n.classList.contains('sb-section')) {
+            if (n.classList && n.classList.contains('sb-link') && n.style.display !== 'none') anyVisible = true;
+            n = n.nextElementSibling;
+          }
+          if (!anyVisible) sec.style.display = 'none';
+        });
+      }
+      if (SESSION.readonly) document.body.classList.add('readonly-mode');
+
       // Punto de notificación si hay solicitudes pendientes
       const pendApps = getVendorApplications().filter(a => a.status === 'pendiente').length;
       if (pendApps > 0) document.getElementById('sb-notify-dot').style.display = '';
@@ -2568,11 +2616,11 @@
       // Honrar #hash al cargar (ej: admin.html#envios)
       const hash = (window.location.hash || '').replace('#','').trim();
       const knownViews = Object.keys(VIEW_TITLES);
-      if (hash && knownViews.includes(hash)) {
-        showView(hash);
-      } else {
-        renderDashboard();
-      }
+      const _av = Array.isArray(SESSION.allowedViews) && SESSION.allowedViews.length ? SESSION.allowedViews : null;
+      const _hashOk = hash && knownViews.includes(hash) && (!_av || _av.includes(hash));
+      if (_hashOk) { showView(hash); }
+      else if (_av && !_av.includes('dashboard')) { showView(_av[0]); }
+      else { renderDashboard(); }
       if (typeof syncOrdersFromSupabase === 'function') {
         syncOrdersFromSupabase().then(() => {
           renderOrders(); renderDashboard();
@@ -2738,6 +2786,7 @@
     function showView(name) {
       window._viewDirty = false;
       if (SESSION && SESSION.role === 'agente_pedidos' && name !== 'pedidos') return;
+      if (SESSION && Array.isArray(SESSION.allowedViews) && SESSION.allowedViews.length && !SESSION.allowedViews.includes(name)) return;
       if (name === 'lookbook' && !lookbookCanManage()) {
         alert('Solo un superusuario puede gestionar el Lookbook.');
         return;
@@ -3848,6 +3897,7 @@
     }
 
     async function deleteUserConfirm(id) {
+      if (window.SESSION && SESSION.readonly) return;
       if (!confirm('¿Eliminar este usuario permanentemente?')) return;
       const isCloudId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);   // UUID de Supabase
       if (window.LAUREAN_DB && isCloudId) {
@@ -3860,6 +3910,7 @@
 
     // ─── Modal usuario ─────────────────────────────────────────────────────────
     function openUserModal(id) {
+      if (window.SESSION && SESSION.readonly) return;
       const modal  = document.getElementById('modal-overlay');
       const title  = document.getElementById('modal-title');
       const errEl  = document.getElementById('modal-error');
@@ -3886,6 +3937,11 @@
         document.getElementById('m-can-pos').checked     = u.canLoginPOS !== undefined ? u.canLoginPOS : true;
         document.getElementById('m-commission').value    = (u.commissionRate != null) ? Math.round(u.commissionRate * 1000) / 10 : '';
         document.getElementById('m-pwd-hint').textContent = 'Dejar en blanco para no cambiar.';
+        const _rv = Array.isArray(u.allowedViews) && u.allowedViews.length;
+        document.getElementById('m-restrict-views').checked = !!_rv;
+        document.getElementById('m-readonly').checked = u.readonly === true;
+        renderViewsChecklist(_rv ? u.allowedViews : []);
+        document.getElementById('m-views-checks').style.display = _rv ? 'flex' : 'none';
         onRoleChange(true);
         if (u.role === 'bodega') populateBodegaChecks(u.bodegaIds || []);
       } else {
@@ -3896,6 +3952,9 @@
         });
         document.getElementById('m-role').value = 'vendedor';
         document.getElementById('m-pwd-hint').textContent = 'Mínimo 8 caracteres.';
+        document.getElementById('m-restrict-views').checked = false;
+        document.getElementById('m-readonly').checked = false;
+        document.getElementById('m-views-checks').style.display = 'none';
         onRoleChange();
       }
       modal.classList.add('open');
@@ -3911,6 +3970,7 @@
         document.getElementById('m-can-pos').checked = defaults[role] ?? false;
       }
       if (role === 'bodega') populateBodegaChecks([]);
+      document.getElementById('views-group').style.display = (role === 'admin') ? '' : 'none';
     }
 
     function populateBodegaChecks(selectedIds) {
@@ -3922,6 +3982,22 @@
           <input type="checkbox" value="${b.id}" ${selectedIds.includes(b.id) ? 'checked' : ''} />
           ${escapeHtml(b.name)}
         </label>`).join('');
+    }
+
+    function renderViewsChecklist(selected) {
+      const exclude = new Set(['config', 'lookbook', 'vendedores']); // no se otorgan a staff restringido
+      const sel = new Set(selected || []);
+      const wrap = document.getElementById('m-views-checks');
+      wrap.innerHTML = Object.keys(VIEW_TITLES).filter(k => !exclude.has(k)).map(k =>
+        `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid var(--piedra);border-radius:4px;">
+           <input type="checkbox" value="${k}" ${sel.has(k) ? 'checked' : ''} /> ${escapeHtml(VIEW_TITLES[k])}
+         </label>`).join('');
+    }
+    function toggleViewsChecklist() {
+      const on = document.getElementById('m-restrict-views').checked;
+      const box = document.getElementById('m-views-checks');
+      box.style.display = on ? 'flex' : 'none';
+      if (on && !box.children.length) renderViewsChecklist([]);
     }
 
     function closeModal() {
@@ -3940,6 +4016,7 @@
     }
 
     async function saveUser() {
+      if (window.SESSION && SESSION.readonly) return;
       if (USER_SAVE_IN_PROGRESS) return;
       USER_SAVE_IN_PROGRESS = true;
       setUserSaveBusy(true);
@@ -3956,6 +4033,11 @@
         const code        = document.getElementById('m-code').value.trim() || null;
         const notes       = document.getElementById('m-notes').value.trim();
         const canLoginPOS = document.getElementById('m-can-pos').checked;
+        const _restrict = document.getElementById('m-restrict-views').checked;
+        const allowedViews = (role === 'admin' && _restrict)
+          ? Array.from(document.querySelectorAll('#m-views-checks input[type=checkbox]:checked')).map(c => c.value)
+          : null;
+        const readonly = (role === 'admin' && _restrict) ? document.getElementById('m-readonly').checked : false;
         const bodegaIds   = Array.from(document.querySelectorAll('#m-bodega-checks input[type=checkbox]:checked')).map(c => c.value);
         const commissionRaw = document.getElementById('m-commission').value.trim();
         const commissionRate = (role === 'vendedor' && commissionRaw !== '')
@@ -3981,7 +4063,7 @@
 
         if (id) {
           // ── Editar ── (local-first: siempre persiste en local)
-          const fields = { name, email, phone, notes, role, canLoginPOS, bodegaIds, commissionRate, birthday: document.getElementById('m-birthday').value || null, ...dep };
+          const fields = { name, email, phone, notes, role, canLoginPOS, bodegaIds, commissionRate, allowedViews, readonly, birthday: document.getElementById('m-birthday').value || null, ...dep };
           if (needsCode) fields.code = finalCode;
           if (password) fields.password = password;
           const res = updateUser(id, fields);
@@ -3990,6 +4072,7 @@
             const r = await callUserFn({
               action: 'update', id, name, email, role, phone,
               code: finalCode, bodega_ids: bodegaIds, can_login_pos: canLoginPOS,
+              allowed_views: allowedViews, readonly,
               commission_rate: commissionRate,
               birthday: document.getElementById('m-birthday').value || null,
               ...dep,
@@ -4006,6 +4089,7 @@
             const r = await callUserFn({
               action: 'create', name, email, password, role, phone,
               code: finalCode, bodega_ids: bodegaIds, can_login_pos: canLoginPOS,
+              allowed_views: allowedViews, readonly,
               commission_rate: commissionRate,
               birthday: document.getElementById('m-birthday').value || null,
               ...dep,
@@ -4018,7 +4102,7 @@
           }
           cacheUserLocal({
             id: newId, name, email, password: btoa(password), role, phone, notes,
-            code: finalCode, bodegaIds, canLoginPOS, commissionRate, active: true,
+            code: finalCode, bodegaIds, canLoginPOS, commissionRate, allowedViews, readonly, active: true,
             birthday: document.getElementById('m-birthday').value || null, ...dep,
             createdAt: new Date().toISOString(),
           });
@@ -4201,6 +4285,7 @@
     }
 
     function changeOrderStatus(id, status) {
+      if (window.SESSION && SESSION.readonly) return;
       updateOrderStatus(id, status);
       renderOrders();
       renderDashboard();
@@ -4225,6 +4310,7 @@
     }
 
     async function generatePendingGuidesBatch() {
+      if (window.SESSION && SESSION.readonly) return;
       const pending = getPendingGuideOrders();
       if (!pending.length) return alert('No hay pedidos filtrados pendientes de guía.');
       if (!window.Forza) return alert('Cliente Forza no disponible.');
@@ -4356,6 +4442,7 @@
     }
 
     function saveOrderDetail() {
+      if (window.SESSION && SESSION.readonly) return;
       if (!_currentOrderId) return;
       const status = document.getElementById('od-status-select').value;
       updateOrderStatus(_currentOrderId, status);
@@ -4416,6 +4503,7 @@
     }
 
     function payCommission(id) {
+      if (window.SESSION && SESSION.readonly) return;
       markCommissionPaid(id);
       renderCommissions();
       renderDashboard();
@@ -5697,6 +5785,39 @@
           ? `<tr style="border-top:2px solid var(--carbon);font-weight:600"><td>Total</td><td></td><td style="text-align:right">${fmtQ(pStats.totalRev)}</td><td style="text-align:right">${fmtQ(pStats.costoTotal)}</td><td style="text-align:right;color:var(--vino)">${fmtQ(pStats.liquidezTotal)}</td></tr>`
           : '';
       }
+      renderCierresPanel(from, to);
+    }
+
+    function renderCierresPanel(from, to) {
+      const orders = getOrders().filter(o => { const d = new Date(o.createdAt); return d >= from && d <= to; });
+      // Agrupar por día + origen (POS/Tienda). Ventas y ticket cuentan solo no-canceladas.
+      const groups = {};
+      orders.forEach(o => {
+        const day    = new Date(o.createdAt).toLocaleDateString('es-GT', { year:'numeric', month:'2-digit', day:'2-digit' });
+        const origin = isPosOrder(o) ? 'POS' : 'Tienda';
+        const key    = day + '|' + origin;
+        if (!groups[key]) groups[key] = { day, origin, ventas:0, trans:0, desc:0, _sortDay:new Date(o.createdAt).toDateString() };
+        const g = groups[key];
+        if (String(o.status || '').toLowerCase() !== 'cancelado') {
+          g.ventas += Number(o.total_gtq || 0);
+          g.trans  += 1;
+          g.desc   += Number(o.manual_discount_gtq || 0) + Number(o.discount_gtq || 0) + Number(o.discountCode_gtq || 0) + Number(o.referral_discount_gtq || 0);
+        }
+      });
+      const rows = Object.values(groups).sort((a,b) =>
+        (new Date(b._sortDay) - new Date(a._sortDay)) || a.origin.localeCompare(b.origin));
+      const tbody = document.getElementById('stats-cierres');
+      if (!tbody) return;
+      if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="td-muted" style="text-align:center">Sin cierres en el período</td></tr>`; return; }
+      tbody.innerHTML = rows.map(g => `
+        <tr>
+          <td>${escapeHtml(g.day)}</td>
+          <td>${escapeHtml(g.origin)}</td>
+          <td style="text-align:right">${fmtQ(g.ventas)}</td>
+          <td style="text-align:right">${g.trans}</td>
+          <td style="text-align:right">${fmtQ(g.desc)}</td>
+          <td style="text-align:right">${g.trans ? fmtQ(Math.round(g.ventas / g.trans)) : '—'}</td>
+        </tr>`).join('');
     }
 
     // Calcula el set de métricas del período (reutilizado por la vista y el imprimible).
@@ -7848,6 +7969,7 @@
     }
 
     function saveClientForm() {
+      if (window.SESSION && SESSION.readonly) return;
       const id    = document.getElementById('client-id').value;
       const name  = document.getElementById('cl-name').value.trim();
       const phone = document.getElementById('cl-phone').value.trim();
@@ -7866,6 +7988,7 @@
     }
 
     function deleteClientConfirm(id) {
+      if (window.SESSION && SESSION.readonly) return;
       if (!confirm('¿Eliminar este cliente?')) return;
       deleteCustomer(id);
       renderClientes();
@@ -8777,6 +8900,7 @@
     }
 
     async function envCreateGuideFromOrder(orderId) {
+      if (window.SESSION && SESSION.readonly) return;
       const { localOrder, dbOrder } = await envResolveOrderForGuide(orderId);
       const o = dbOrder || localOrder;
       if (!o) return alert('Pedido no encontrado.');
