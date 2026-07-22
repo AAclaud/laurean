@@ -1322,9 +1322,18 @@
     }
     .qty-val {
       font-size: 14px;
+      width: 40px;
       min-width: 22px;
       text-align: center;
+      background: transparent;
+      border: 0;
+      color: var(--carbon);
+      font-family: inherit;
+      padding: 2px 0;
+      -moz-appearance: textfield;
     }
+    .qty-val:focus { outline: none; border-bottom: 1px solid var(--carbon); }
+    .qty-val::-webkit-inner-spin-button, .qty-val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     .ci-remove {
       display: block;
       font-size: 11px;
@@ -2372,6 +2381,30 @@
       justify-content: space-between;
       margin-bottom: 36px;
     }
+    .store-search-wrap {
+      display: flex; align-items: center; gap: 8px;
+      margin: 0 auto; flex: 0 1 320px; min-width: 160px;
+      border-bottom: 1px solid var(--piedra);
+      padding: 4px 6px;
+    }
+    .store-search-wrap:focus-within { border-bottom-color: var(--carbon); }
+    .store-search-icon { width: 16px; height: 16px; flex: 0 0 auto; stroke: var(--warm-mid); fill: none; stroke-width: 1.6; }
+    .store-search-input {
+      flex: 1 1 auto; border: 0; background: transparent; outline: none;
+      font-family: inherit; font-size: 13px; color: var(--carbon);
+      letter-spacing: .02em;
+    }
+    .store-search-input::placeholder { color: var(--warm-mid); opacity: .7; }
+    .store-search-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+    .store-search-clear {
+      border: 0; background: transparent; cursor: pointer; color: var(--warm-mid);
+      font-size: 13px; line-height: 1; padding: 2px 4px;
+    }
+    .store-search-clear:hover { color: var(--carbon); }
+    @media (max-width: 640px) {
+      .products-section-header { flex-wrap: wrap; gap: 12px; }
+      .store-search-wrap { order: 3; flex: 1 1 100%; margin: 0; }
+    }
     .products-section-title {
       font-family: var(--fd);
       font-size: clamp(22px, 2vw, 32px);
@@ -2667,6 +2700,9 @@
     </button>
     <div class="nav-actions">
       <!-- Sin sesión -->
+      <button class="nav-btn" aria-label="Buscar productos" onclick="focusStoreSearch()">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
       <a href="login.html" class="nav-btn" id="nav-login-btn" aria-label="Iniciar sesión">
         <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--carbon);fill:none;stroke-width:1.4"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </a>
@@ -2775,6 +2811,12 @@
       <div class="products-section">
         <div class="products-section-header">
           <span class="products-section-title" id="products-section-title">Colección</span>
+          <div class="store-search-wrap">
+            <svg class="store-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="store-search" class="store-search-input" type="search" placeholder="Buscar prendas…"
+                   oninput="onStoreSearch(this.value)" aria-label="Buscar productos" />
+            <button class="store-search-clear" id="store-search-clear" onclick="clearStoreSearch()" aria-label="Limpiar búsqueda" style="display:none">✕</button>
+          </div>
           <span class="products-count" id="products-count"></span>
         </div>
         <div class="products-grid" id="products-grid">
@@ -3894,6 +3936,16 @@
       else renderCart();
     }
 
+    function setQty(id, val) {
+      const item = cart.find(i => i.id === id);
+      if (!item) return;
+      if (item._comboId) return;  // piezas de combo no se editan individualmente
+      const n = parseInt(val, 10);
+      if (!n || n <= 0) { removeFromCart(id); return; }
+      item.qty = n;
+      renderCart();
+    }
+
     // ─── Cart render ───────────────────────────────────────────────────────────
     function renderCart(newItemId) {
       const body        = document.getElementById('cart-body');
@@ -3926,7 +3978,8 @@
           ? `<div class="ci-qty"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:var(--warm-dark, #531F23);color:#fff;padding:2px 8px;border-radius:20px;">Combo${item._comboName ? ' · ' + escapeHtml(item._comboName) : ''}</span> <span class="qty-val" style="margin-left:6px;">×${escapeHtml(item.qty)}</span></div>`
           : `<div class="ci-qty">
               <button class="qty-btn" onclick="updateQty('${jsAttr(item.id)}', -1)">−</button>
-              <span class="qty-val">${escapeHtml(item.qty)}</span>
+              <input class="qty-val" type="text" inputmode="numeric" value="${escapeAttr(String(item.qty))}"
+                     onfocus="this.select()" onchange="setQty('${jsAttr(item.id)}', this.value)" aria-label="Cantidad" />
               <button class="qty-btn" onclick="updateQty('${jsAttr(item.id)}', 1)">+</button>
             </div>`;
         const removeBtn = isCombo
@@ -4842,11 +4895,31 @@
     // ─── State del catálogo ────────────────────────────────────────────────────
     let _activeCatId    = null;
     let _activeSubcatId = null;
+    let _searchQuery    = '';
+
+    function focusStoreSearch() {
+      const cat = document.getElementById('catalogo');
+      if (cat) cat.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => { const el = document.getElementById('store-search'); if (el) el.focus(); }, 450);
+    }
+    function onStoreSearch(v) {
+      _searchQuery = v || '';
+      const clr = document.getElementById('store-search-clear');
+      if (clr) clr.style.display = _searchQuery.trim() ? '' : 'none';
+      renderProducts();
+    }
+    function clearStoreSearch() {
+      _searchQuery = '';
+      const el = document.getElementById('store-search'); if (el) el.value = '';
+      const clr = document.getElementById('store-search-clear'); if (clr) clr.style.display = 'none';
+      renderProducts();
+    }
 
     function renderProducts() {
       const data = window.LAUREAN_DATA;
       if (!data) return;
       const role = SESSION_LOCAL ? SESSION_LOCAL.role : 'guest';
+      const _qActive = (_searchQuery || '').trim();
 
       // ── Parent category tabs + hero images ──────────────────────────────────
       // Categorías: base (Supabase) + personalizadas locales, deduplicadas por id.
@@ -4897,7 +4970,7 @@
       if (subtabsBar) subtabsBar.style.display = '';
       if (collLink) collLink.style.display = '';
 
-      if (_activeCatId === '__combos__') {
+      if (!_qActive && _activeCatId === '__combos__') {
         const subtabsEl = document.getElementById('cat-subtabs');
         if (subtabsEl) subtabsEl.innerHTML = '';
         if (subtabsBar) subtabsBar.style.display = 'none';
@@ -4957,23 +5030,43 @@
 
       // ── Products grid ────────────────────────────────────────────────────────
       const allProds = [...(data.products || []), ...getCustomProducts()];
-      let filtered = allProds.filter(p => p.parent === _activeCatId || p.category === _activeCatId);
-      if (_activeSubcatId !== 'all') {
-        filtered = filtered.filter(p => p.subcat === _activeSubcatId);
+      const _q = _qActive.toLowerCase();
+      let filtered;
+      if (_q) {
+        const _catName = {};
+        (window._PARENT_CATS || parentCats).forEach(c => { if (c && c.id) _catName[c.id] = String(c.name || '').toLowerCase(); });
+        filtered = allProds.filter(p => {
+          const hay = [p.name || '', p.description || '', _catName[p.parent || p.category] || ''].join(' ').toLowerCase();
+          return hay.includes(_q);
+        });
+        if (subtabsBar) subtabsBar.style.display = 'none';
+      } else {
+        filtered = allProds.filter(p => p.parent === _activeCatId || p.category === _activeCatId);
+        if (_activeSubcatId !== 'all') { filtered = filtered.filter(p => p.subcat === _activeSubcatId); }
       }
 
       const titleEl = document.getElementById('products-section-title');
       const countEl = document.getElementById('products-count');
       if (titleEl) {
-        const sub = visibleSubs.find(s => s.id === _activeSubcatId);
-        titleEl.textContent = sub ? `${activeCat ? activeCat.name : ''} · ${sub.name}` : (activeCat ? activeCat.name : 'Colección');
+        if (_q) {
+          titleEl.textContent = `Resultados para «${_qActive}»`;
+        } else {
+          const sub = visibleSubs.find(s => s.id === _activeSubcatId);
+          titleEl.textContent = sub ? `${activeCat ? activeCat.name : ''} · ${sub.name}` : (activeCat ? activeCat.name : 'Colección');
+        }
       }
-      if (countEl) countEl.textContent = filtered.length + ' producto' + (filtered.length !== 1 ? 's' : '');
+      if (countEl) {
+        countEl.textContent = _q
+          ? filtered.length + ' resultado' + (filtered.length !== 1 ? 's' : '')
+          : filtered.length + ' producto' + (filtered.length !== 1 ? 's' : '');
+      }
 
       const grid = document.getElementById('products-grid');
       if (grid) {
         if (!filtered.length) {
-          grid.innerHTML = `<div class="products-empty">No hay productos en esta categoría aún.</div>`;
+          grid.innerHTML = _q
+            ? `<div class="products-empty">Sin resultados para «${escapeHtml(_qActive)}».</div>`
+            : `<div class="products-empty">No hay productos en esta categoría aún.</div>`;
         } else {
           grid.innerHTML = filtered.map(p => {
             const showPrice = shouldShowPublicPrice(p);
@@ -5318,6 +5411,11 @@
     Object.keys(CAT_LOCKUP).forEach(function(k){ var i = new Image(); i.src = CAT_LOCKUP[k].logo; });
 
     function selectCategory(catId) {
+      if (_searchQuery) {
+        _searchQuery = '';
+        const _s = document.getElementById('store-search'); if (_s) _s.value = '';
+        const _c = document.getElementById('store-search-clear'); if (_c) _c.style.display = 'none';
+      }
       _activeCatId    = catId;
       _activeSubcatId = 'all';
       const sel    = document.querySelector('.cat-selector');

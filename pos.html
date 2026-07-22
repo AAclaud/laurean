@@ -370,7 +370,13 @@
       transition: background 0.15s;
     }
     .pos-ci-qty-btn:hover { background: var(--carbon); color: white; }
-    .pos-ci-qty-num { font-size: 13px; width: 20px; text-align: center; }
+    .pos-ci-qty-num {
+      font-size: 13px; width: 34px; text-align: center;
+      background: transparent; border: 0; color: inherit;
+      font-family: var(--fb); padding: 2px 0; -moz-appearance: textfield;
+    }
+    .pos-ci-qty-num:focus { outline: none; border-bottom: 1px solid var(--carbon); }
+    .pos-ci-qty-num::-webkit-inner-spin-button, .pos-ci-qty-num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
     /* Cart footer */
     .pos-cart-footer {
@@ -1198,6 +1204,15 @@
     renderPosCart();
   }
 
+  function posSetQty(id, val) {
+    const item = posCart.find(i => i.id === id);
+    if (!item) return;
+    const n = parseInt(val, 10);
+    if (!n || n <= 0) { posCart = posCart.filter(i => i.id !== id); }
+    else { item.qty = n; }
+    renderPosCart();
+  }
+
   function posClearCart() {
     posCart = [];
     posManualDisc = 0;
@@ -1231,7 +1246,8 @@
           <div class="pos-ci-name">${escapeHtml(i.name)}</div>
           <div class="pos-ci-qty">
             <button class="pos-ci-qty-btn" onclick="posChangeQty('${jsAttr(i.id)}',-1)">−</button>
-            <span class="pos-ci-qty-num">${i.qty}</span>
+            <input class="pos-ci-qty-num" type="text" inputmode="numeric" value="${i.qty}"
+                   onfocus="this.select()" onchange="posSetQty('${jsAttr(i.id)}', this.value)" aria-label="Cantidad" />
             <button class="pos-ci-qty-btn" onclick="posChangeQty('${jsAttr(i.id)}',1)">+</button>
           </div>
           <div class="pos-ci-price">Q${(i.price * i.qty).toLocaleString()}</div>
