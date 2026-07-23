@@ -1,15 +1,15 @@
 /* ─── Cursor Laurean ───────────────────────────────────────────────────────────
-   Flecha esbelta color crema (#F1ECE8) con borde carbón (#192729): elegante y de marca,
-   pero clara-sobre-borde-oscuro para verse en CUALQUIER fondo (Mac y Windows). Reemplaza
-   el cursor circular anterior; nada de aro que siga el mouse. */
+   Flecha esbelta color crema (#F1ECE8) con BORDE VINO (#8F3833, la firma de la marca):
+   se lee como de Laurean, no como el cursor blanco default, y sigue clara-sobre-borde-oscuro
+   para verse en CUALQUIER fondo (Mac y Windows). Reemplaza el cursor circular; sin aro. */
 .cursor-dot, .cursor-ring { display: none !important; }
 
 @media (hover: hover) and (pointer: fine) {
-  html, body { cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='22'%20height='24'%20viewBox='0%200%2022%2024'%3E%20%3Cpath%20d='M3%202.2%20L3%2018.6%20L7.1%2014.7%20L9.7%2020.8%20L12.3%2019.6%20L9.7%2013.7%20L15.2%2013.4%20Z'%20fill='%23F1ECE8'%20stroke='%23192729'%20stroke-width='1.25'%20stroke-linejoin='round'%20stroke-linecap='round'/%3E%3C/svg%3E") 3 2, auto; }
+  html, body { cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='23'%20height='26'%20viewBox='0%200%2023%2026'%3E%20%3Cpath%20d='M3.5%202.4%20L3.5%2020%20L8%2015.6%20L10.9%2022.2%20L13.7%2021%20L10.9%2014.6%20L16.8%2014.3%20Z'%20fill='%23F1ECE8'%20stroke='%238F3833'%20stroke-width='1.7'%20stroke-linejoin='round'%20stroke-linecap='round'/%3E%20%3Cpath%20d='M3.5%202.4%20L3.5%2020%20L8%2015.6%20L10.9%2022.2%20L13.7%2021%20L10.9%2014.6%20L16.8%2014.3%20Z'%20fill='none'%20stroke='%23192729'%20stroke-width='0.5'%20stroke-linejoin='round'%20opacity='0.35'/%3E%3C/svg%3E") 3 2, auto; }
   a, button, [role="button"], label, select, summary, .cursor-hover,
   .sb-link, .btn, .stat-card[onclick], [onclick],
   input[type=checkbox], input[type=radio] {
-    cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='26'%20height='26'%20viewBox='0%200%2026%2026'%3E%20%3Cpath%20d='M9%201.8%20C8.1%201.8%207.5%202.5%207.5%203.4%20L7.5%2011.5%20L6.4%2010.3%20C5.7%209.6%204.6%209.6%203.9%2010.3%20C3.3%2010.9%203.3%2011.8%203.8%2012.5%20L7.1%2017%20C8.1%2018.5%209.5%2019.3%2011.4%2019.3%20L14.6%2019.3%20C16.7%2019.3%2018.2%2017.9%2018.2%2015.8%20L18.2%209.4%20C18.2%208.5%2017.5%207.9%2016.7%207.9%20C16.4%207.9%2016.1%208%2015.9%208.2%20C15.8%207.4%2015.1%206.8%2014.3%206.8%20C13.9%206.8%2013.6%206.9%2013.3%207.1%20C13.1%206.4%2012.5%205.9%2011.7%205.9%20C11.4%205.9%2011.1%206%2010.8%206.2%20L10.8%203.4%20C10.8%202.5%2010%201.8%209%201.8%20Z'%20fill='%23F1ECE8'%20stroke='%23192729'%20stroke-width='1.15'%20stroke-linejoin='round'/%3E%20%3Cpath%20d='M9%203.6%20L9%209.5'%20stroke='%238F3833'%20stroke-width='1.1'%20stroke-linecap='round'/%3E%3C/svg%3E") 9 2, pointer;
+    cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='27'%20height='27'%20viewBox='0%200%2027%2027'%3E%20%3Cpath%20d='M9.2%201.9%20C8.3%201.9%207.6%202.6%207.6%203.6%20L7.6%2011.9%20L6.4%2010.6%20C5.7%209.9%204.5%209.9%203.8%2010.6%20C3.2%2011.3%203.2%2012.2%203.7%2012.9%20L7.1%2017.6%20C8.2%2019.1%209.6%2020%2011.6%2020%20L14.9%2020%20C17.1%2020%2018.6%2018.5%2018.6%2016.3%20L18.6%209.7%20C18.6%208.7%2017.9%208.1%2017%208.1%20C16.7%208.1%2016.4%208.2%2016.2%208.4%20C16.1%207.5%2015.4%206.9%2014.5%206.9%20C14.1%206.9%2013.8%207%2013.5%207.2%20C13.3%206.5%2012.7%206%2011.9%206%20C11.6%206%2011.2%206.1%2010.9%206.3%20L10.9%203.6%20C10.9%202.6%2010.1%201.9%209.2%201.9%20Z'%20fill='%23F1ECE8'%20stroke='%238F3833'%20stroke-width='1.5'%20stroke-linejoin='round'/%3E%20%3Cpath%20d='M9.2%203.7%20L9.2%209.8'%20stroke='%23192729'%20stroke-width='1'%20stroke-linecap='round'%20opacity='0.6'/%3E%3C/svg%3E") 9 2, pointer;
   }
   input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]),
   textarea { cursor: text; }
