@@ -874,6 +874,12 @@ async function syncOrdersFromSupabase() {
     };
     byRemote[r.id] = mapped;
   });
+  // Autoritativo: si la lectura fue completa (< límite), los pedidos locales con supabase_id que ya
+  // no están en la BD fueron eliminados en el servidor → quitarlos del caché.
+  if (data.length < 1000) {
+    const _remoteIds = new Set(data.map(r => r.id));
+    Object.keys(byRemote).forEach(id => { if (!_remoteIds.has(id)) delete byRemote[id]; });
+  }
   const localOnly = local.filter(o => !o.supabase_id && !linkedLocalIds.has(o.id));
   const merged = [...localOnly, ...Object.values(byRemote)];
   saveOrders(merged);
@@ -1212,6 +1218,10 @@ async function syncCommissionsFromSupabase() {
       status: r.status, createdAt: r.created_at,
     };
   });
+  if (data.length < 2000) {
+    const _remoteIds = new Set(data.map(r => r.id));
+    Object.keys(byId).forEach(id => { if (!_remoteIds.has(id)) delete byId[id]; });
+  }
   saveCommissions(Object.values(byId));
   return true;
 }
@@ -1365,6 +1375,10 @@ async function syncCustomersFromSupabase() {
       firstOrderAt: r.first_order_at, lastOrderAt: r.last_order_at, createdAt: r.created_at, createdBy: r.created_by,
     };
   });
+  if (data.length < 5000) {
+    const _remoteIds = new Set(data.map(r => r.id));
+    Object.keys(byId).forEach(id => { if (!_remoteIds.has(id)) delete byId[id]; });
+  }
   saveCustomers(Object.values(byId));
   return true;
 }
