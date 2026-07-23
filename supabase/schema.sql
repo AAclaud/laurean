@@ -863,6 +863,21 @@ do $$ begin
     using (public.is_admin()) with check (public.is_admin());
 end $$;
 
+-- ── Registro de actividad (audit log): quién crea/edita/elimina qué. Lectura SOLO superuser. Append-only.
+create table if not exists public.activity_log (
+  id text primary key, actor_id uuid, actor_name text, actor_email text,
+  action text not null, entity_type text not null, entity_id text, entity_name text,
+  details jsonb, created_at timestamptz default now()
+);
+create index if not exists idx_activity_log_created on public.activity_log(created_at desc);
+alter table public.activity_log enable row level security;
+do $$ begin
+  drop policy if exists "log_insert_admin" on public.activity_log;
+  drop policy if exists "log_read_superuser" on public.activity_log;
+  create policy "log_insert_admin"   on public.activity_log for insert with check (public.is_admin());
+  create policy "log_read_superuser" on public.activity_log for select using (public.current_role() = 'superuser');
+end $$;
+
 -- ════════════════════════════════════════════════════════════
 -- FIN. Después de correr esto, ejecutar `seed.sql` para crear
 -- usuarios y categorías base.

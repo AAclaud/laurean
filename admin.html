@@ -731,6 +731,10 @@
         <span>Landing Vendedores</span>
       </a>
 
+      <button class="sb-link" id="btn-logs" onclick="showView('logs')" data-view="logs" style="display:none">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        <span>Registro</span>
+      </button>
       <button class="sb-link" id="btn-config" onclick="showView('config')" data-view="config" style="display:none">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Configuración</span>
@@ -1152,6 +1156,21 @@
             <button class="btn btn-danger" onclick="confirmReset('commissions')">Borrar todas las comisiones</button>
             <button class="btn btn-danger" onclick="confirmReset('prices')">Restaurar precios base</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ── REGISTRO DE ACTIVIDAD (solo superuser) ─────────────────────────── -->
+      <div id="view-logs" class="view">
+        <h1 class="view-title">Registro de <em>actividad</em></h1>
+        <div class="filter-row" style="margin-bottom:16px;">
+          <input type="search" class="form-input" id="logs-search" placeholder="Buscar por usuario, acción o entidad…" oninput="renderLogsFilter()" style="width:280px" />
+          <button class="btn btn-light" onclick="renderLogs()">Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Qué</th><th>Detalle</th></tr></thead>
+            <tbody id="logs-tbody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -2574,6 +2593,10 @@
       if (SESSION.role === 'superuser' || SESSION.role === 'admin') {
         document.getElementById('btn-config').style.display = '';
       }
+      // Registro de actividad: SOLO superuser
+      if (SESSION.role === 'superuser') {
+        document.getElementById('btn-logs').style.display = '';
+      }
       // Lookbook: SOLO superuser
       if (SESSION.role === 'superuser') {
         document.getElementById('btn-lookbook').style.display = '';
@@ -2783,6 +2806,7 @@
       clientes:     'Clientes',
       descuentos:   'Códigos de Descuento',
       pagos:        'Pagos QPayPro',
+      logs:         'Registro de actividad',
     };
 
     function setSidebarOpen(open) {
@@ -2802,6 +2826,7 @@
     function showView(name) {
       window._viewDirty = false;
       if (SESSION && SESSION.role === 'agente_pedidos' && name !== 'pedidos') return;
+      if (name === 'logs' && (!SESSION || SESSION.role !== 'superuser')) return;
       if (SESSION && Array.isArray(SESSION.allowedViews) && SESSION.allowedViews.length && !SESSION.allowedViews.includes(name)) return;
       if (name === 'lookbook' && !lookbookCanManage()) {
         alert('Solo un superusuario puede gestionar el Lookbook.');
@@ -2857,6 +2882,39 @@
       if (name === 'clientes')     { renderClientes(); if (typeof syncCustomersFromSupabase === 'function') syncCustomersFromSupabase().then(ok => { if (ok) renderClientes(); }); }
       if (name === 'descuentos')   { renderDescuentos(); if (typeof syncDiscountCodesFromSupabase === 'function') syncDiscountCodesFromSupabase().then(ok => { if (ok) renderDescuentos(); }); }
       if (name === 'pagos')      { renderPagos(); loadPaymentConfig(); }
+      if (name === 'logs')       renderLogs();
+    }
+
+    let _LOGS_CACHE = [];
+    async function renderLogs() {
+      const tbody = document.getElementById('logs-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">Cargando…</td></tr>`;
+      if (!window.LAUREAN_DB) { tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">Sin conexión a la nube</td></tr>`; return; }
+      const { data, error } = await window.LAUREAN_DB.from('activity_log').select('*').order('created_at', { ascending: false }).limit(300);
+      if (error) { tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">No se pudo cargar el registro (solo el superusuario puede verlo): ${escapeHtml(error.message)}</td></tr>`; return; }
+      _LOGS_CACHE = data || [];
+      paintLogs(_LOGS_CACHE);
+    }
+    function paintLogs(rows) {
+      const tbody = document.getElementById('logs-tbody');
+      if (!tbody) return;
+      if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">Sin actividad registrada</td></tr>`; return; }
+      const A_LABEL = { crear:'Creó', editar:'Editó', guardar:'Guardó', eliminar:'Eliminó', pago:'Pagó', estado:'Cambió estado', activar:'Activó', desactivar:'Desactivó' };
+      const A_COLOR = { eliminar:'#C62828', crear:'#2E7D32', editar:'#8F3833', estado:'#1565C0', pago:'#2E7D32', desactivar:'#C62828', activar:'#2E7D32' };
+      tbody.innerHTML = rows.map(l => `
+        <tr>
+          <td class="td-muted" style="white-space:nowrap;font-size:12px">${escapeHtml(new Date(l.created_at).toLocaleString('es-GT', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }))}</td>
+          <td>${escapeHtml(l.actor_name || l.actor_email || '—')}</td>
+          <td><span style="font-weight:600;color:${A_COLOR[l.action] || 'var(--carbon)'}">${escapeHtml(A_LABEL[l.action] || l.action)}</span></td>
+          <td>${escapeHtml(l.entity_type || '')}${l.entity_name ? ` · <strong>${escapeHtml(l.entity_name)}</strong>` : ''}</td>
+          <td class="td-muted" style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.details ? escapeHtml(typeof l.details === 'string' ? l.details : JSON.stringify(l.details)) : ''}</td>
+        </tr>`).join('');
+    }
+    function renderLogsFilter() {
+      const q = (document.getElementById('logs-search').value || '').toLowerCase();
+      if (!q) return paintLogs(_LOGS_CACHE);
+      paintLogs(_LOGS_CACHE.filter(l => [l.actor_name, l.actor_email, l.action, l.entity_type, l.entity_name, JSON.stringify(l.details||'')].join(' ').toLowerCase().includes(q)));
     }
 
     function syncProductsAndStockFromSupabase() {
@@ -3933,11 +3991,13 @@
       if (window.LAUREAN_DB && u) {
         const r = await callUserFn({ action: 'deactivate', id, active: !u.active });
         if (!r.ok) alert('No se pudo sincronizar el estado en Supabase: ' + r.error);
+        else if (window.logActivity) window.logActivity(u.active ? 'desactivar' : 'activar', 'usuario', id, u.name || id);
       }
     }
 
     async function deleteUserConfirm(id) {
       if (window.SESSION && SESSION.readonly) return;
+      const u = getUserById(id);
       if (!confirm('¿Eliminar este usuario permanentemente?')) return;
       const isCloudId = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(id);   // UUID de Supabase
       if (window.LAUREAN_DB && isCloudId) {
@@ -3945,6 +4005,7 @@
         if (!r.ok) { alert('No se pudo eliminar en Supabase: ' + r.error); return; }
       }
       deleteUser(id);
+      if (window.logActivity) window.logActivity('eliminar', 'usuario', id, u?.name || id);
       renderUsers();
     }
 
@@ -4038,7 +4099,7 @@
     }
 
     function renderViewsChecklist(selected) {
-      const exclude = new Set(['config', 'lookbook', 'vendedores']); // no se otorgan a staff restringido
+      const exclude = new Set(['config', 'lookbook', 'vendedores', 'logs']); // no se otorgan a staff restringido
       const sel = new Set(selected || []);
       const wrap = document.getElementById('m-views-checks');
       wrap.innerHTML = Object.keys(VIEW_TITLES).filter(k => !exclude.has(k)).map(k =>
@@ -4133,6 +4194,7 @@
             });
             if (!r.ok) { showModalError('Guardado local, pero falló en Supabase: ' + r.error); renderUsers(); return; }
           }
+          if (window.logActivity) window.logActivity('editar', 'usuario', id, name);
         } else {
           // ── Crear ── (local-first: persiste en local aunque Supabase falle)
           let newId = genId(role === 'vendedor' ? 'vnd' : role === 'bodega' ? 'bdg' : role === 'agente_pedidos' ? 'agp' : 'adm');
@@ -4160,6 +4222,7 @@
             createdAt: new Date().toISOString(),
           });
           if (syncWarn) { showModalError(syncWarn); renderUsers(); return; }
+          if (window.logActivity) window.logActivity('crear', 'usuario', newId, name);
         }
 
         closeModal();
@@ -5693,6 +5756,7 @@
       const parentId = document.getElementById('msc-parent').value;
       const name = document.getElementById('msc-name').value.trim();
       let id = document.getElementById('msc-id').value.trim();
+      const eraNueva = !id;
       if (!parentId || !name) {
         errEl.textContent = 'Selecciona una categoría padre y escribe el nombre.';
         errEl.classList.add('show');
@@ -5718,6 +5782,7 @@
         }
       }
       saveCustomSubcategory(record);
+      if (window.logActivity) window.logActivity(eraNueva ? 'crear' : 'editar', 'subcategoría', id, name);
       closeSubcategoryModal();
       renderCategoriesView();
       renderCategories();
@@ -5728,6 +5793,8 @@
     async function deleteSubcategoryConfirm(id) {
       if (window.SESSION && SESSION.readonly) return;
       if (!id) return;
+      const subcategory = getNormalizedSubcatsForSelect().find(s => s.id === id);
+      const nombre = subcategory?.name || id;
       if (!confirm('¿Eliminar esta subcategoría? Los productos que la tengan quedarán sin subcategoría.')) return;
       if (window.LAUREAN_DB) {
         const { error } = await window.LAUREAN_DB.from('subcategories').delete().eq('id', id);
@@ -5740,6 +5807,7 @@
       if (window.LAUREAN_DATA && Array.isArray(LAUREAN_DATA.subcategories)) {
         LAUREAN_DATA.subcategories = LAUREAN_DATA.subcategories.filter(s => s.id !== id);
       }
+      if (window.logActivity) window.logActivity('eliminar', 'subcategoría', id, nombre);
       renderCategoriesView();
       renderCategories();
       window.LAUREAN_CATALOG_HYDRATE && window.LAUREAN_CATALOG_HYDRATE();

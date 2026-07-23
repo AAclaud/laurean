@@ -291,6 +291,22 @@ async function callUserFn(payload) {
 window.cacheUserLocal = cacheUserLocal;
 window.callUserFn = callUserFn;
 
+function logActivity(action, entityType, entityId, entityName, details) {
+  try {
+    const s = (typeof getSession === 'function') ? getSession() : null;
+    if (!window.LAUREAN_DB || !s || String(s.userId || '').indexOf('local-') === 0) return;
+    window.LAUREAN_DB.from('activity_log').insert({
+      id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      actor_id: s.userId, actor_name: s.name || null, actor_email: s.email || null,
+      action: action, entity_type: entityType,
+      entity_id: entityId != null ? String(entityId) : null,
+      entity_name: entityName != null ? String(entityName) : null,
+      details: details || null,
+    }).then(({ error }) => { if (error) console.warn('[log]', error.message); });
+  } catch (e) { /* noop */ }
+}
+window.logActivity = logActivity;
+
 // Trae los perfiles de Supabase al caché local (fuente de verdad cuando está
 // conectado). Devuelve true si sincronizó.
 async function syncUsersFromSupabase() {
@@ -504,6 +520,7 @@ function saveSiteSettings(patch) {
     });
   }
   document.dispatchEvent(new CustomEvent('laurean:site-settings-changed', { detail: merged }));
+  logActivity('editar', 'configuración', null, 'Ajustes del sitio', { campos: Object.keys(patch || {}) });
   return merged;
 }
 
@@ -554,6 +571,7 @@ function savePriceOverride(id, data) {
       window.LAUREAN_DB.from('products').update(pub).eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] product price:', error.message); });
     }
   }
+  logActivity('editar', 'precio', id, (typeof getProductById === 'function' ? getProductById(id)?.name : null) || id, { tipo: 'precios por rol' });
 }
 
 // Retorna { gtq, usd } según el rol del usuario.
@@ -644,6 +662,7 @@ function saveBodegaPrice(productId, bodegaId, gtq, usd) {
   overrides[productId].bodega_prices[bodegaId] = { gtq: Number(gtq), usd: Number(usd) };
   localStorage.setItem(KEYS.PRICES, JSON.stringify(overrides));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('price_overrides').upsert({ product_id: productId, data: overrides[productId], updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] bodega price:', error.message); });
+  logActivity('editar', 'precio', productId, (typeof getProductById === 'function' ? getProductById(productId)?.name : null) || productId, { bodega: bodegaId, gtq, usd });
 }
 
 async function syncPriceOverridesFromSupabase() {
@@ -1038,6 +1057,7 @@ function updateOrderStatus(id, status) {
     window.LAUREAN_DB.from('orders').update({ status }).eq('id', orders[idx].supabase_id)
       .then(({ error }) => { if (error) console.warn('[supabase] order status update:', error.message); });
   }
+  logActivity('estado', 'pedido', orders[idx].id, orders[idx].customerName || orders[idx].id, { status });
 }
 
 function getOrdersByUser(userId) {
@@ -1091,6 +1111,7 @@ function markCommissionPaid(id) {
     commissions[idx].status = 'pagado';
     saveCommissions(commissions);
     if (window.LAUREAN_DB) window.LAUREAN_DB.from('commissions').update({ status: 'pagado' }).eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] commission paid:', error.message); });
+    logActivity('pago', 'comisión', id, null);
   }
 }
 
@@ -1187,6 +1208,7 @@ function findCustomerByPhone(phone) {
 function saveCustomer(customer) {
   const list    = getCustomers();
   const session = getSession();
+  const eraNuevo = !customer.id || !list.some(c => c.id === customer.id);
   if (customer.id) {
     const idx = list.findIndex(c => c.id === customer.id);
     if (idx !== -1) {
@@ -1214,12 +1236,15 @@ function saveCustomer(customer) {
       created_at: customer.createdAt || new Date().toISOString(), created_by: customer.createdBy || null,
     }).then(({ error }) => { if (error) console.warn('[supabase] customer upsert:', error.message); });
   }
+  logActivity(eraNuevo ? 'crear' : 'editar', 'cliente', customer.id, customer.name);
   return customer;
 }
 
 function deleteCustomer(id) {
+  const target = getCustomers().find(c => c.id === id);
   saveCustomers(getCustomers().filter(c => c.id !== id));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('customers').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] customer delete:', error.message); });
+  logActivity('eliminar', 'cliente', id, target?.name || id);
 }
 
 // Recalcula clientes desde los pedidos (dedup por teléfono). Reusa el id existente si
@@ -1321,6 +1346,7 @@ function saveDiscountCodes(list)   { localStorage.setItem(KEYS.DISCOUNT_CODES, J
 function saveDiscountCode(code) {
   const list    = getDiscountCodes();
   const session = getSession();
+  const eraNuevo = !code.id || !list.some(c => c.id === code.id);
   if (code.id) {
     const idx = list.findIndex(c => c.id === code.id);
     if (idx !== -1) {
@@ -1348,12 +1374,15 @@ function saveDiscountCode(code) {
       created_at: code.createdAt || new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('[supabase] discount upsert:', error.message); });
   }
+  logActivity(eraNuevo ? 'crear' : 'editar', 'descuento', code.id, code.code || code.name);
   return code;
 }
 
 function deleteDiscountCode(id) {
+  const target = getDiscountCodes().find(c => c.id === id);
   saveDiscountCodes(getDiscountCodes().filter(c => c.id !== id));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('discount_codes').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] discount delete:', error.message); });
+  logActivity('eliminar', 'descuento', id, target?.code || target?.name || id);
 }
 
 function validateDiscountCode(codeStr) {
@@ -1562,6 +1591,12 @@ function getCustomCategories() {
 
 function saveCustomCategory(category) {
   const cats = getCustomCategories();
+  const dataCategories = [
+    ...(window.LAUREAN_DATA?.parentCategories || []),
+    ...(window.LAUREAN_DATA?.categories || []),
+  ];
+  const eraNueva = !category.id ||
+    (!cats.some(c => c.id === category.id) && !dataCategories.some(c => c.id === category.id));
   if (category.id) {
     const idx = cats.findIndex(c => c.id === category.id);
     if (idx !== -1) { cats[idx] = { ...cats[idx], ...category }; }
@@ -1583,16 +1618,23 @@ function saveCustomCategory(category) {
       active: true,
     }).then(({ error }) => { if (error) console.warn('[supabase] upsert category:', error.message); });
   }
+  logActivity(eraNueva ? 'crear' : 'editar', 'categoría', category.id, category.name);
   return category;
 }
 
 function deleteCustomCategory(id) {
+  const dataCategories = [
+    ...(window.LAUREAN_DATA?.parentCategories || []),
+    ...(window.LAUREAN_DATA?.categories || []),
+  ];
+  const target = getCustomCategories().find(c => c.id === id) || dataCategories.find(c => c.id === id);
   const cats = getCustomCategories().filter(c => c.id !== id);
   localStorage.setItem('laurean_custom_categories', JSON.stringify(cats));
   if (window.LAUREAN_DB) {
     window.LAUREAN_DB.from('categories').delete().eq('id', id)
       .then(({ error }) => { if (error) console.warn('[supabase] delete category:', error.message); });
   }
+  logActivity('eliminar', 'categoría', id, target?.name || id);
 }
 
 async function syncCategoriesFromSupabase() {
@@ -1647,6 +1689,9 @@ function getCustomProducts() {
 
 function saveCustomProduct(product) {
   const products = getCustomProducts();
+  const eraNuevo = !product.id ||
+    (!products.some(p => p.id === product.id) &&
+     !(window.LAUREAN_DATA?.products || []).some(p => p.id === product.id));
   if (product.id) {
     const idx = products.findIndex(p => p.id === product.id);
     if (idx !== -1) { products[idx] = { ...products[idx], ...product }; }
@@ -1677,16 +1722,20 @@ function saveCustomProduct(product) {
       active: product.active !== false,
     }).then(({ error }) => { if (error) console.warn('[supabase] upsert product:', error.message); });
   }
+  logActivity(eraNuevo ? 'crear' : 'editar', 'producto', product.id, product.name);
   return product;
 }
 
 function deleteCustomProduct(id) {
+  const target = getCustomProducts().find(p => p.id === id) ||
+    (window.LAUREAN_DATA?.products || []).find(p => p.id === id);
   const products = getCustomProducts().filter(p => p.id !== id);
   localStorage.setItem('laurean_custom_products', JSON.stringify(products));
   if (window.LAUREAN_DB) {
     window.LAUREAN_LAST_PRODUCT_WRITE = window.LAUREAN_DB.from('products').delete().eq('id', id)
       .then(({ error }) => { if (error) console.warn('[supabase] delete product:', error.message); });
   }
+  logActivity('eliminar', 'producto', id, target?.name || id);
 }
 
 // ─── Proveedores ───────────────────────────────────────────────────────────────
@@ -1707,6 +1756,7 @@ window.syncProveedoresFromSupabase = syncProveedoresFromSupabase;
 
 function saveProveedor(proveedor) {
   const list = getProveedores();
+  const eraNuevo = !proveedor.id || !list.some(p => p.id === proveedor.id);
   if (proveedor.id) {
     const idx = list.findIndex(p => p.id === proveedor.id);
     if (idx !== -1) { list[idx] = { ...list[idx], ...proveedor }; }
@@ -1718,13 +1768,16 @@ function saveProveedor(proveedor) {
   }
   localStorage.setItem('laurean_proveedores', JSON.stringify(list));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('suppliers').upsert({ id: proveedor.id, data: proveedor, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] supplier upsert:', error.message); });
+  logActivity(eraNuevo ? 'crear' : 'editar', 'proveedor', proveedor.id, proveedor.name || proveedor.nombre);
   return proveedor;
 }
 
 function deleteProveedor(id) {
+  const target = getProveedores().find(p => p.id === id);
   const list = getProveedores().filter(p => p.id !== id);
   localStorage.setItem('laurean_proveedores', JSON.stringify(list));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('suppliers').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] supplier delete:', error.message); });
+  logActivity('eliminar', 'proveedor', id, target?.name || target?.nombre || id);
 }
 
 window.getProveedores = getProveedores;
@@ -1774,6 +1827,7 @@ window.syncBodegasFromSupabase = syncBodegasFromSupabase;
 
 async function saveBodega(bodega) {
   const list = getBodegas();
+  const eraNueva = !bodega.id || !list.some(b => b.id === bodega.id);
   if (bodega.id) {
     const idx = list.findIndex(b => b.id === bodega.id);
     if (idx !== -1) { list[idx] = { ...list[idx], ...bodega }; }
@@ -1793,6 +1847,7 @@ async function saveBodega(bodega) {
     });
     if (error) { console.warn('[supabase] bodega upsert:', error.message); return { ok: false, error: error.message, bodega }; }
   }
+  logActivity(eraNueva ? 'crear' : 'editar', 'bodega', bodega.id, bodega.name);
   return { ok: true, bodega };
 }
 
@@ -1802,6 +1857,7 @@ function deleteBodega(id) {
   const list = getBodegas().filter(b => b.id !== id);
   localStorage.setItem('laurean_bodegas', JSON.stringify(list));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('bodegas').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] bodega delete:', error.message); });
+  logActivity('eliminar', 'bodega', id, target?.name || id);
 }
 
 window.ensureDefaultBodegas = ensureDefaultBodegas;
@@ -1827,6 +1883,7 @@ window.syncCotizacionesFromSupabase = syncCotizacionesFromSupabase;
 
 function saveCotizacion(cotizacion) {
   const list = getCotizaciones();
+  const eraNueva = !cotizacion.id || !list.some(c => c.id === cotizacion.id);
   if (cotizacion.id) {
     const idx = list.findIndex(c => c.id === cotizacion.id);
     if (idx !== -1) { list[idx] = { ...list[idx], ...cotizacion }; }
@@ -1839,6 +1896,7 @@ function saveCotizacion(cotizacion) {
   }
   localStorage.setItem('laurean_cotizaciones', JSON.stringify(list));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('quotes').upsert({ id: cotizacion.id, data: cotizacion, status: cotizacion.status || null, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) console.warn('[supabase] quote upsert:', error.message); });
+  logActivity(eraNueva ? 'crear' : 'editar', 'cotización', cotizacion.id, cotizacion.name || cotizacion.cliente || cotizacion.id);
   return cotizacion;
 }
 
@@ -1846,6 +1904,7 @@ function deleteCotizacion(id) {
   const list = getCotizaciones().filter(c => c.id !== id);
   localStorage.setItem('laurean_cotizaciones', JSON.stringify(list));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('quotes').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] quote delete:', error.message); });
+  logActivity('eliminar', 'cotización', id, id);
 }
 
 window.getCotizaciones = getCotizaciones;
@@ -1861,6 +1920,7 @@ function saveCombo(combo) {
   const session = getSession();
   const now     = new Date().toISOString();
   let action    = 'modified';
+  const eraNuevo = !combo.id || !list.some(c => c.id === combo.id);
 
   if (combo.id) {
     const idx = list.findIndex(c => c.id === combo.id);
@@ -1888,13 +1948,16 @@ function saveCombo(combo) {
       id: savedCombo.id, data: savedCombo, active: !!savedCombo.active, updated_at: new Date().toISOString(),
     }).then(({ error }) => { if (error) console.warn('[supabase] combo upsert:', error.message); });
   }
+  logActivity(eraNuevo ? 'crear' : 'editar', 'combo', combo.id, combo.name);
   return savedCombo;
 }
 
 function deleteCombo(id) {
+  const target = getCombos().find(c => c.id === id);
   const list = getCombos().filter(c => c.id !== id);
   localStorage.setItem(KEYS.COMBOS, JSON.stringify(list));
   if (window.LAUREAN_DB) window.LAUREAN_DB.from('combos').delete().eq('id', id).then(({ error }) => { if (error) console.warn('[supabase] combo delete:', error.message); });
+  logActivity('eliminar', 'combo', id, target?.name || id);
 }
 
 function toggleComboActive(id) {
