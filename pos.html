@@ -1066,6 +1066,7 @@
     if (!POS_SESSION) return [];
     const role     = POS_SESSION.role;
     const bodegaId = getActiveBodega();
+    const priceRole = bodegaId ? 'bodega' : role;   // en el POS con bodega activa, el precio SIEMPRE es el de esa bodega (no el de vendedor)
     return [
       ...(data.products    || []),
       ...(data.sweaters    || []),
@@ -1073,7 +1074,7 @@
       ...getCustomProducts(),
     ].map(p => ({
       ...p,
-      displayPrice: getProductPrice(p.id, p.price_gtq || p.base_gtq || 0, p.price_usd || p.base_usd || 0, role, bodegaId).gtq,
+      displayPrice: getProductPrice(p.id, p.price_gtq || p.base_gtq || 0, p.price_usd || p.base_usd || 0, priceRole, bodegaId).gtq,
     }));
   }
 
