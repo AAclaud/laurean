@@ -5,7 +5,7 @@
 // No cachea HTML ni llamadas a Supabase (siempre red).
 // ============================================================
 
-const VERSION    = 'laurean-v5';
+const VERSION    = 'laurean-v6';
 const ASSET_CACHE = `${VERSION}-assets`;
 const MAX_AGE_MS  = 7 * 24 * 60 * 60 * 1000; // 7 días
 
