@@ -2637,16 +2637,10 @@
       if (pendApps > 0) document.getElementById('sb-notify-dot').style.display = '';
 
       startOrderNotifPolling();
-      // Si el token de Supabase murió (races de refresh multi-pestaña), las escrituras
-      // fallan en silencio. Detectarlo y pedir re-login.
-      if (window.LAUREAN_DB && SESSION && String(SESSION.userId || '').indexOf('local-') !== 0) {
-        window.LAUREAN_DB.auth.getSession().then(({ data }) => {
-          if (!data || !data.session) {
-            alert('Tu sesión expiró. Vuelve a iniciar sesión para que los cambios se guarden en la nube.');
-            window.location.href = 'login.html';
-          }
-        });
-      }
+      // Vigilante de sesión: refresca el token al enfocar/cada 60s y, si no se puede recuperar,
+      // muestra un modal limpio de re-login en vez de dejar que las escrituras fallen en silencio.
+      window.onLaureanSessionLost = function(){ if (typeof showSessionExpiredModal === 'function') showSessionExpiredModal(); };
+      if (typeof startSessionWatchdog === 'function') startSessionWatchdog();
       if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
       if (typeof syncPriceOverridesFromSupabase === 'function') syncPriceOverridesFromSupabase();
       if (typeof syncPriceHistoryFromSupabase === 'function') syncPriceHistoryFromSupabase();
@@ -4136,6 +4130,17 @@
       setUserSaveBusy(true);
       const errEl = document.getElementById('modal-error');
       errEl.classList.remove('show');
+
+      // Si la sesión de Supabase murió, no guardes en local a medias: pide re-login.
+      // (Solo para sesiones Supabase reales; en modo local 'local-...' no aplica.)
+      if (window.LAUREAN_DB && SESSION && String(SESSION.userId || '').indexOf('local-') !== 0 && typeof ensureSupabaseSession === 'function') {
+        const _ok = await ensureSupabaseSession();
+        if (!_ok) {
+          if (typeof showSessionExpiredModal === 'function') showSessionExpiredModal();
+          USER_SAVE_IN_PROGRESS = false; setUserSaveBusy(false);
+          return;
+        }
+      }
 
       try {
         const id          = document.getElementById('modal-user-id').value;
@@ -6838,6 +6843,10 @@
         notes:     document.getElementById('bodega-notes').value.trim(),
       };
       if (!data.name) { alert('El nombre es requerido.'); return; }
+      if (window.LAUREAN_DB && SESSION && String(SESSION.userId || '').indexOf('local-') !== 0 && typeof ensureSupabaseSession === 'function') {
+        const _ok = await ensureSupabaseSession();
+        if (!_ok) { if (typeof showSessionExpiredModal === 'function') showSessionExpiredModal(); return; }
+      }
       const res = await saveBodega(data);
       if (res && res.ok === false) {
         alert('La bodega se guardó localmente, pero NO se pudo guardar en Supabase: ' + res.error + '\nRevisa tu sesión e inténtalo de nuevo.');

@@ -69,6 +69,7 @@
         }
       } else if (event === 'SIGNED_OUT') {
         localStorage.removeItem('laurean_session');
+        if (typeof window.onLaureanSessionLost === 'function') window.onLaureanSessionLost();
       }
     });
 

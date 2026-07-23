@@ -1017,6 +1017,8 @@
   // ─── Init App ──────────────────────────────────────────────────────────────
   function initPosApp() {
     document.getElementById('pos-login').style.display = 'none';
+    window.onLaureanSessionLost = function(){ if (typeof showSessionExpiredModal === 'function') showSessionExpiredModal(); };
+    if (typeof startSessionWatchdog === 'function') startSessionWatchdog();
     if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
     if (typeof syncCombosFromSupabase === 'function') syncCombosFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });
     if (typeof syncPriceOverridesFromSupabase === 'function') syncPriceOverridesFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });

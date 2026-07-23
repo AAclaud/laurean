@@ -449,6 +449,66 @@ function syncSessionExpiry(expiresAt) {
 }
 window.syncSessionExpiry = syncSessionExpiry;
 
+// Verifica la sesión de Supabase y la refresca si está por vencer. Devuelve true si hay sesión válida.
+// Si no hay Supabase configurado, devuelve true (modo local es esperado).
+async function ensureSupabaseSession() {
+  const db = window.LAUREAN_DB;
+  if (!db) return true;
+  try {
+    const { data } = await db.auth.getSession();
+    let session = data && data.session;
+    const soon = session && session.expires_at && (session.expires_at - Date.now() / 1000) < 60;
+    if (!session || soon) {
+      const { data: r, error } = await db.auth.refreshSession();
+      if (error || !r || !r.session) return false;
+      session = r.session;
+    }
+    if (typeof syncSessionExpiry === 'function') syncSessionExpiry(session.expires_at || null);
+    return true;
+  } catch (e) { return false; }
+}
+window.ensureSupabaseSession = ensureSupabaseSession;
+
+// Modal de marca "Tu sesión expiró" (se construye solo; sirve en admin/POS). Bloquea y pide re-login.
+function showSessionExpiredModal() {
+  if (document.getElementById('laurean-session-expired')) return;
+  const ov = document.createElement('div');
+  ov.id = 'laurean-session-expired';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(25,39,41,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px;';
+  ov.innerHTML = '<div style="background:#F1ECE8;max-width:420px;width:100%;border-radius:12px;padding:32px 28px;text-align:center;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+    '<div style="font-size:32px;margin-bottom:10px">🔒</div>' +
+    '<h2 style="margin:0 0 8px;font-size:20px;color:#192729;font-weight:600">Tu sesión expiró</h2>' +
+    '<p style="margin:0 0 22px;font-size:14px;color:#8F3833;line-height:1.5">Por seguridad tu sesión se cerró. Vuelve a iniciar sesión para seguir guardando cambios.</p>' +
+    '<button id="lse-login-btn" style="background:#192729;color:#fff;border:0;border-radius:6px;padding:13px 28px;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">Iniciar sesión</button></div>';
+  document.body.appendChild(ov);
+  document.getElementById('lse-login-btn').onclick = function(){ window.location.href = 'login.html'; };
+}
+window.showSessionExpiredModal = showSessionExpiredModal;
+
+// Vigilante de sesión: revisa/refresca al enfocar la pestaña, al volver visible y cada 60s.
+// Solo aplica a sesiones Supabase reales (no a las locales 'local-...'). Si la sesión no se puede
+// recuperar, dispara onExpired (una sola vez).
+function startSessionWatchdog() {
+  let handling = false;
+  async function check() {
+    const s = (typeof getSession === 'function') ? getSession() : null;
+    if (!s || String(s.userId || '').indexOf('local-') === 0 || !window.LAUREAN_DB) return;
+    const ok = await ensureSupabaseSession();
+    if (!ok && !handling) {
+      handling = true;
+      if (typeof window.onLaureanSessionLost === 'function') window.onLaureanSessionLost();
+      else showSessionExpiredModal();
+    } else if (ok) {
+      handling = false;
+    }
+  }
+  window.addEventListener('focus', check);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) check(); });
+  setInterval(check, 60000);
+  check();
+}
+window.startSessionWatchdog = startSessionWatchdog;
+
 // Redirige al login si la sesión no cumple los roles requeridos.
 function requireAuth(allowedRoles = []) {
   const session = getSession();
