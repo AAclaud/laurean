@@ -291,6 +291,7 @@
       overflow-y: auto;
       padding: 36px;
     }
+    .od-print-logo { display: none; }
     .modal-title { font-family: var(--fd); font-size: 26px; font-weight: 300; margin-bottom: 28px; }
     .modal-footer { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--piedra); }
     .modal-error { background: rgba(229,57,53,0.08); border: 1px solid rgba(229,57,53,0.2); color: #c62828; font-size: 13px; padding: 10px 14px; margin-bottom: 16px; display: none; }
@@ -522,7 +523,8 @@
       body > *:not(#order-detail-overlay) { display: none !important; }
       #order-detail-overlay { position: static !important; inset: auto !important; background: #fff !important; padding: 0 !important; display: block !important; overflow: visible !important; }
       #order-detail-overlay .modal { box-shadow: none !important; max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; max-height: none !important; overflow: visible !important; color: #000 !important; }
-      #order-detail-overlay .modal::before { content: "LAUREAN"; display: block; text-align: center; font-family: var(--fd); font-size: 20px; font-weight: 600; letter-spacing: 0; margin-bottom: 4mm; }
+      #order-detail-overlay .modal::before { content: none !important; }
+      #order-detail-overlay .od-print-logo { display: block !important; width: 42mm; height: auto; margin: 0 auto 4mm !important; }
       #order-detail-overlay .modal-title { text-align: center !important; font-size: 14px !important; margin: 0 0 2mm !important; }
       #order-detail-overlay #od-status-badge { display: none !important; }
       #order-detail-overlay #od-meta { text-align: center !important; margin-bottom: 4mm !important; color: #000 !important; font-size: 10px !important; }
@@ -2259,6 +2261,7 @@
   <!-- ── MODAL DETALLE PEDIDO ────────────────────────────────────────────────── -->
   <div class="modal-overlay" id="order-detail-overlay" onclick="if(event.target===this)closeOrderDetail()" style="display:none;align-items:center;justify-content:center;padding:20px;">
     <div class="modal" style="max-width:780px">
+      <img class="od-print-logo" src="images/brand/logo-navbar.svg" alt="Laurean" onerror="this.style.display='none'">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
         <h2 class="modal-title" id="od-title" style="margin-bottom:0">Pedido</h2>
         <span class="badge" id="od-status-badge"></span>
