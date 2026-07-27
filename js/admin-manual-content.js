@@ -38,38 +38,73 @@ window.LAUREAN_MANUAL_VIEWS = {
     label: 'Pedidos',
     subtitle: 'Atender los pedidos de la tienda y del punto de venta',
     blocks: [
-      { type: 'p', text: 'Aquí llegan los pedidos de la tienda en línea y del punto de venta (POS). Desde cada uno gestionas su estado, el pago, el envío y el contacto con el cliente.' },
+      { type: 'p', text: 'Aquí llegan todos los pedidos: los de la tienda en línea y los del punto de venta. Desde la lista los filtras y los exportas; al abrir uno gestionas su estado, el pago, el envío y el contacto con el cliente.' },
+
+      { type: 'h', text: 'La lista — qué significa cada columna' },
+      { type: 'kv', items: [
+        ['ID', 'el número del pedido. Es con el que lo identificas ante el cliente.'],
+        ['Fecha', 'cuándo se hizo.'],
+        ['Cliente', 'quién compró.'],
+        ['Origen', 'de dónde vino: de la tienda en línea o del punto de venta.'],
+        ['Ítems', 'cuántas piezas lleva.'],
+        ['Subtotal / Descuento / Total', 'el precio antes del descuento, la rebaja aplicada y lo que finalmente paga.'],
+        ['Pago', 'si ya pagó y por qué medio.'],
+        ['Referido', 'el código de la vendedora que trajo la venta. Si tiene código, se le genera comisión.'],
+        ['Estado', 'en qué punto va el pedido.'],
+      ] },
+
       { type: 'h', text: 'Paso a paso — procesar un pedido' },
       { type: 'steps', items: [
         'En la lista, haz clic en la fila del pedido para abrirlo.',
         'Revisa los productos, el total y los datos del cliente (nombre, teléfono, dirección).',
         'En "Estado", elige cómo va: Pendiente → Procesando → Enviado → Completado.',
-        'Marca si el pago ya fue recibido (campo de pago).',
+        'Marca si el pago ya fue recibido.',
         'Presiona "Guardar estado" para dejar registrado el cambio.',
       ] },
-      { type: 'h', text: 'Paso a paso — avisar al cliente por WhatsApp' },
-      { type: 'steps', items: [
-        'Abre el pedido (o ubícalo en la lista).',
-        'Presiona "Seguimiento WhatsApp".',
-        'Se abre WhatsApp con el mensaje ya armado (saludo, número de pedido, productos y total).',
-        'Revisa el texto y envíalo.',
-      ] },
-      { type: 'h', text: 'Paso a paso — generar la guía de envío (Forza)' },
-      { type: 'steps', items: [
-        'Confirma que el pedido tenga departamento y municipio (si falta, complétalo en el pedido).',
-        'Presiona "+ Guía Forza" (o "Generar guía").',
-        'Revisa los datos y confírmalos.',
-        'Usa "Imprimir guía" para adjuntarla al paquete.',
-      ] },
+
       { type: 'h', text: 'Estados del pedido' },
       { type: 'kv', items: [
         ['Pendiente', 'recién ingresado, aún no se procesa.'],
         ['Procesando', 'se está preparando.'],
         ['Enviado', 'ya salió con el courier.'],
-        ['Completado', 'entregado y cerrado (cuenta como venta).'],
-        ['Cancelado', 'anulado (no cuenta como venta).'],
+        ['Completado', 'entregado y cerrado. Solo estos cuentan como venta en las estadísticas.'],
+        ['Cancelado', 'anulado. No cuenta como venta.'],
       ] },
-      { type: 'note', text: 'Los pedidos NO se borran. Si te equivocaste, cambia el estado o deja una nota; para anularlo, ponlo en "Cancelado". El punto rojo del menú se apaga solo cuando ya no quedan pedidos pendientes.' },
+
+      { type: 'h', text: 'Paso a paso — avisar al cliente por WhatsApp' },
+      { type: 'steps', items: [
+        'Abre el pedido.',
+        'Presiona "Seguimiento WhatsApp".',
+        'Se abre WhatsApp con el mensaje ya armado: saludo, número de pedido, productos y total.',
+        'Revisa el texto, ajústalo si quieres y envíalo.',
+      ] },
+
+      { type: 'h', text: 'Paso a paso — generar la guía de un envío' },
+      { type: 'steps', items: [
+        'Confirma que el pedido tenga departamento y municipio. Si falta, complétalo en el pedido.',
+        'Presiona el botón de guía Forza dentro del pedido.',
+        'Revisa los datos y confirma.',
+        'Imprime la guía y pégala al paquete.',
+      ] },
+
+      { type: 'h', text: 'Paso a paso — generar muchas guías de una vez' },
+      { type: 'steps', items: [
+        'Sirve cuando tienes varios pedidos listos para despachar el mismo día.',
+        'Usa los filtros de arriba para dejar en pantalla los pedidos que vas a enviar.',
+        'Presiona "Generar guías pendientes".',
+        'El sistema te dice cuántas guías va a crear y te pide confirmar.',
+        'Al terminar te muestra cuáles salieron bien y cuáles fallaron, para que corrijas solo esas.',
+      ] },
+      { type: 'note', text: 'Solo toma los pedidos que no son del punto de venta y que todavía no tienen guía, así que no genera duplicados. Los que fallan casi siempre es porque les falta el departamento o el municipio.' },
+
+      { type: 'h', text: 'Paso a paso — exportar los pedidos' },
+      { type: 'steps', items: [
+        'Filtra lo que necesitas (por origen o por estado).',
+        'Presiona "Exportar CSV".',
+        'Se descarga un archivo que puedes abrir en Excel para contabilidad o reportes.',
+      ] },
+
+      { type: 'note', text: 'Los pedidos NO se borran. Si te equivocaste, cambia el estado; para anular uno, ponlo en "Cancelado". El punto rojo del menú se apaga solo cuando ya no quedan pedidos pendientes.' },
       { type: 'roles', items: ['admin', 'superusuario', 'agente de pedidos'] },
     ],
   },
@@ -295,33 +330,98 @@ window.LAUREAN_MANUAL_VIEWS = {
 
   inventario: {
     label: 'Inventario',
-    subtitle: 'Controlar el stock: entradas, salidas y traslados',
+    subtitle: 'Cuánto producto hay, dónde está y todo lo que entra y sale',
     blocks: [
-      { type: 'p', text: 'Controla las existencias por bodega. Tiene pestañas: "Stock actual", "Movimientos", "Calendario" y "Mayoreo" (el maestro de artículos).' },
-      { type: 'h', text: 'Paso a paso — registrar una entrada o salida' },
+      { type: 'p', text: 'Controla las existencias de cada bodega. Está dividido en cuatro pestañas, cada una con su propósito.' },
+
+      { type: 'h', text: 'Las cuatro pestañas' },
+      { type: 'kv', items: [
+        ['Stock Actual', 'cuánto hay hoy de cada producto. Desde aquí se registra todo lo que entra y sale.'],
+        ['Movimientos', 'el historial: todo lo que se registró, quién lo hizo y cuándo. Solo se consulta.'],
+        ['Calendario', 'en qué días entró mercadería durante el mes.'],
+        ['Mayoreo', 'el listado maestro de artículos de mayoreo, del que se publican productos a la tienda.'],
+      ] },
+      { type: 'note', text: 'Lo más común es confundirlas: los movimientos se REGISTRAN desde "Stock Actual"; la pestaña "Movimientos" solo sirve para consultar lo ya registrado.' },
+
+      { type: 'h', text: 'Paso a paso — registrar mercadería que llega' },
       { type: 'steps', items: [
-        'Ve a la pestaña "Movimientos".',
-        'Busca el producto escribiendo su nombre o código.',
-        'Elige el tipo: "Entrada" (llega mercadería) o "Salida" (merma, daño, ajuste).',
-        'Escribe la cantidad.',
-        'En "Notas", anota el motivo (proveedor, factura, o razón de la salida).',
+        'Entra a la pestaña "Stock Actual".',
+        'Presiona "+ Ingreso".',
+        'Elige la "Bodega" donde entra el producto y el "Producto".',
+        'Escribe la cantidad que llegó.',
+        'Opcional: elige el "Proveedor" y marca "Pagado al proveedor" si ya se le pagó.',
+        'Si el producto maneja tallas, usa "Detalle por talla" para indicar cuántas de cada una.',
+        'Presiona "Registrar". El stock sube y queda el registro.',
+      ] },
+
+      { type: 'h', text: 'Paso a paso — dar salida a un producto' },
+      { type: 'steps', items: [
+        'En "Stock Actual", presiona "- Salida".',
+        'Elige la bodega y el producto.',
+        'Escribe la "Cantidad a retirar".',
+        'Escribe el "Motivo": daño, pérdida, muestra, regalo. Es lo que después explica el faltante.',
         'Presiona "Registrar".',
       ] },
-      { type: 'h', text: 'Paso a paso — trasladar stock entre bodegas' },
+      { type: 'note', text: 'Las ventas NO se registran como salida: el punto de venta y la tienda descuentan el stock solos. Usa "Salida" únicamente para lo que se pierde o se saca sin vender.' },
+
+      { type: 'h', text: 'Paso a paso — corregir el stock tras un conteo físico' },
       { type: 'steps', items: [
-        'Usa el botón de traslado ("⇄ Trasladar entre bodegas").',
-        'Elige la bodega de origen y la de destino.',
-        'Indica el producto y la cantidad a mover.',
-        'Confirma: el stock sale de una bodega y entra a la otra.',
+        'Cuenta físicamente lo que hay en la bodega.',
+        'En "Stock Actual", presiona "Ajuste".',
+        'Elige la bodega y el producto.',
+        'En "Nuevo stock", escribe la cantidad REAL que contaste. No la diferencia: el número final.',
+        'Anota en el motivo que fue un conteo físico.',
+        'Presiona "Registrar". El sistema calcula solo la diferencia.',
       ] },
+
+      { type: 'h', text: 'Paso a paso — mover producto entre bodegas' },
+      { type: 'steps', items: [
+        'En "Stock Actual", presiona "⇄ Trasladar entre bodegas".',
+        'Elige "Bodega origen" (de dónde sale) y "Bodega destino" (a dónde va).',
+        'Indica el producto y la cantidad.',
+        'Agrega "Notas" si hace falta (quién lo lleva, cuándo).',
+        'Confirma: el stock baja en una bodega y sube en la otra, en un solo paso.',
+      ] },
+
       { type: 'h', text: 'Tipos de movimiento' },
       { type: 'kv', items: [
-        ['Entrada', 'aumenta stock (llega mercadería, devolución).'],
-        ['Salida', 'disminuye stock (merma, daño, vencimiento).'],
-        ['Ajuste', 'corrige el stock: registra una Entrada o Salida por la diferencia del conteo físico.'],
-        ['Traslado', 'mueve stock de una bodega a otra.'],
+        ['Ingreso', 'aumenta el stock: llegó mercadería o hubo una devolución.'],
+        ['Salida', 'disminuye el stock: daño, pérdida, muestra o regalo.'],
+        ['Ajuste', 'deja el stock en la cantidad real contada. Corrige diferencias.'],
+        ['Traslado', 'mueve producto de una bodega a otra sin cambiar el total.'],
       ] },
-      { type: 'note', text: 'Cada movimiento queda registrado con usuario y fecha, y NO se puede borrar. Si te equivocaste, registra el movimiento contrario para corregir. El punto rojo del menú avisa de stock bajo; el "Kardex" muestra el historial de un producto.' },
+
+      { type: 'h', text: 'Consultar el historial y sacar reportes' },
+      { type: 'steps', items: [
+        'La pestaña "Movimientos" lista todo lo registrado, con fecha, tipo, cantidad, el stock antes y después, proveedor y notas.',
+        'Puedes filtrar por bodega y por tipo de movimiento.',
+        'Desde "Stock Actual", "Imprimir reporte" genera el documento con la imagen de Laurean para imprimir o guardar en PDF.',
+        '"Exportar CSV" descarga los datos para abrirlos en Excel.',
+        'Para ver toda la vida de un solo producto, abre su "Kardex": ahí está su historial completo.',
+      ] },
+
+      { type: 'h', text: 'La pestaña Calendario' },
+      { type: 'steps', items: [
+        'Muestra el mes con los días en que entró mercadería.',
+        'Cada día marcado indica cuántos ingresos hubo y cuántas unidades.',
+        'Haz clic en un día para ver el detalle de ese día.',
+        'Usa las flechas ‹ y › para moverte entre meses.',
+      ] },
+      { type: 'note', text: 'Sirve para ver de un vistazo cada cuánto llega mercadería y detectar si un mes se quedó sin abastecer.' },
+
+      { type: 'h', text: 'La pestaña Mayoreo' },
+      { type: 'p', text: 'Es el listado maestro de artículos de mayoreo. Cada fila trae su código (COD), descripción, proveedor, marca, conteo, costo y precio de venta, organizados por período.' },
+      { type: 'steps', items: [
+        'Presiona "Importar CSV" para cargar el listado desde un archivo.',
+        'Usa el buscador para encontrar por código, descripción o marca.',
+        'Alterna entre "Mes" y "Semana" según cómo quieras agrupar los artículos.',
+        'En la leyenda puedes nombrar cada período y darle un color, para distinguirlos de un vistazo.',
+        'Cuando un artículo esté listo para venderse en la tienda, presiona "Publicar".',
+        'Al publicar, indica el "Precio a mostrar sin login de vendedor (Q)", la "Categoría", la "Subcategoría" y, si tienes, la "Galería" de fotos.',
+      ] },
+      { type: 'note', text: 'El "Precio a mostrar sin login de vendedor (Q)" es el que ve cualquier visitante de la tienda. Si lo dejas vacío, el producto se publica sin precio y aparece la opción de contactar a Laurean.' },
+
+      { type: 'note', text: 'Ningún movimiento se puede borrar: así el inventario siempre cuadra y se puede auditar. Si te equivocaste, registra el movimiento contrario para corregir. El punto rojo del menú avisa cuando hay stock bajo.' },
       { type: 'roles', items: ['admin', 'superusuario', 'bodega'] },
     ],
   },
@@ -537,14 +637,14 @@ window.LAUREAN_MANUAL_VIEWS = {
       { type: 'steps', items: [
         'Presiona "+ Nuevo Código".',
         'Escribe el código (por ejemplo, BIENVENIDA10).',
-        'Elige el tipo: "Porcentaje" (un % del total) o "Fijo" (un monto en Q).',
+        'Elige el tipo: "Porcentaje (%)" (un % del total) o "Monto fijo (Q)" (una cantidad en quetzales).',
         'Escribe el valor (por ejemplo, 10 para 10%, o 50 para Q50).',
         'Define la vigencia (desde/hasta) y, si quieres, un límite de usos.',
         'Actívalo y guarda.',
       ] },
       { type: 'kv', items: [
-        ['Porcentaje', 'descuenta un % del total (ej. 10%).'],
-        ['Fijo', 'descuenta un monto en quetzales (ej. Q50).'],
+        ['Porcentaje (%)', 'descuenta un % del total (ej. 10%).'],
+        ['Monto fijo (Q)', 'descuenta una cantidad en quetzales (ej. Q50).'],
       ] },
       { type: 'note', text: 'Un código inactivo o vencido deja de aplicar solo. El sistema valida cada código al momento de usarlo, así que no se puede abusar de uno caducado.' },
       { type: 'roles', items: ['admin', 'superusuario'] },
