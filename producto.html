@@ -1077,13 +1077,22 @@
       var CART_KEY = 'laurean_pending_cart';
       var cart = [];
       try { cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch(e) { cart = []; }
-      var existing = cart.find(function(i) { return i.id === product.id; });
+      // El color y la talla elegidos viajan con la línea: es lo que después
+      // descuenta el inventario de esa variante.
+      var color = (_selectedVariant && (_selectedVariant.label || '')) || '';
+      var size  = _selectedSize || '';
+      var lineId = [product.id, color, size].join('||');
+      var existing = cart.find(function(i) { return (i.lineId || i.id) === lineId; });
       if (existing) {
         existing.qty++;
       } else {
+        var detalle = [color, size].filter(Boolean).join(' · ');
         cart.push({
+          lineId:    lineId,
           id:        product.id,
-          name:      product.name,
+          name:      product.name + (detalle ? ' · ' + detalle : ''),
+          color:     color,
+          size:      size,
           image:     product.image || '',
           price_gtq: priceObj ? priceObj.gtq : (product.price_gtq || 0),
           price_usd: priceObj ? priceObj.usd : (product.price_usd || 0),

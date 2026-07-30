@@ -1581,10 +1581,10 @@
     };
     createOrder(orderData);
 
-    // Descontar del inventario de la bodega activa, por color y talla.
-    if (activeBodegaId && typeof applyVariantSale === 'function') {
-      applyVariantSale(orderData.items, activeBodegaId)
-        .catch(e => console.warn('[pos] descuento de inventario:', e && e.message));
+    // El inventario lo descuenta la base al entrar el pedido (disparador
+    // descontar_variant_stock). Aquí solo refrescamos para ver el saldo nuevo.
+    if (typeof syncVariantStockFromSupabase === 'function') {
+      setTimeout(() => syncVariantStockFromSupabase(), 1200);
     }
 
     // Increment discount code usage after order is created

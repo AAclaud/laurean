@@ -3883,11 +3883,31 @@
       try { pending = JSON.parse(localStorage.getItem('laurean_pending_cart') || '[]'); } catch { pending = []; }
       if (!Array.isArray(pending) || !pending.length) return;
       localStorage.removeItem('laurean_pending_cart');
+      // Se agrega directo (sin pasar por addToCart) para conservar el color y la
+      // talla ya elegidos en la ficha, y porque addToCart redirige si hay variantes.
       pending.forEach(it => {
-        const p = getProductById(it.id) || it;   // fallback al snapshot guardado
-        const qty = Math.max(1, parseInt(it.qty, 10) || 1);
-        for (let n = 0; n < qty; n++) addToCart(p);
+        const p    = getProductById(it.id) || it;   // fallback al snapshot guardado
+        const qty  = Math.max(1, parseInt(it.qty, 10) || 1);
+        const role = SESSION_LOCAL ? SESSION_LOCAL.role : 'guest';
+        const price = getProductPrice(
+          p.id, p.price_gtq ?? p.base_gtq ?? 0, p.price_usd ?? p.base_usd ?? 0, role);
+        const color  = it.color || '';
+        const size   = it.size  || '';
+        const lineId = [p.id, color, size].join('||');
+        const existing = cart.find(i => (i.lineId || i.id) === lineId);
+        if (existing) {
+          existing.qty += qty;
+        } else {
+          const detalle = [color, size].filter(Boolean).join(' · ');
+          cart.push({
+            ...p,
+            lineId, color, size,
+            name: (p.name || it.name || '') + (detalle ? ' · ' + detalle : ''),
+            price_gtq: price.gtq, price_usd: price.usd, qty,
+          });
+        }
       });
+      renderCart();
       if (wantCart) {
         openCart();
         if (params.get('cart') === '1') {
@@ -3899,6 +3919,12 @@
     }
 
     function addToCart(product) {
+      // Con variantes hay que elegir color y talla. Eso se hace en la ficha del
+      // producto, la única pantalla con selectores y disponibilidad real.
+      if (Array.isArray(product.variants) && product.variants.length) {
+        window.location.href = 'producto.html?id=' + encodeURIComponent(product.id);
+        return;
+      }
       const role  = SESSION_LOCAL ? SESSION_LOCAL.role : 'guest';
       const baseGtq = product.price_gtq ?? product.base_gtq ?? 0;
       const baseUsd = product.price_usd ?? product.base_usd ?? 0;
@@ -3915,9 +3941,9 @@
     }
 
     function removeFromCart(id) {
-      const it = cart.find(i => i.id === id);
+      const it = cart.find(i => (i.lineId || i.id) === id);
       if (it && it._comboId) { removeCombo(it._comboId); return; }  // pieza de combo → quita el combo entero
-      cart = cart.filter(i => i.id !== id);
+      cart = cart.filter(i => (i.lineId || i.id) !== id);
       renderCart();
     }
 
@@ -3928,7 +3954,7 @@
     }
 
     function updateQty(id, delta) {
-      const item = cart.find(i => i.id === id);
+      const item = cart.find(i => (i.lineId || i.id) === id);
       if (!item) return;
       if (item._comboId) return;  // las piezas de combo no se ajustan individualmente
       item.qty += delta;
@@ -3937,7 +3963,7 @@
     }
 
     function setQty(id, val) {
-      const item = cart.find(i => i.id === id);
+      const item = cart.find(i => (i.lineId || i.id) === id);
       if (!item) return;
       if (item._comboId) return;  // piezas de combo no se editan individualmente
       const n = parseInt(val, 10);
@@ -3977,14 +4003,14 @@
         const qtyControls = isCombo
           ? `<div class="ci-qty"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:var(--warm-dark, #531F23);color:#fff;padding:2px 8px;border-radius:20px;">Combo${item._comboName ? ' · ' + escapeHtml(item._comboName) : ''}</span> <span class="qty-val" style="margin-left:6px;">×${escapeHtml(item.qty)}</span></div>`
           : `<div class="ci-qty">
-              <button class="qty-btn" onclick="updateQty('${jsAttr(item.id)}', -1)">−</button>
+              <button class="qty-btn" onclick="updateQty('${jsAttr(item.lineId || item.id)}', -1)">−</button>
               <input class="qty-val" type="text" inputmode="numeric" value="${escapeAttr(String(item.qty))}"
-                     onfocus="this.select()" onchange="setQty('${jsAttr(item.id)}', this.value)" aria-label="Cantidad" />
-              <button class="qty-btn" onclick="updateQty('${jsAttr(item.id)}', 1)">+</button>
+                     onfocus="this.select()" onchange="setQty('${jsAttr(item.lineId || item.id)}', this.value)" aria-label="Cantidad" />
+              <button class="qty-btn" onclick="updateQty('${jsAttr(item.lineId || item.id)}', 1)">+</button>
             </div>`;
         const removeBtn = isCombo
           ? `<button class="ci-remove" onclick="removeCombo('${jsAttr(item._comboId)}')">Quitar combo</button>`
-          : `<button class="ci-remove" onclick="removeFromCart('${jsAttr(item.id)}')">Eliminar</button>`;
+          : `<button class="ci-remove" onclick="removeFromCart('${jsAttr(item.lineId || item.id)}')">Eliminar</button>`;
         return `
         <div class="cart-item${item.id === newItemId ? ' cart-item-new' : ''}">
           <img class="cart-item-img" src="${escapeAttr(item.image || '')}" alt="${escapeAttr(item.name)}"
@@ -4466,6 +4492,12 @@
       };
 
       const order = createOrder(orderData);
+
+      // El inventario lo descuenta la base al entrar el pedido (disparador
+      // descontar_variant_stock), así funciona también para clientes anónimos.
+      if (typeof syncVariantStockFromSupabase === 'function') {
+        setTimeout(() => syncVariantStockFromSupabase(), 1200);
+      }
 
       // Increment discount code usage
       if (appliedDscCode) incrementCodeUsage(appliedDscCode.id);
