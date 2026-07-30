@@ -24,6 +24,47 @@
     }
     html, body { height: 100%; font-family: var(--fb); background: var(--crema); color: var(--carbon); }
 
+    /* ─── Selección de color y talla ──────────────────────────── */
+    .pv-overlay { position: fixed; inset: 0; background: rgba(25,26,24,0.55); backdrop-filter: blur(2px);
+      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 900; }
+    .pv-overlay.open { display: flex; }
+    .pv-modal { background: #fff; border-radius: 10px; width: 100%; max-width: 520px; max-height: 90vh;
+      overflow-y: auto; box-shadow: 0 18px 60px rgba(25,26,24,0.28); }
+    .pv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+      padding: 20px 24px 14px; border-bottom: 1px solid var(--piedra); }
+    .pv-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--warm-mid); font-weight: 600; }
+    .pv-title { font-family: var(--fd); font-size: 22px; font-weight: 500; margin-top: 3px; line-height: 1.2; }
+    .pv-x { background: none; border: none; font-size: 26px; line-height: 1; color: var(--warm-mid); cursor: pointer; padding: 0 4px; }
+    .pv-x:hover { color: var(--carbon); }
+    .pv-body { padding: 18px 24px 4px; }
+    .pv-group { margin-bottom: 18px; }
+    .pv-label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--warm-mid);
+      font-weight: 600; margin-bottom: 9px; }
+    .pv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pv-chip { border: 1px solid var(--piedra); background: #fff; border-radius: 6px; padding: 9px 14px;
+      font-size: 13px; font-family: var(--fb); cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+    .pv-chip:hover:not(:disabled) { border-color: var(--carbon); }
+    .pv-chip.sel { background: var(--carbon); color: #fff; border-color: var(--carbon); }
+    .pv-chip:disabled { opacity: .38; cursor: not-allowed; text-decoration: line-through; }
+    .pv-chip .n { font-size: 11px; opacity: .62; margin-left: 5px; }
+    .pv-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 7px;
+      border: 1px solid rgba(25,26,24,0.22); vertical-align: -1px; }
+    .pv-qty { display: flex; align-items: center; gap: 8px; }
+    .pv-qty button { width: 34px; height: 34px; border: 1px solid var(--piedra); background: #fff; border-radius: 6px;
+      font-size: 17px; cursor: pointer; color: var(--carbon); }
+    .pv-qty button:hover { border-color: var(--carbon); }
+    .pv-qty input { width: 68px; height: 34px; text-align: center; border: 1px solid var(--piedra);
+      border-radius: 6px; font-family: var(--fb); font-size: 14px; }
+    .pv-avail { font-size: 12px; color: var(--warm-mid); margin-left: 4px; }
+    .pv-avail.err { color: var(--red); }
+    .pv-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px 20px;
+      border-top: 1px solid var(--piedra); margin-top: 6px; }
+    .pv-btn { padding: 10px 20px; border-radius: 6px; font-family: var(--fb); font-size: 13px; cursor: pointer;
+      border: 1px solid var(--piedra); background: #fff; color: var(--carbon); }
+    .pv-btn.primary { background: var(--carbon); color: #fff; border-color: var(--carbon); }
+    .pv-btn.primary:disabled { opacity: .4; cursor: not-allowed; }
+    @media (max-width: 560px) { .pv-modal { max-width: none; } }
+
     /* ─── LOGIN ───────────────────────────────────────────────── */
     #pos-login {
       min-height: 100vh;
@@ -881,6 +922,42 @@
 
 <div class="pos-toast" id="pos-toast"></div>
 
+<!-- ── Selección de color y talla ───────────────────────────────────────── -->
+<div class="pv-overlay" id="pv-overlay" onclick="if(event.target===this)posCloseVariant()">
+  <div class="pv-modal">
+    <div class="pv-head">
+      <div>
+        <div class="pv-eyebrow">Elige color y talla</div>
+        <h3 class="pv-title" id="pv-name">Producto</h3>
+      </div>
+      <button class="pv-x" onclick="posCloseVariant()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="pv-body">
+      <div class="pv-group" id="pv-colors-group">
+        <div class="pv-label">Color</div>
+        <div class="pv-chips" id="pv-colors"></div>
+      </div>
+      <div class="pv-group" id="pv-sizes-group">
+        <div class="pv-label">Talla</div>
+        <div class="pv-chips" id="pv-sizes"></div>
+      </div>
+      <div class="pv-group">
+        <div class="pv-label">Cantidad</div>
+        <div class="pv-qty">
+          <button type="button" onclick="posVariantQty(-1)" aria-label="Menos">&minus;</button>
+          <input id="pv-qty" type="number" min="1" value="1" oninput="posVariantQtyInput(this.value)" />
+          <button type="button" onclick="posVariantQty(1)" aria-label="M&aacute;s">+</button>
+          <span class="pv-avail" id="pv-avail"></span>
+        </div>
+      </div>
+    </div>
+    <div class="pv-foot">
+      <button class="pv-btn ghost" onclick="posCloseVariant()">Cancelar</button>
+      <button class="pv-btn primary" id="pv-add" onclick="posConfirmVariant()">Agregar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Auth & Data -->
 <script src="js/config.js" onerror="console.info('[pos] js/config.js no existe; sin Supabase')"></script>
 <script src="js/auth.js"></script>
@@ -1022,13 +1099,16 @@
     if (typeof hydrateSiteSettings === 'function') hydrateSiteSettings();
     if (typeof syncCombosFromSupabase === 'function') syncCombosFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });
     if (typeof syncPriceOverridesFromSupabase === 'function') syncPriceOverridesFromSupabase().then(ok => { if (ok && typeof renderPosProducts === 'function') renderPosProducts(); });
+    // Existencias por color y talla: el selector las necesita para no vender lo que no hay.
+    if (typeof syncVariantStockFromSupabase === 'function') syncVariantStockFromSupabase();
     // Sincronización continua: precios/stock/combos cambiados en otro equipo llegan solos.
     if (typeof startLiveSync === 'function') {
       startLiveSync({
-        tables: ['products', 'inventory_stock', 'price_overrides', 'combos', 'site_settings'],
+        tables: ['products', 'inventory_stock', 'variant_stock', 'price_overrides', 'combos', 'site_settings'],
         sync: [
           () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
           () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
+          () => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : null),
           () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
           () => (typeof syncCombosFromSupabase === 'function' ? syncCombosFromSupabase() : null),
         ],
@@ -1189,14 +1269,144 @@
   }
 
   // ─── Cart ──────────────────────────────────────────────────────────────────
+  // ─── Selección de color y talla ────────────────────────────────────────────
+  // El POS descuenta del inventario de la bodega activa, así que la venta debe
+  // decir exactamente qué variante salió.
+  let _pv = null;   // { producto, combos[], color, size }
+
+  function _pvCartId(pid, color, size) { return [pid, color || '', size || ''].join('||'); }
+
   function posAddToCart(id) {
     const p = POS_PRODUCTS.find(x => x.id === id);
     if (!p) return;
-    const existing = posCart.find(i => i.id === id);
+    const bodegaId = getActiveBodega();
+    const combos = (bodegaId && typeof getProductVariantStock === 'function')
+      ? getProductVariantStock(p.id, bodegaId) : [];
+    const conVariante = combos.filter(c => c.color || c.size);
+
+    // Sin variantes registradas: se agrega directo, como antes.
+    if (!conVariante.length) { _pvAddDirect(p, '', ''); return; }
+
+    _pv = { producto: p, combos: conVariante, color: null, size: null };
+    // Si solo hay un color, queda elegido de una vez.
+    const colores = [...new Set(conVariante.map(c => c.color).filter(Boolean))];
+    if (colores.length === 1) _pv.color = colores[0];
+
+    document.getElementById('pv-name').textContent = p.name;
+    document.getElementById('pv-qty').value = 1;
+    document.getElementById('pv-overlay').classList.add('open');
+    _pvRender();
+  }
+
+  function _pvAddDirect(p, color, size) {
+    const cartId   = _pvCartId(p.id, color, size);
+    const existing = posCart.find(i => i.id === cartId);
     if (existing) { existing.qty++; }
-    else          { posCart.push({ id: p.id, name: p.name, price: p.displayPrice, qty: 1 }); }
+    else {
+      posCart.push({
+        id: cartId, productId: p.id, name: p.name,
+        price: p.displayPrice, qty: 1, color: color || '', size: size || '',
+      });
+    }
     renderPosCart();
     showToast(`${p.name} agregado`);
+  }
+
+  function _pvHexDe(color) {
+    const vs = (_pv && _pv.producto && _pv.producto.variants) || [];
+    const v  = vs.find(x => (x.label || '') === color);
+    return (v && v.hex) || '';
+  }
+
+  function _pvRender() {
+    const colores = [...new Set(_pv.combos.map(c => c.color).filter(Boolean))];
+    const gc = document.getElementById('pv-colors-group');
+    gc.style.display = colores.length ? '' : 'none';
+    document.getElementById('pv-colors').innerHTML = colores.map(c => {
+      const hay = _pv.combos.some(x => x.color === c && x.stock > 0);
+      const hex = _pvHexDe(c);
+      return `<button class="pv-chip${_pv.color === c ? ' sel' : ''}" ${hay ? '' : 'disabled'}
+        onclick="posPickColor('${jsAttr(c)}')">${hex ? `<span class="pv-dot" style="background:${escapeAttr(hex)}"></span>` : ''}${escapeHtml(c)}</button>`;
+    }).join('');
+
+    const tallas = _pv.combos.filter(c => !_pv.color || c.color === _pv.color).filter(c => c.size);
+    const gs = document.getElementById('pv-sizes-group');
+    gs.style.display = tallas.length ? '' : 'none';
+    document.getElementById('pv-sizes').innerHTML = tallas.map(t =>
+      `<button class="pv-chip${_pv.size === t.size ? ' sel' : ''}" ${t.stock > 0 ? '' : 'disabled'}
+        onclick="posPickSize('${jsAttr(t.size)}')">${escapeHtml(t.size)}<span class="n">${t.stock}</span></button>`
+    ).join('');
+
+    _pvRefreshAvail();
+  }
+
+  function _pvDisponible() {
+    if (!_pv) return 0;
+    const c = _pv.combos.find(x => (x.color || '') === (_pv.color || '') && (x.size || '') === (_pv.size || ''));
+    return c ? c.stock : 0;
+  }
+
+  function _pvRefreshAvail() {
+    const necesitaColor = _pv.combos.some(c => c.color) && !_pv.color;
+    const necesitaTalla = _pv.combos.some(c => c.size)  && !_pv.size;
+    const el  = document.getElementById('pv-avail');
+    const btn = document.getElementById('pv-add');
+    if (necesitaColor || necesitaTalla) {
+      el.textContent = necesitaColor ? 'Elige un color' : 'Elige una talla';
+      el.className = 'pv-avail';
+      btn.disabled = true;
+      return;
+    }
+    const disp = _pvDisponible();
+    const qty  = parseInt(document.getElementById('pv-qty').value, 10) || 1;
+    // Lo ya puesto en el carrito también ocupa existencia.
+    const enCarrito = (posCart.find(i => i.id === _pvCartId(_pv.producto.id, _pv.color, _pv.size)) || {}).qty || 0;
+    const libre = disp - enCarrito;
+    if (qty > libre) {
+      el.textContent = libre > 0 ? `Solo quedan ${libre}` : 'Sin existencia';
+      el.className = 'pv-avail err';
+      btn.disabled = true;
+    } else {
+      el.textContent = `${libre} disponibles`;
+      el.className = 'pv-avail';
+      btn.disabled = false;
+    }
+  }
+
+  function posPickColor(c) { _pv.color = c; _pv.size = null; _pvRender(); }
+  function posPickSize(s)  { _pv.size  = s; _pvRender(); }
+
+  function posVariantQty(d) {
+    const input = document.getElementById('pv-qty');
+    input.value = Math.max(1, (parseInt(input.value, 10) || 1) + d);
+    _pvRefreshAvail();
+  }
+  function posVariantQtyInput() { _pvRefreshAvail(); }
+
+  function posCloseVariant() {
+    document.getElementById('pv-overlay').classList.remove('open');
+    _pv = null;
+  }
+
+  function posConfirmVariant() {
+    if (!_pv) return;
+    const qty = parseInt(document.getElementById('pv-qty').value, 10) || 1;
+    const p   = _pv.producto;
+    const cartId   = _pvCartId(p.id, _pv.color, _pv.size);
+    const existing = posCart.find(i => i.id === cartId);
+    if (existing) { existing.qty += qty; }
+    else {
+      const detalle = [_pv.color, _pv.size].filter(Boolean).join(' · ');
+      posCart.push({
+        id: cartId, productId: p.id,
+        name: p.name + (detalle ? ' · ' + detalle : ''),
+        price: p.displayPrice, qty,
+        color: _pv.color || '', size: _pv.size || '',
+      });
+    }
+    renderPosCart();
+    showToast(`${p.name} agregado`);
+    posCloseVariant();
   }
 
   function posChangeQty(id, delta) {
@@ -1351,7 +1561,10 @@
       customerPhone:       '',
       address:             'Venta POS directa',
       notes:               `Método: ${posPayMethod}`,
-      items:               posCart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price_gtq: i.price })),
+      items:               posCart.map(i => ({
+        id: i.productId || i.id, name: i.name, qty: i.qty, price_gtq: i.price,
+        color: i.color || '', size: i.size || '',
+      })),
       subtotal_gtq:        subtotal,
       discount_gtq:        0,
       manual_discount_pct: posManualDisc,
@@ -1367,6 +1580,12 @@
       bodegaName:          activeBodega ? activeBodega.name : null,
     };
     createOrder(orderData);
+
+    // Descontar del inventario de la bodega activa, por color y talla.
+    if (activeBodegaId && typeof applyVariantSale === 'function') {
+      applyVariantSale(orderData.items, activeBodegaId)
+        .catch(e => console.warn('[pos] descuento de inventario:', e && e.message));
+    }
 
     // Increment discount code usage after order is created
     if (posAppliedDscCode) {
