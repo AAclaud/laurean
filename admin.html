@@ -1675,6 +1675,17 @@
                 <input type="hidden" id="inv-product-name" />
                 <div id="inv-current-stock" style="font-size:12px;color:var(--warm-mid);margin-top:4px;"></div>
               </div>
+              <!-- Color y talla: el inventario se lleva por variante -->
+              <div class="form-row" id="inv-variant-row" style="display:none">
+                <div class="form-group">
+                  <label class="form-label">Color</label>
+                  <select class="form-input" id="inv-color" onchange="onInvVariantChange()"></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Talla</label>
+                  <select class="form-input" id="inv-size" onchange="updateInvSelectedStockLabel()"></select>
+                </div>
+              </div>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" id="inv-qty-label">Cantidad a retirar</label>
@@ -2682,6 +2693,7 @@
       if (typeof syncProductsFromSupabase === 'function') {
         syncProductsFromSupabase()
           .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
+          .then(() => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : false))
           .then(() => { renderCategories(); renderProducts(); renderCategoriesView(); renderDashboard(); });
       }
       if (typeof syncDiscountCodesFromSupabase === 'function') {
@@ -2697,11 +2709,12 @@
       // (realtime + re-sync al enfocar la pestaña + intervalo de resguardo).
       if (typeof startLiveSync === 'function') {
         startLiveSync({
-          tables: ['products','categories','subcategories','price_overrides','inventory_stock','inventory_items','combos','bodegas','suppliers','quotes','site_settings','orders','discount_codes','vendor_applications','commissions','customers'],
+          tables: ['products','categories','subcategories','price_overrides','inventory_stock','variant_stock','inventory_items','combos','bodegas','suppliers','quotes','site_settings','orders','discount_codes','vendor_applications','commissions','customers'],
           sync: [
             () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
             () => (typeof syncCategoriesFromSupabase === 'function' ? syncCategoriesFromSupabase() : null),
             () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
+            () => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : null),
             () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
             () => (typeof syncOrdersFromSupabase === 'function' ? syncOrdersFromSupabase() : null),
             () => (typeof syncCommissionsFromSupabase === 'function' ? syncCommissionsFromSupabase() : null),
@@ -7465,6 +7478,8 @@
       document.getElementById('inv-product-id').value  = '';
       document.getElementById('inv-product-name').value = '';
       document.getElementById('inv-current-stock').textContent = '';
+      const _vr = document.getElementById('inv-variant-row');
+      if (_vr) _vr.style.display = 'none';   // se muestra al elegir el producto
       document.getElementById('inv-qty').value  = '';
       document.getElementById('inv-notes').value = '';
       if (document.getElementById('inv-newstock')) document.getElementById('inv-newstock').value = '';
@@ -7648,8 +7663,23 @@
         document.getElementById('inv-current-stock').textContent = '';
         return;
       }
-      const stock = getStockValue(productId, bodegaId);
-      document.getElementById('inv-current-stock').textContent = `Stock actual en esta bodega: ${stock} unidades`;
+      // Si el movimiento es de una variante, el saldo que importa es el de esa
+      // combinación, no el total del producto.
+      const row = document.getElementById('inv-variant-row');
+      const esVariante = row && row.style.display !== 'none';
+      const color = esVariante ? (document.getElementById('inv-color').value || '') : '';
+      const size  = esVariante ? (document.getElementById('inv-size').value  || '') : '';
+
+      let stock, etiqueta;
+      if (esVariante && typeof getVariantStockFor === 'function') {
+        stock = getVariantStockFor(productId, bodegaId, color, size);
+        const detalle = [color, size].filter(Boolean).join(' · ') || 'talla única';
+        etiqueta = `Stock de ${detalle} en esta bodega: ${stock} unidades`;
+      } else {
+        stock = getStockValue(productId, bodegaId);
+        etiqueta = `Stock actual en esta bodega: ${stock} unidades`;
+      }
+      document.getElementById('inv-current-stock').textContent = etiqueta;
       if (type === 'ajuste') document.getElementById('inv-newstock').value = stock;
     }
 
@@ -7658,6 +7688,73 @@
       document.getElementById('inv-product-name').value  = name;
       document.getElementById('inv-product-search').value = name;
       document.getElementById('inv-product-dropdown').style.display = 'none';
+      fillInvVariantSelects();
+      updateInvSelectedStockLabel();
+    }
+
+    // ─── Color y talla del movimiento ──────────────────────────────────────
+    // El inventario se lleva por variante, así que un ingreso o un traslado
+    // tiene que decir exactamente qué color y qué talla se está moviendo.
+
+    function invBodegaDelMovimiento() {
+      const type = document.getElementById('inv-modal-type').value;
+      return type === 'traslado'
+        ? document.getElementById('inv-transfer-from').value
+        : document.getElementById('inv-bodega-select').value;
+    }
+
+    // Combinaciones conocidas del producto: las de la bodega y, si no hay,
+    // las que define el catálogo (para poder ingresar mercadería nueva).
+    function invCombinacionesDe(productId, bodegaId) {
+      let combos = (typeof getProductVariantStock === 'function' && bodegaId)
+        ? getProductVariantStock(productId, bodegaId) : [];
+      combos = combos.filter(c => c.color || c.size);
+      if (combos.length) return combos;
+      const prod = (typeof getAdminProducts === 'function' ? getAdminProducts() : [])
+        .find(p => p.id === productId);
+      const vars = (prod && Array.isArray(prod.variants)) ? prod.variants : [];
+      const out = [];
+      vars.forEach(v => {
+        const sizes = Array.isArray(v.sizes) ? v.sizes : [];
+        if (!sizes.length) { out.push({ color: v.label || '', size: '', stock: 0 }); return; }
+        sizes.forEach(s => out.push({
+          color: v.label || '',
+          size: (typeof s === 'string' ? s : (s && s.size)) || '',
+          stock: 0,
+        }));
+      });
+      return out;
+    }
+
+    function fillInvVariantSelects() {
+      const productId = document.getElementById('inv-product-id').value;
+      const row = document.getElementById('inv-variant-row');
+      if (!productId) { row.style.display = 'none'; return; }
+      const combos = invCombinacionesDe(productId, invBodegaDelMovimiento());
+      if (!combos.length) { row.style.display = 'none'; return; }
+      row.style.display = '';
+      const colores = [...new Set(combos.map(c => c.color).filter(Boolean))];
+      const selColor = document.getElementById('inv-color');
+      selColor.innerHTML = colores.length
+        ? colores.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('')
+        : '<option value="">(sin color)</option>';
+      fillInvSizeSelect();
+    }
+
+    function fillInvSizeSelect() {
+      const productId = document.getElementById('inv-product-id').value;
+      const color  = document.getElementById('inv-color').value;
+      const combos = invCombinacionesDe(productId, invBodegaDelMovimiento())
+        .filter(c => (c.color || '') === (color || ''));
+      const tallas = [...new Set(combos.map(c => c.size).filter(Boolean))];
+      const selSize = document.getElementById('inv-size');
+      selSize.innerHTML = tallas.length
+        ? tallas.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')
+        : '<option value="">(talla única)</option>';
+    }
+
+    function onInvVariantChange() {
+      fillInvSizeSelect();
       updateInvSelectedStockLabel();
     }
 
@@ -7740,6 +7837,17 @@
       const productName = document.getElementById('inv-product-name').value;
       if (!productId) return alert('Selecciona un producto.');
 
+      // Color y talla del movimiento (vacíos si el producto no maneja variantes).
+      const _vrow  = document.getElementById('inv-variant-row');
+      const _esVar = _vrow && _vrow.style.display !== 'none';
+      const mColor = _esVar ? (document.getElementById('inv-color').value || '') : '';
+      const mSize  = _esVar ? (document.getElementById('inv-size').value  || '') : '';
+      const aplicarVariante = (bod, delta) => {
+        if (!_esVar || typeof adjustVariantStock !== 'function') return;
+        adjustVariantStock(productId, bod, mColor, mSize, delta)
+          .catch(e => console.warn('[inventario] variante:', e && e.message));
+      };
+
       if (type === 'traslado') {
         const origen  = document.getElementById('inv-transfer-from').value;
         const destino = document.getElementById('inv-transfer-to').value;
@@ -7749,7 +7857,14 @@
         if (!destino) return alert('Selecciona la bodega destino.');
         if (origen === destino) return alert('La bodega destino debe ser distinta de la bodega origen.');
         if (!qty || qty <= 0) return alert('Ingresa una cantidad válida.');
-        if (qty > getStockValue(productId, origen)) { alert('Stock insuficiente en la bodega origen.'); return; }
+        const dispOrigen = (_esVar && typeof getVariantStockFor === 'function')
+          ? getVariantStockFor(productId, origen, mColor, mSize)
+          : getStockValue(productId, origen);
+        if (qty > dispOrigen) {
+          const det = [mColor, mSize].filter(Boolean).join(' · ');
+          alert(`Stock insuficiente en la bodega origen${det ? ' para ' + det : ''}. Disponible: ${dispOrigen}.`);
+          return;
+        }
         const bodegas = getBodegas();
         const origenName = bodegas.find(b => b.id === origen)?.name || origen;
         const destinoName = bodegas.find(b => b.id === destino)?.name || destino;
@@ -7757,6 +7872,8 @@
           productName,
           motivo: 'traslado',
           notes,
+          color: mColor,
+          size:  mSize,
           fromBodega: origen,
           toBodega: destino,
           fromBodegaName: origenName,
@@ -7764,6 +7881,8 @@
         };
         updateStock(productId, origen, -qty, 'transferencia', meta);
         updateStock(productId, destino, qty, 'transferencia', meta);
+        aplicarVariante(origen, -qty);
+        aplicarVariante(destino, qty);
         closeInvModal();
         renderInventarioStock();
         renderInventarioMovimientos();
@@ -7780,12 +7899,19 @@
         const notes = notesWithTallas(document.getElementById('inv-notes').value, tallasText);
         await saveAdjustmentTallasDetail(productId, tallasText);
         ajustarStock(productId, bodegaId, newStock, notes);
+        if (_esVar && typeof getVariantStockFor === 'function') {
+          const actual = getVariantStockFor(productId, bodegaId, mColor, mSize);
+          aplicarVariante(bodegaId, newStock - actual);   // deja la variante en lo contado
+        }
       } else {
         const qty = parseInt(document.getElementById('inv-qty').value);
         if (!qty || qty <= 0) return alert('Ingresa una cantidad válida.');
         if (type === 'salida') {
-          const current = getStockValue(productId, bodegaId);
-          if (qty > current) return alert(`Stock insuficiente. Disponible: ${current} unidades.`);
+          const current = (_esVar && typeof getVariantStockFor === 'function')
+            ? getVariantStockFor(productId, bodegaId, mColor, mSize)
+            : getStockValue(productId, bodegaId);
+          const detalle = [mColor, mSize].filter(Boolean).join(' · ');
+          if (qty > current) return alert(`Stock insuficiente${detalle ? ' de ' + detalle : ''}. Disponible: ${current} unidades.`);
         }
         const provSel  = document.getElementById('inv-proveedor-select');
         const provId   = provSel.value;
@@ -7793,7 +7919,8 @@
         const motivo   = document.getElementById('inv-motivo')?.value || null;
         const notes    = document.getElementById('inv-notes').value;
         updateStock(productId, bodegaId, type === 'ingreso' ? qty : -qty, type,
-          { productName, proveedorId: provId, proveedorName: provName, motivo, notes });
+          { productName, proveedorId: provId, proveedorName: provName, motivo, notes, color: mColor, size: mSize });
+        aplicarVariante(bodegaId, type === 'ingreso' ? qty : -qty);
       }
 
       closeInvModal();
