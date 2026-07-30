@@ -66,6 +66,7 @@ const KEYS = {
   DISCOUNT_CODES: 'laurean_discount_codes',
   PRICE_HISTORY:  'laurean_price_history',
   SITE_SETTINGS:  'laurean_site_settings',
+  VARIANT_STOCK:  'laurean_variant_stock',
 };
 
 // Contenido del sitio editable desde el dashboard (marquee, redes, WhatsApp).
@@ -1012,6 +1013,114 @@ async function syncStockFromSupabase() {
 }
 
 window.syncStockFromSupabase = syncStockFromSupabase;
+
+// ─── Existencias por variante (producto × bodega × color × talla) ───────────
+// La clave del caché local es `productId|bodegaId|color|size`.
+
+function _vsKey(productId, bodegaId, color, size) {
+  return [productId, bodegaId, color || '', size || ''].join('|');
+}
+
+function getVariantStock() {
+  try { return JSON.parse(localStorage.getItem(KEYS.VARIANT_STOCK) || '{}') || {}; }
+  catch (e) { return {}; }
+}
+
+function saveVariantStock(map) {
+  localStorage.setItem(KEYS.VARIANT_STOCK, JSON.stringify(map || {}));
+  document.dispatchEvent(new CustomEvent('laurean:variant-stock-synced'));
+}
+
+// Autoritativo: si la lectura fue completa, lo que ya no está en la BD se quita del caché.
+async function syncVariantStockFromSupabase() {
+  const sb = window.LAUREAN_DB || window.LAUREAN_DB_ANON;
+  if (!sb) return false;
+  const { data, error } = await sb.from('variant_stock')
+    .select('product_id,bodega_id,color,size,stock').limit(20000);
+  if (error || !data) { console.warn('[supabase] sync variant_stock:', error && error.message); return false; }
+  const map = {};
+  data.forEach(r => {
+    map[_vsKey(r.product_id, r.bodega_id, r.color, r.size)] = Number(r.stock) || 0;
+  });
+  saveVariantStock(map);
+  return true;
+}
+
+// Existencia de una combinación exacta.
+function getVariantStockFor(productId, bodegaId, color, size) {
+  const map = getVariantStock();
+  return Number(map[_vsKey(productId, bodegaId, color, size)]) || 0;
+}
+
+// Todas las combinaciones de un producto en una bodega: [{ color, size, stock }].
+function getProductVariantStock(productId, bodegaId) {
+  const map  = getVariantStock();
+  const pref = productId + '|' + bodegaId + '|';
+  const out  = [];
+  Object.keys(map).forEach(k => {
+    if (k.indexOf(pref) !== 0) return;
+    const partes = k.split('|');
+    out.push({ color: partes[2] || '', size: partes[3] || '', stock: Number(map[k]) || 0 });
+  });
+  out.sort((a, b) => (a.color || '').localeCompare(b.color || '') || (a.size || '').localeCompare(b.size || ''));
+  return out;
+}
+
+// Suma de todas las bodegas (la tienda pública no tiene bodega activa).
+function getVariantStockAllBodegas(productId, color, size) {
+  const map = getVariantStock();
+  let total = 0;
+  Object.keys(map).forEach(k => {
+    const p = k.split('|');
+    if (p[0] === productId && (p[2] || '') === (color || '') && (p[3] || '') === (size || '')) {
+      total += Number(map[k]) || 0;
+    }
+  });
+  return total;
+}
+
+// Descuenta (delta negativo) o repone (positivo) una variante: local + Supabase.
+async function adjustVariantStock(productId, bodegaId, color, size, delta) {
+  const map   = getVariantStock();
+  const key   = _vsKey(productId, bodegaId, color, size);
+  const antes = Number(map[key]) || 0;
+  const nuevo = Math.max(0, antes + (Number(delta) || 0));
+  map[key] = nuevo;
+  saveVariantStock(map);
+
+  const sb = window.LAUREAN_DB;
+  if (sb) {
+    try {
+      await sb.from('variant_stock').upsert({
+        product_id: productId, bodega_id: bodegaId,
+        color: color || '', size: size || '', stock: nuevo,
+      }, { onConflict: 'product_id,bodega_id,color,size' });
+    } catch (e) { console.warn('[supabase] adjustVariantStock:', e && e.message); }
+  }
+  return nuevo;
+}
+
+// Aplica la venta de un pedido: descuenta cada línea de su variante.
+async function applyVariantSale(items, bodegaId) {
+  if (!bodegaId || !Array.isArray(items)) return 0;
+  let n = 0;
+  for (const it of items) {
+    const qty = Number(it && it.qty) || 0;
+    if (!it || !it.id || qty <= 0) continue;
+    await adjustVariantStock(it.id, bodegaId, it.color || '', it.size || '', -qty);
+    n++;
+  }
+  return n;
+}
+
+window.getVariantStock              = getVariantStock;
+window.saveVariantStock             = saveVariantStock;
+window.syncVariantStockFromSupabase = syncVariantStockFromSupabase;
+window.getVariantStockFor           = getVariantStockFor;
+window.getProductVariantStock       = getProductVariantStock;
+window.getVariantStockAllBodegas    = getVariantStockAllBodegas;
+window.adjustVariantStock           = adjustVariantStock;
+window.applyVariantSale             = applyVariantSale;
 
 function createOrder(data) {
   const session = getSession();
