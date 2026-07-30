@@ -816,7 +816,11 @@
         <div class="table-wrap">
           <div class="table-head">
             <span class="table-head-title">Productos</span>
-            <div style="display:flex;gap:10px;">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input class="form-input" id="prod-search" placeholder="Buscar producto o categoría…"
+                     style="width:230px;padding:8px 12px;font-size:12.5px;"
+                     oninput="filterProductsTable(this.value)" autocomplete="off" />
+              <span id="prod-search-count" style="font-size:11.5px;color:var(--warm-mid);"></span>
               <button class="btn btn-light" onclick="saveAllPrices()">
                 <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Guardar precios
@@ -3762,6 +3766,22 @@
       tbody.innerHTML = rows || `<tr><td colspan="5"><div class="empty-state"><p>Sin categorías</p></div></td></tr>`;
     }
 
+    // Filtra la tabla de productos sin volver a renderizarla, para no perder
+    // los precios que se estén editando en las celdas.
+    function filterProductsTable(texto) {
+      const q = (texto || '').trim().toLowerCase();
+      const filas = document.querySelectorAll('#products-tbody tr');
+      let visibles = 0;
+      filas.forEach(tr => {
+        if (!tr.querySelector('td')) return;
+        const hay = !q || tr.textContent.toLowerCase().includes(q);
+        tr.style.display = hay ? '' : 'none';
+        if (hay) visibles++;
+      });
+      const lbl = document.getElementById('prod-search-count');
+      if (lbl) lbl.textContent = q ? `${visibles} de ${filas.length}` : '';
+    }
+
     function renderProducts() {
       const products  = getAllProducts();
       const overrides = getPriceOverrides();
@@ -3830,8 +3850,11 @@
             </td>
           </tr>`;
       }).join('');
+    
+      // Mantener el filtro si el usuario estaba buscando algo.
+      const _q = document.getElementById('prod-search');
+      if (_q && _q.value) filterProductsTable(_q.value);
     }
-
     function toggleProductPublished(id, on) {
       if (window.LAUREAN_DB) {
         window.LAUREAN_DB.from('products').update({ active: on }).eq('id', id)

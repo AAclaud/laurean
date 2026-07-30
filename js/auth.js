@@ -1616,6 +1616,10 @@ async function syncDiscountCodesFromSupabase() {
       createdAt: r.created_at,
     };
   });
+  // Autoritativo: lo que ya no está en la base fue eliminado allá; se quita del
+  // caché para no dejar registros fantasma en un solo equipo.
+  const _remotas = new Set(data.map(r => r.id));
+  Object.keys(byId).forEach(id => { if (!_remotas.has(id)) delete byId[id]; });
   saveDiscountCodes(Object.values(byId));
   return true;
 }
@@ -1932,6 +1936,10 @@ async function syncProveedoresFromSupabase() {
   if (error || !data) { console.warn('[supabase] sync suppliers:', error && error.message); return false; }
   const byId = {}; getProveedores().forEach(p => { if (p && p.id) byId[p.id] = p; });
   data.forEach(r => { if (r && r.data) byId[r.id] = { ...(byId[r.id]||{}), ...r.data, id: r.id }; });
+  // Autoritativo: lo que ya no está en la base fue eliminado allá; se quita del
+  // caché para no dejar registros fantasma en un solo equipo.
+  const _remotas = new Set(data.map(r => r.id));
+  Object.keys(byId).forEach(id => { if (!_remotas.has(id)) delete byId[id]; });
   localStorage.setItem('laurean_proveedores', JSON.stringify(Object.values(byId)));
   return true;
 }
@@ -2002,6 +2010,12 @@ async function syncBodegasFromSupabase() {
       township_code: r.township_code || null, active: r.active !== false,
     };
   });
+  // Autoritativo: una bodega que ya no está en la base fue eliminada allá, o
+  // nunca llegó a subir. Se quita del caché para que no aparezca duplicada o
+  // fantasma en un solo equipo. Las base (Central/Website) las repone
+  // ensureDefaultBodegas.
+  const _remotas = new Set(data.map(r => r.id));
+  Object.keys(byId).forEach(id => { if (!_remotas.has(id)) delete byId[id]; });
   localStorage.setItem('laurean_bodegas', JSON.stringify(Object.values(byId)));
   ensureDefaultBodegas();
   return true;
@@ -2059,6 +2073,10 @@ async function syncCotizacionesFromSupabase() {
   if (error || !data) { console.warn('[supabase] sync quotes:', error && error.message); return false; }
   const byId = {}; getCotizaciones().forEach(c => { if (c && c.id) byId[c.id] = c; });
   data.forEach(r => { if (r && r.data) byId[r.id] = { ...(byId[r.id]||{}), ...r.data, id: r.id }; });
+  // Autoritativo: lo que ya no está en la base fue eliminado allá; se quita del
+  // caché para no dejar registros fantasma en un solo equipo.
+  const _remotas = new Set(data.map(r => r.id));
+  Object.keys(byId).forEach(id => { if (!_remotas.has(id)) delete byId[id]; });
   localStorage.setItem('laurean_cotizaciones', JSON.stringify(Object.values(byId)));
   return true;
 }
@@ -2169,6 +2187,10 @@ async function syncCombosFromSupabase() {
   const byId = {};
   getCombos().forEach(c => { if (c && c.id) byId[c.id] = c; });
   data.forEach(r => { if (r && r.data) byId[r.id] = { ...(byId[r.id] || {}), ...r.data, id: r.id, active: !!r.active }; });
+  // Autoritativo: lo que ya no está en la base fue eliminado allá; se quita del
+  // caché para no dejar registros fantasma en un solo equipo.
+  const _remotas = new Set(data.map(r => r.id));
+  Object.keys(byId).forEach(id => { if (!_remotas.has(id)) delete byId[id]; });
   localStorage.setItem(KEYS.COMBOS, JSON.stringify(Object.values(byId)));
   return true;
 }

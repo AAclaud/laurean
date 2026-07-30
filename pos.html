@@ -1276,13 +1276,34 @@
 
   function _pvCartId(pid, color, size) { return [pid, color || '', size || ''].join('||'); }
 
+  // Las combinaciones salen del CATÁLOGO del producto (lo que existe) y la
+  // existencia de la BODEGA activa (lo que hay aquí). Así el selector aparece
+  // aunque a esta bodega todavía no le hayan trasladado mercadería.
+  function _pvCombos(p, bodegaId) {
+    const vars = Array.isArray(p.variants) ? p.variants : [];
+    const stockDe = (color, size) => (bodegaId && typeof getVariantStockFor === 'function')
+      ? getVariantStockFor(p.id, bodegaId, color, size) : 0;
+    const out = [];
+    vars.forEach(v => {
+      const color = v.label || '';
+      const sizes = Array.isArray(v.sizes) ? v.sizes : [];
+      if (!sizes.length) { out.push({ color, size: '', stock: stockDe(color, '') }); return; }
+      sizes.forEach(s => {
+        const size = (typeof s === 'string' ? s : (s && s.size)) || '';
+        out.push({ color, size, stock: stockDe(color, size) });
+      });
+    });
+    if (out.length) return out;
+    // Sin variantes en el catálogo: usar lo que haya registrado en la bodega.
+    return (bodegaId && typeof getProductVariantStock === 'function')
+      ? getProductVariantStock(p.id, bodegaId) : [];
+  }
+
   function posAddToCart(id) {
     const p = POS_PRODUCTS.find(x => x.id === id);
     if (!p) return;
     const bodegaId = getActiveBodega();
-    const combos = (bodegaId && typeof getProductVariantStock === 'function')
-      ? getProductVariantStock(p.id, bodegaId) : [];
-    const conVariante = combos.filter(c => c.color || c.size);
+    const conVariante = _pvCombos(p, bodegaId).filter(c => c.color || c.size);
 
     // Sin variantes registradas: se agrega directo, como antes.
     if (!conVariante.length) { _pvAddDirect(p, '', ''); return; }
