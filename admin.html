@@ -948,6 +948,9 @@
             <option value="store">Tienda</option>
             <option value="pos">POS</option>
           </select>
+          <button class="btn btn-light" id="ord-local-btn" onclick="limpiarPedidosLocales()"
+                  style="display:none;border-color:var(--vino);color:var(--vino)"
+                  title="Pedidos que solo existen en este equipo y nunca llegaron a la base"></button>
           <button class="btn btn-light" onclick="exportOrdersCSV()">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar CSV
@@ -4402,7 +4405,41 @@
       if (url) window.open(url, '_blank', 'noopener');
     }
 
+    // Pedidos que solo viven en este equipo: nunca llegaron a la base. Suelen ser
+    // pruebas o intentos que fallaron al subir, y el sync los conserva a propósito
+    // para no perder una venta real. Desde aquí el superusuario puede descartarlos.
+    function pedidosSoloLocales() {
+      return getOrders().filter(o => o && !o.supabase_id);
+    }
+
+    function actualizarBotonPedidosLocales() {
+      const btn = document.getElementById('ord-local-btn');
+      if (!btn) return;
+      const n = pedidosSoloLocales().length;
+      const esSuper = window.SESSION && SESSION.role === 'superuser';
+      btn.style.display = (n > 0 && esSuper) ? '' : 'none';
+      btn.textContent = `${n} sin sincronizar`;
+    }
+
+    function limpiarPedidosLocales() {
+      const locales = pedidosSoloLocales();
+      if (!locales.length) return;
+      const ok = confirm(
+        `${locales.length} pedido(s) existen solo en este equipo y nunca llegaron a la base.\n\n` +
+        `Se eliminarán de este navegador. No afecta a la base ni a los demás equipos.\n\n¿Continuar?`);
+      if (!ok) return;
+      const ids = new Set(locales.map(o => o.id));
+      saveOrders(getOrders().filter(o => !ids.has(o.id)));
+      if (typeof logActivity === 'function') {
+        logActivity('eliminar', 'pedidos', null, `Descartó ${locales.length} pedido(s) sin sincronizar`);
+      }
+      renderOrders();
+      renderDashboard();
+      alert(`${locales.length} pedido(s) eliminados de este equipo.`);
+    }
+
     function renderOrders() {
+      actualizarBotonPedidosLocales();
       const orders = getFilteredOrders();
       const tbody  = document.getElementById('orders-tbody');
       if (!orders.length) {
