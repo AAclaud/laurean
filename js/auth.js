@@ -334,6 +334,13 @@ async function syncUsersFromSupabase() {
       active: p.active !== false, createdAt: p.created_at || prev.createdAt,
     };
   });
+  // Autoritativo: un usuario que ya no está en la base fue eliminado allá y no
+  // debe seguir apareciendo en un solo equipo. Se conservan únicamente los que
+  // aún no lograron subir (pendingSync), para no perder un alta reciente.
+  const _remotos = new Set(data.map(p => p.id));
+  Object.keys(byId).forEach(id => {
+    if (!_remotos.has(id) && byId[id] && byId[id].pendingSync !== true) delete byId[id];
+  });
   saveUsers(Object.values(byId));
   return true;
 }
