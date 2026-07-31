@@ -65,6 +65,21 @@
     .pv-btn.primary:disabled { opacity: .4; cursor: not-allowed; }
     @media (max-width: 560px) { .pv-modal { max-width: none; } }
 
+    /* ─── Configurar combo (color y talla por unidad) ─────────── */
+    .pc-modal { max-width: 640px; }
+    .pc-item { border: 1px solid var(--piedra); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+    .pc-item-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .pc-item-name { font-family: var(--fd); font-size: 17px; font-weight: 500; }
+    .pc-item-qty { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm-mid); }
+    .pc-unit { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px dashed var(--piedra); }
+    .pc-unit:first-of-type { border-top: none; }
+    .pc-unit .u { font-size: 11px; color: var(--warm-mid); width: 62px; flex: none; }
+    .pc-unit select { flex: 1; min-width: 0; padding: 7px 9px; font-size: 12.5px; font-family: var(--fb);
+      border: 1px solid var(--piedra); border-radius: 5px; background: #fff; color: var(--carbon); }
+    .pc-unit .st { font-size: 11px; width: 76px; text-align: right; flex: none; color: var(--warm-mid); }
+    .pc-unit .st.err { color: var(--red); font-weight: 600; }
+    .pc-nota { font-size: 12px; color: var(--warm-mid); margin-bottom: 12px; }
+
     /* ─── LOGIN ───────────────────────────────────────────────── */
     #pos-login {
       min-height: 100vh;
@@ -958,6 +973,27 @@
   </div>
 </div>
 
+<!-- ── Configurar combo: color y talla por unidad ───────────────────────── -->
+<div class="pv-overlay" id="pc-overlay" onclick="if(event.target===this)posCloseCombo()">
+  <div class="pv-modal pc-modal">
+    <div class="pv-head">
+      <div>
+        <div class="pv-eyebrow">Configurar combo</div>
+        <h3 class="pv-title" id="pc-name">Combo</h3>
+      </div>
+      <button class="pv-x" onclick="posCloseCombo()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="pv-body">
+      <p class="pc-nota">Elige el color y la talla de cada prenda. Solo aparecen las que hay en esta bodega.</p>
+      <div id="pc-items"></div>
+    </div>
+    <div class="pv-foot">
+      <button class="pv-btn ghost" onclick="posCloseCombo()">Cancelar</button>
+      <button class="pv-btn primary" id="pc-add" onclick="posConfirmCombo()">Agregar combo</button>
+    </div>
+  </div>
+</div>
+
 <!-- Auth & Data -->
 <script src="js/config.js" onerror="console.info('[pos] js/config.js no existe; sin Supabase')"></script>
 <script src="js/auth.js"></script>
@@ -1247,25 +1283,138 @@
     if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
   }
 
+  // ─── Combos: color y talla por unidad ──────────────────────────────────────
+  // Un combo puede traer varias unidades de la misma prenda y cada una puede
+  // ser de distinto color o talla, así que se configura unidad por unidad.
+  let _pc = null;   // { combo, filas:[{item, unidad, combos[], color, size}] }
+
   function posAddComboToCart(comboId) {
     const combo = getCombos().find(c => c.id === comboId);
     if (!combo || !combo.active) return;
-    (combo.items || []).forEach(item => {
-      const cartId   = item.productId + '_combo_' + comboId;
-      const existing = posCart.find(i => i.id === cartId);
-      if (existing) {
-        existing.qty += (item.quantity || 1);
-      } else {
-        posCart.push({
-          id:    cartId,
-          name:  item.productName + ' (Combo: ' + combo.name + ')',
-          price: item.comboPrice_gtq || 0,
-          qty:   item.quantity || 1,
-        });
+    const bodegaId = getActiveBodega();
+
+    const filas = [];
+    (combo.items || []).forEach((item, idxItem) => {
+      const p = POS_PRODUCTS.find(x => x.id === item.productId) || { id: item.productId, variants: [] };
+      const combos = _pvCombos(p, bodegaId).filter(c => c.color || c.size);
+      const unidades = Math.max(1, item.quantity || 1);
+      for (let u = 0; u < unidades; u++) {
+        filas.push({ item, idxItem, unidad: u, combos, color: null, size: null });
       }
+    });
+
+    // Ninguna prenda del combo maneja variantes: se agrega directo, como antes.
+    if (!filas.some(f => f.combos.length)) { _pcAgregar(combo, filas); return; }
+
+    // Preseleccionar cuando no hay de dónde elegir.
+    filas.forEach(f => {
+      const colores = [...new Set(f.combos.map(c => c.color).filter(Boolean))];
+      if (colores.length === 1) f.color = colores[0];
+      const tallas = f.combos.filter(c => !f.color || c.color === f.color).filter(c => c.size);
+      if (!tallas.length) f.size = '';
+      else if (tallas.length === 1) f.size = tallas[0].size;
+    });
+
+    _pc = { combo, filas };
+    document.getElementById('pc-name').textContent = combo.name;
+    document.getElementById('pc-overlay').classList.add('open');
+    _pcRender();
+  }
+
+  function _pcRender() {
+    const porItem = {};
+    _pc.filas.forEach((f, i) => { (porItem[f.idxItem] = porItem[f.idxItem] || []).push({ f, i }); });
+
+    document.getElementById('pc-items').innerHTML = Object.keys(porItem).map(k => {
+      const grupo = porItem[k];
+      const item  = grupo[0].f.item;
+      const filasHtml = grupo.map(({ f, i }) => {
+        if (!f.combos.length) {
+          return `<div class="pc-unit"><span class="u">Unidad ${f.unidad + 1}</span>
+            <span style="flex:1;font-size:12.5px;color:var(--warm-mid)">Sin color ni talla</span></div>`;
+        }
+        const colores = [...new Set(f.combos.map(c => c.color).filter(Boolean))];
+        const tallas  = f.combos.filter(c => !f.color || c.color === f.color).filter(c => c.size);
+        const disp    = _pcDisp(f);
+        const usadas  = _pcUsadas(f, i);
+        const libre   = disp - usadas;
+        const selColor = colores.length ? `<select onchange="posComboColor(${i}, this.value)">
+            <option value="">Color…</option>
+            ${colores.map(c => `<option value="${escapeAttr(c)}"${f.color === c ? ' selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+          </select>` : '';
+        const selSize = tallas.length ? `<select onchange="posComboSize(${i}, this.value)">
+            <option value="">Talla…</option>
+            ${tallas.map(t => `<option value="${escapeAttr(t.size)}"${f.size === t.size ? ' selected' : ''}${t.stock <= 0 ? ' disabled' : ''}>${escapeHtml(t.size)} (${t.stock})</option>`).join('')}
+          </select>` : '';
+        const listo = (!colores.length || f.color) && (!tallas.length || f.size);
+        const txt = !listo ? 'Elige…' : (libre > 0 ? `${libre} disp.` : 'Sin stock');
+        return `<div class="pc-unit"><span class="u">Unidad ${f.unidad + 1}</span>
+          ${selColor}${selSize}
+          <span class="st${listo && libre <= 0 ? ' err' : ''}">${txt}</span></div>`;
+      }).join('');
+      return `<div class="pc-item">
+        <div class="pc-item-head">
+          <span class="pc-item-name">${escapeHtml(item.productName || '')}</span>
+          <span class="pc-item-qty">${grupo.length} ${grupo.length === 1 ? 'unidad' : 'unidades'}</span>
+        </div>${filasHtml}</div>`;
+    }).join('');
+
+    document.getElementById('pc-add').disabled = !_pcCompleto();
+  }
+
+  function _pcDisp(f) {
+    const c = f.combos.find(x => (x.color || '') === (f.color || '') && (x.size || '') === (f.size || ''));
+    return c ? c.stock : 0;
+  }
+
+  // Cuántas unidades del combo ya están pidiendo esa misma variante.
+  function _pcUsadas(f, idx) {
+    return _pc.filas.filter((o, j) => j !== idx
+      && o.item.productId === f.item.productId
+      && (o.color || '') === (f.color || '') && (o.size || '') === (f.size || '')
+      && o.color !== null && o.size !== null).length + 1;
+  }
+
+  function _pcCompleto() {
+    return _pc.filas.every(f => {
+      if (!f.combos.length) return true;
+      const colores = [...new Set(f.combos.map(c => c.color).filter(Boolean))];
+      const tallas  = f.combos.filter(c => !f.color || c.color === f.color).filter(c => c.size);
+      if (colores.length && !f.color) return false;
+      if (tallas.length && !f.size) return false;
+      return _pcDisp(f) - _pcUsadas(f, _pc.filas.indexOf(f)) >= 0;
+    });
+  }
+
+  function posComboColor(i, v) { _pc.filas[i].color = v || null; _pc.filas[i].size = null; _pcRender(); }
+  function posComboSize(i, v)  { _pc.filas[i].size  = v || null; _pcRender(); }
+  function posCloseCombo() { document.getElementById('pc-overlay').classList.remove('open'); _pc = null; }
+
+  function _pcAgregar(combo, filas) {
+    filas.forEach(f => {
+      const color = f.color || '';
+      const size  = f.size  || '';
+      const cartId = f.item.productId + '_combo_' + combo.id + '||' + color + '||' + size;
+      const existing = posCart.find(i => i.id === cartId);
+      if (existing) { existing.qty += 1; return; }
+      const detalle = [color, size].filter(Boolean).join(' · ');
+      posCart.push({
+        id: cartId,
+        productId: f.item.productId,
+        name: f.item.productName + ' (Combo: ' + combo.name + ')' + (detalle ? ' · ' + detalle : ''),
+        price: f.item.comboPrice_gtq || 0,
+        qty: 1,
+        color, size,
+      });
     });
     renderPosCart();
     showToast('Combo "' + combo.name + '" agregado');
+  }
+
+  function posConfirmCombo() {
+    if (!_pc || !_pcCompleto()) return;
+    _pcAgregar(_pc.combo, _pc.filas);
+    posCloseCombo();
   }
 
   // ─── Cart ──────────────────────────────────────────────────────────────────

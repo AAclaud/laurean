@@ -1721,7 +1721,15 @@ async function syncVendorAppsFromSupabase() {
       createdAt:  r.created_at || prev.createdAt || new Date().toISOString(),
     };
   });
-  const localOnly = local.filter(app => !remoteIds.has(app.id));
+  // Autoritativo: si la lectura fue completa (no llegó al límite), una solicitud
+  // que ya no está en la base fue eliminada allá y debe irse del caché. Solo se
+  // conservan las que aún no lograron subir (sin reflejo remoto y recientes).
+  const lecturaCompleta = data.length < 500;
+  const localOnly = local.filter(app => {
+    if (remoteIds.has(app.id)) return false;
+    if (!lecturaCompleta) return true;
+    return app.pendingSync === true;   // aún no subió: no perderla
+  });
   localStorage.setItem('laurean_vendor_apps', JSON.stringify([...remoteApps, ...localOnly]));
   return true;
 }
@@ -1738,6 +1746,8 @@ function createVendorApplication(data) {
     message:   data.message || '',
     status:    'pendiente',
     createdAt: new Date().toISOString(),
+    // Mientras no confirme la subida se marca, para que el sync no la borre.
+    pendingSync: true,
   };
   apps.push(app);
   localStorage.setItem('laurean_vendor_apps', JSON.stringify(apps));
@@ -1751,7 +1761,18 @@ function createVendorApplication(data) {
       message: app.message || null,
       status: 'pendiente',
       created_at: app.createdAt,
-    }).then(({ error }) => { if (error) console.warn('[supabase] vendor app insert:', error.message); });
+    }).then(({ error }) => {
+      if (error) { console.warn('[supabase] vendor app insert:', error.message); return; }
+      // Ya está en la base: se quita la marca para que el sync mande.
+      try {
+        const lista = getVendorApplications();
+        const i = lista.findIndex(a => a.id === app.id);
+        if (i !== -1) {
+          delete lista[i].pendingSync;
+          localStorage.setItem('laurean_vendor_apps', JSON.stringify(lista));
+        }
+      } catch (e) { /* el sync la conservará una vuelta más */ }
+    });
   }
   return app;
 }
