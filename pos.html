@@ -1143,8 +1143,8 @@
         tables: ['products', 'inventory_stock', 'variant_stock', 'price_overrides', 'combos', 'site_settings'],
         sync: [
           () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
-          () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
           () => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : null),
+          () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
           () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
           () => (typeof syncCombosFromSupabase === 'function' ? syncCombosFromSupabase() : null),
         ],

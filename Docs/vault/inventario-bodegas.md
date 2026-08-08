@@ -70,14 +70,38 @@ Stock maestro de articulos. Columnas:
 | observation | text | Notas adicionales |
 | active | boolean | Activo en catalogo |
 
-### inventory_stock
-Distribucion de stock por bodega. Columnas:
+### variant_stock — **fuente de verdad de las existencias**
+Existencias por producto x bodega x color x talla. Es lo que vende el POS, lo que
+muestra la tienda y sobre lo que operan todos los movimientos.
+
+| Columna | Tipo | Descripcion |
+|---------|------|-------------|
+| product_id | text FK → products | |
+| bodega_id | text FK → bodegas | |
+| color | text | `''` si el producto no maneja color |
+| size | text | `''` si el producto no maneja talla |
+| stock | int | Unidades de esa combinacion en esa bodega |
+
+Clave primaria compuesta: `(product_id, bodega_id, color, size)`.
+RLS: lectura publica (la tienda necesita saber que tallas ofrecer), escritura
+`admin` o `bodega`.
+
+Un producto sin colores ni tallas tiene **una** fila con `color=''` y `size=''`.
+No hay caso "producto sin variante": eso evita que un movimiento se aplique al
+total sin llegar nunca al POS, que era el origen de los traslados fantasma.
+
+### inventory_stock — total **derivado**, no se escribe a mano
+Total por COD y bodega. Ya **no** es una fuente independiente: el trigger
+`agregado_desde_variantes` sobre `variant_stock` lo recalcula como la suma de las
+variantes de ese producto en esa bodega (funcion `refrescar_stock_agregado`).
+Los productos sin `source_cod` no tienen fila aqui; su total lo arma el frontend
+sumando variantes en `syncStockFromSupabase()`.
 
 | Columna | Tipo | Descripcion |
 |---------|------|-------------|
 | cod | text FK → inventory_items | |
 | bodega_id | text FK → bodegas | |
-| stock | int | Unidades disponibles en esa bodega |
+| stock | int | Suma de las variantes de ese producto en esa bodega |
 
 Clave primaria compuesta: `(cod, bodega_id)`.
 
@@ -87,20 +111,55 @@ Leyenda configurable semana=color: `(week_number PK, color, label)`. Editable de
 ### inventory_month_legend
 Leyenda configurable mes=color: `(month_number PK 1–12, color, label)`. Default del indicador interno; se usa cuando `inventory_period_mode='month'`. Convive con la semanal.
 
-## Estado actual (POS sigue en localStorage)
+## Movimientos: un solo motor, `mover_inventario`
 
-El POS aun lee/descuenta stock desde localStorage; la migracion a `inventory_stock` queda pendiente de pruebas con Supabase en vivo. Hoy el inventario operativo vive en localStorage:
+Todos los movimientos (ingreso, salida, ajuste, traslado) pasan por la funcion
+`public.mover_inventario(...)` en Postgres. Definicion completa y comentada en
+[[supabase/movimientos-por-variante.sql]].
 
-- `localStorage['laurean_inventory']`: objeto `{ productId: { bodegaId: { stock, updatedAt } } }`.
-- Funciones: `getStockValue`, `updateStock`, `ajustarStock`, `getInventoryMovements` (en `js/auth.js`).
-- Alertas de stock bajo: `getLowStockItems()` compara stock contra `product.lowStockThreshold` (default 5).
+Firma: `mover_inventario(p_tipo, p_product_id, p_product_name, p_origen,
+p_destino, p_lineas, p_motivo, p_notas, p_proveedor, p_costo_unit, p_pagado)`
+donde `p_lineas` es `[{ "color": "Negro", "size": "M", "qty": 10 }, …]`.
 
-## Migracion desde Google Sheet
+Por que vive en la base y no en el navegador:
 
-El flujo previsto de migracion:
-1. Exportar CSV desde Google Sheet.
-2. Limpiar y mapear columnas al schema de `inventory_items`.
-3. Importar via script o carga en Supabase Table Editor.
-4. Poblar `inventory_stock` segun la distribucion inicial por bodega.
+- **Atomica.** Aplica `stock = stock + delta`, no un total calculado en el
+  navegador. Dos equipos moviendo a la vez ya no se pisan.
+- **Valida de verdad.** Si no alcanza la existencia lanza un error con nombre,
+  combinacion, disponible y pedido; no se escribe nada.
+- **SECURITY DEFINER.** Un usuario con rol `bodega` puede registrar movimientos
+  aunque `inventory_movements` sea de escritura solo-admin.
+- **Deja traza siempre.** Incluye color, talla, costo unitario y pagado. Un
+  traslado deja **un** movimiento con `from_bodega` → `to_bodega`, no dos.
 
-Ver `Docs/plantilla-inventario.csv` como referencia de columnas esperadas.
+En `js/auth.js`, `moverInventario(mov)` la envuelve y devuelve `{ ok, error }`.
+Si la funcion no estuviera instalada, cae a escrituras directas equivalentes
+(leyendo el valor vigente de la base antes de escribir) y reporta los errores en
+vez de tragarselos. Despues de cada movimiento, `refrescarExistencias()` vuelve a
+leer de la base: lo que se ve en pantalla es lo guardado.
+
+## En el admin
+
+`admin.html` → Inventario:
+
+- **Existencias**: total por bodega + boton que despliega el desglose por color y
+  talla. Ahi se comprueba si un traslado llego.
+- **Movimientos**: columna Color / Talla; el filtro por bodega encuentra el
+  traslado desde cualquiera de sus dos lados.
+- **Modal de movimiento**: cuadricula de combinaciones (color, talla, disponible,
+  cantidad) con filtro, "Todo" y "Limpiar". Un traslado mueve varias
+  combinaciones de una sola vez. Funciones: `invCombinacionesDe`,
+  `renderInvVarGrid`, `invVarLineas`, `saveInvMovement`.
+- **Ingreso**: cada linea lleva Color + cantidades por talla, y eso es lo que
+  alimenta `variant_stock`.
+
+Cache local (`localStorage`), reconstruido desde la base en cada sync:
+
+- `laurean_variant_stock`: `{ 'productId|bodegaId|color|size': stock }`.
+- `laurean_inventory`: `{ productId: { bodegaId: { stock, updatedAt } } }` (total).
+- Alertas de stock bajo: `getLowStockItems()` contra `product.lowStockThreshold`
+  (default 5).
+
+Orden obligatorio de sincronizacion: `syncVariantStockFromSupabase()` **antes**
+de `syncStockFromSupabase()`, porque el segundo completa los totales de los
+productos sin COD sumando variantes.

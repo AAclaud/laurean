@@ -1444,7 +1444,7 @@
             </div>
           </div>
           <table class="tbl">
-            <thead><tr><th>Producto</th><th>Categoría</th><th>Bodega</th><th>Stock</th><th>Última actualización</th></tr></thead>
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Bodega</th><th>Stock</th><th>Colores y tallas</th><th>Última actualización</th></tr></thead>
             <tbody id="inv-stock-tbody"></tbody>
           </table>
         </div>
@@ -1465,7 +1465,7 @@
             <input class="form-input" id="invmov-filter-product" placeholder="Buscar producto..." style="width:200px;" oninput="renderInventarioMovimientos()" />
           </div>
           <table class="tbl">
-            <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Bodega</th><th>Cantidad</th><th>Stock anterior</th><th>Stock nuevo</th><th>Proveedor</th><th>Notas</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Color / Talla</th><th>Bodega</th><th>Cantidad</th><th>Stock anterior</th><th>Stock nuevo</th><th>Proveedor</th><th>Notas</th></tr></thead>
             <tbody id="invmov-tbody"></tbody>
           </table>
         </div>
@@ -1655,7 +1655,7 @@
               </div>
               <div class="form-group" id="inv-main-bodega-group">
                 <label class="form-label">Bodega</label>
-                <select class="form-input" id="inv-bodega-select" onchange="updateInvSelectedStockLabel()"></select>
+                <select class="form-input" id="inv-bodega-select" onchange="onInvBodegaChange()"></select>
               </div>
               <div class="form-group" id="inv-prov-group">
                 <label class="form-label">Proveedor <span style="color:var(--warm-mid);font-size:11px">(opcional)</span></label>
@@ -1682,19 +1682,23 @@
                 <input type="hidden" id="inv-product-name" />
                 <div id="inv-current-stock" style="font-size:12px;color:var(--warm-mid);margin-top:4px;"></div>
               </div>
-              <!-- Color y talla: el inventario se lleva por variante -->
-              <div class="form-row" id="inv-variant-row" style="display:none">
-                <div class="form-group">
-                  <label class="form-label">Color</label>
-                  <select class="form-input" id="inv-color" onchange="onInvVariantChange()"></select>
+              <!-- Colores y tallas: el inventario se lleva por variante, así que
+                   el movimiento dice exactamente qué combinaciones se mueven. -->
+              <div class="form-group" id="inv-var-block" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+                  <label class="form-label" id="inv-var-title" style="margin:0">Colores y tallas a mover</label>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <input class="form-input" id="inv-var-filter" placeholder="Filtrar color o talla"
+                           style="width:160px;padding:6px 8px;font-size:12px" oninput="renderInvVarGrid()" autocomplete="off" />
+                    <button type="button" class="btn btn-light" style="padding:6px 10px;font-size:11px" onclick="invVarTodo()">Todo</button>
+                    <button type="button" class="btn btn-light" style="padding:6px 10px;font-size:11px" onclick="invVarLimpiar()">Limpiar</button>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Talla</label>
-                  <select class="form-input" id="inv-size" onchange="updateInvSelectedStockLabel()"></select>
-                </div>
+                <div id="inv-var-grid" style="max-height:250px;overflow-y:auto;border:1px solid var(--warm-border);border-radius:8px"></div>
+                <div id="inv-var-total" style="font-size:12px;color:var(--warm-mid);margin-top:6px"></div>
               </div>
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" id="inv-qty-group">
                   <label class="form-label" id="inv-qty-label">Cantidad a retirar</label>
                   <input class="form-input" type="number" id="inv-qty" min="1" placeholder="0" />
                 </div>
@@ -1707,21 +1711,13 @@
                     <option value="otro">Otro</option>
                   </select>
                 </div>
-                <div class="form-group" id="inv-newstock-group" style="display:none">
-                  <label class="form-label">Nuevo stock</label>
-                  <input class="form-input" type="number" id="inv-newstock" min="0" placeholder="0" />
-                </div>
-              </div>
-              <div class="form-group" id="inv-adjust-tallas-group" style="display:none">
-                <label class="form-label">Detalle por talla (opcional)</label>
-                <input class="form-input" id="inv-adjust-tallas" placeholder="Ej: S:10, M:25, L:8" />
               </div>
             </div>
             <div id="inv-transfer-block" style="display:none">
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Bodega origen</label>
-                  <select class="form-input" id="inv-transfer-from" onchange="updateInvSelectedStockLabel()"></select>
+                  <select class="form-input" id="inv-transfer-from" onchange="onInvBodegaChange()"></select>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Bodega destino</label>
@@ -2699,8 +2695,8 @@
       }
       if (typeof syncProductsFromSupabase === 'function') {
         syncProductsFromSupabase()
-          .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
           .then(() => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : false))
+          .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
           .then(() => { renderCategories(); renderProducts(); renderCategoriesView(); renderDashboard(); });
       }
       if (typeof syncDiscountCodesFromSupabase === 'function') {
@@ -2720,8 +2716,8 @@
           sync: [
             () => (typeof syncProductsFromSupabase === 'function' ? syncProductsFromSupabase() : null),
             () => (typeof syncCategoriesFromSupabase === 'function' ? syncCategoriesFromSupabase() : null),
-            () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
             () => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : null),
+            () => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : null),
             () => (typeof syncPriceOverridesFromSupabase === 'function' ? syncPriceOverridesFromSupabase() : null),
             () => (typeof syncOrdersFromSupabase === 'function' ? syncOrdersFromSupabase() : null),
             () => (typeof syncCommissionsFromSupabase === 'function' ? syncCommissionsFromSupabase() : null),
@@ -2938,6 +2934,7 @@
         ? syncProductsFromSupabase()
         : Promise.resolve(false);
       return Promise.resolve(productSync)
+        .then(() => (typeof syncVariantStockFromSupabase === 'function' ? syncVariantStockFromSupabase() : false))
         .then(() => (typeof syncStockFromSupabase === 'function' ? syncStockFromSupabase() : false))
         .catch(err => {
           console.warn('[supabase] sync products/stock:', err && err.message ? err.message : err);
@@ -7325,6 +7322,7 @@
       const tbody         = document.getElementById('inv-stock-tbody');
 
       const rows = [];
+      let detalleSeq = 0;
       products.forEach(p => {
         if (filterProduct && !p.name.toLowerCase().includes(filterProduct)) return;
         const productBodegas = inv[p.id] || {};
@@ -7334,7 +7332,7 @@
           rows.push(`<tr>
             <td><strong>${escapeHtml(p.name)}</strong></td>
             <td class="td-muted">${escapeHtml(p.category)}</td>
-            <td class="td-muted" colspan="2">Sin bodegas registradas</td>
+            <td class="td-muted" colspan="3">Sin bodegas registradas</td>
             <td></td>
           </tr>`);
           return;
@@ -7345,21 +7343,49 @@
           const stockNum  = stockInfo.stock || 0;
           const updatedAt = stockInfo.updatedAt ? fmtDate(stockInfo.updatedAt) : '—';
           const stockColor = stockNum === 0 ? '#E53935' : stockNum < 5 ? '#D4A017' : '#4CAF50';
+
+          // Desglose por color y talla: es lo que realmente se puede vender en
+          // esa bodega, y lo que deja ver si un traslado llegó o no.
+          const combos = (typeof getProductVariantStock === 'function')
+            ? getProductVariantStock(p.id, b.id).filter(c => c.stock > 0)
+            : [];
+          const did = 'invdet-' + (++detalleSeq);
+          const resumen = combos.length
+            ? `<button class="btn btn-light" style="font-size:11px;padding:3px 9px" onclick="toggleInvDetalle('${did}')">${combos.length} combinación(es) ▾</button>`
+            : `<span class="td-muted" style="font-size:11.5px">sin desglose</span>`;
+
           rows.push(`<tr>
             <td><strong>${escapeHtml(p.name)}</strong></td>
             <td class="td-muted">${escapeHtml(p.category)}</td>
             <td>${escapeHtml(b.name)}</td>
             <td><span style="font-weight:600;color:${stockColor}">${stockNum}</span> unidades</td>
+            <td>${resumen}</td>
             <td class="td-muted">${updatedAt}</td>
           </tr>`);
+          if (combos.length) {
+            rows.push(`<tr id="${did}" style="display:none;background:var(--warm-bg,#faf7f2)">
+              <td colspan="6" style="padding:8px 14px">
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  ${combos.map(c => `<span style="font-size:11.5px;border:1px solid var(--warm-border);border-radius:20px;padding:3px 10px;background:#fff">
+                    ${escapeHtml([c.color, c.size].filter(Boolean).join(' · ') || 'talla única')}
+                    <strong style="margin-left:5px">${c.stock}</strong></span>`).join('')}
+                </div>
+              </td>
+            </tr>`);
+          }
         });
       });
 
       tbody.innerHTML = rows.length
         ? rows.join('')
-        : `<tr><td colspan="5"><div class="empty-state"><p>Sin registros de inventario. Registra ingresos para empezar.</p></div></td></tr>`;
+        : `<tr><td colspan="6"><div class="empty-state"><p>Sin registros de inventario. Registra ingresos para empezar.</p></div></td></tr>`;
 
       renderLowStockWidget();
+    }
+
+    function toggleInvDetalle(id) {
+      const row = document.getElementById(id);
+      if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
     }
 
     // Widget de stock bajo + sugerencia de reorden
@@ -7513,11 +7539,13 @@
         const bodegaTxt = m.type === 'transferencia' && (m.fromBodegaName || m.toBodegaName)
           ? `${m.fromBodegaName || m.fromBodega || '—'} → ${m.toBodegaName || m.toBodega || '—'}`
           : m.bodegaName;
+        const variante = [m.color, m.size].filter(Boolean).join(' · ');
         return `
         <tr>
           <td class="td-muted">${fmtDate(m.createdAt)}</td>
           <td><span class="badge" style="background:${typeColor[m.type]}22;color:${typeColor[m.type]}">${typeLabel[m.type] || m.type}</span></td>
           <td><strong>${escapeHtml(m.productName)}</strong></td>
+          <td class="td-muted">${escapeHtml(variante || 'talla única')}</td>
           <td>${escapeHtml(bodegaTxt)}</td>
           <td style="font-weight:600;color:${m.quantity >= 0 ? '#4CAF50' : '#E53935'}">${m.quantity >= 0 ? '+' : ''}${m.quantity}</td>
           <td class="td-muted">${m.previousStock}</td>
@@ -7526,7 +7554,7 @@
           <td class="td-muted" style="font-size:11px">${escapeHtml(m.notes || '—')}</td>
         </tr>`;
       }).join('')
-        : `<tr><td colspan="9"><div class="empty-state"><p>Sin movimientos registrados</p></div></td></tr>`;
+        : `<tr><td colspan="10"><div class="empty-state"><p>Sin movimientos registrados</p></div></td></tr>`;
     }
 
     function openInvModal(type) {
@@ -7538,12 +7566,11 @@
       document.getElementById('inv-product-id').value  = '';
       document.getElementById('inv-product-name').value = '';
       document.getElementById('inv-current-stock').textContent = '';
-      const _vr = document.getElementById('inv-variant-row');
-      if (_vr) _vr.style.display = 'none';   // se muestra al elegir el producto
+      _invVarQty = {};
+      document.getElementById('inv-var-filter').value = '';
+      document.getElementById('inv-var-block').style.display = 'none';  // se abre al elegir producto
       document.getElementById('inv-qty').value  = '';
       document.getElementById('inv-notes').value = '';
-      if (document.getElementById('inv-newstock')) document.getElementById('inv-newstock').value = '';
-      if (document.getElementById('inv-adjust-tallas')) document.getElementById('inv-adjust-tallas').value = '';
 
       const bodegas = getBodegas();
       document.getElementById('inv-bodega-select').innerHTML =
@@ -7565,12 +7592,9 @@
       document.getElementById('inv-main-bodega-group').style.display = type === 'traslado' ? 'none' : '';
       document.getElementById('inv-prov-group').style.display    = type === 'ingreso' ? '' : 'none';
       document.getElementById('inv-motivo-group').style.display  = type === 'salida'  ? '' : 'none';
-      document.getElementById('inv-newstock-group').style.display = type === 'ajuste'  ? '' : 'none';
-      document.getElementById('inv-adjust-tallas-group').style.display = type === 'ajuste' ? '' : 'none';
-      document.getElementById('inv-qty-label').textContent =
-        type === 'salida' ? 'Cantidad a retirar' : type === 'traslado' ? 'Cantidad a trasladar' : 'Cantidad (delta)';
-      const qtyParent = document.getElementById('inv-qty').closest('.form-group');
-      if (qtyParent) qtyParent.style.display = type === 'ajuste' ? 'none' : '';
+      // La cantidad, el nuevo stock y el detalle de tallas los resuelve ahora la
+      // cuadrícula de colores y tallas, combinación por combinación.
+      document.getElementById('inv-qty-group').style.display = 'none';
       document.getElementById('inv-modal-save-btn').textContent =
         type === 'ingreso' ? 'Registrar ingreso' : type === 'salida' ? 'Registrar salida' : type === 'traslado' ? 'Registrar traslado' : 'Aplicar ajuste';
 
@@ -7608,6 +7632,10 @@
           <input type="hidden" class="inv-line-pname" />
         </div>
         <div class="form-row" style="margin-bottom:0">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="font-size:11px">Color</label>
+            <select class="form-input inv-line-color"><option value="">(sin color)</option></select>
+          </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label" style="font-size:11px">Cantidad</label>
             <input class="form-input inv-line-qty" type="number" min="1" placeholder="0" />
@@ -7670,6 +7698,18 @@
       row.querySelector('.inv-line-dd').style.display = 'none';
       const costInp = row.querySelector('.inv-line-cost');
       if (cost && !costInp.value) costInp.value = cost;
+      fillInvLineColors(row, id);
+    }
+
+    // Los colores de la línea salen del catálogo del producto: sin color el
+    // ingreso no sabría a qué variante sumarle y no llegaría al POS.
+    function fillInvLineColors(row, productId) {
+      const sel = row.querySelector('.inv-line-color');
+      if (!sel) return;
+      const colores = [...new Set(invCombinacionesDe(productId, '').map(c => c.color).filter(Boolean))];
+      sel.innerHTML = colores.length
+        ? colores.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('')
+        : '<option value="">(sin color)</option>';
     }
 
     // Suma tallas "S:3, M:5" → cantidad total
@@ -7714,33 +7754,19 @@
 
     function updateInvSelectedStockLabel() {
       const productId = document.getElementById('inv-product-id').value;
-      if (!productId) return;
-      const type = document.getElementById('inv-modal-type').value;
-      const bodegaId = type === 'traslado'
-        ? document.getElementById('inv-transfer-from').value
-        : document.getElementById('inv-bodega-select').value;
-      if (!bodegaId) {
-        document.getElementById('inv-current-stock').textContent = '';
-        return;
-      }
-      // Si el movimiento es de una variante, el saldo que importa es el de esa
-      // combinación, no el total del producto.
-      const row = document.getElementById('inv-variant-row');
-      const esVariante = row && row.style.display !== 'none';
-      const color = esVariante ? (document.getElementById('inv-color').value || '') : '';
-      const size  = esVariante ? (document.getElementById('inv-size').value  || '') : '';
-
-      let stock, etiqueta;
-      if (esVariante && typeof getVariantStockFor === 'function') {
-        stock = getVariantStockFor(productId, bodegaId, color, size);
-        const detalle = [color, size].filter(Boolean).join(' · ') || 'talla única';
-        etiqueta = `Stock de ${detalle} en esta bodega: ${stock} unidades`;
-      } else {
-        stock = getStockValue(productId, bodegaId);
-        etiqueta = `Stock actual en esta bodega: ${stock} unidades`;
-      }
-      document.getElementById('inv-current-stock').textContent = etiqueta;
-      if (type === 'ajuste') document.getElementById('inv-newstock').value = stock;
+      const box = document.getElementById('inv-current-stock');
+      if (!productId) { box.textContent = ''; return; }
+      const bodegaId = invBodegaDelMovimiento();
+      if (!bodegaId) { box.textContent = ''; return; }
+      const combos = (typeof getProductVariantStock === 'function')
+        ? getProductVariantStock(productId, bodegaId) : [];
+      const total  = combos.length
+        ? combos.reduce((s, c) => s + (c.stock || 0), 0)
+        : getStockValue(productId, bodegaId);
+      const bodega = getBodegas().find(b => b.id === bodegaId);
+      const conStock = combos.filter(c => c.stock > 0).length;
+      box.textContent = `${total} unidades en ${bodega ? bodega.name : bodegaId}`
+        + (combos.length ? ` · ${conStock} de ${combos.length} combinaciones con existencia` : '');
     }
 
     function selectInvProduct(id, name) {
@@ -7748,14 +7774,23 @@
       document.getElementById('inv-product-name').value  = name;
       document.getElementById('inv-product-search').value = name;
       document.getElementById('inv-product-dropdown').style.display = 'none';
-      fillInvVariantSelects();
+      _invVarQty = {};
+      document.getElementById('inv-var-filter').value = '';
+      renderInvVarGrid();
       updateInvSelectedStockLabel();
     }
 
-    // ─── Color y talla del movimiento ──────────────────────────────────────
-    // El inventario se lleva por variante, así que un ingreso o un traslado
-    // tiene que decir exactamente qué color y qué talla se está moviendo.
+    // ─── Colores y tallas del movimiento ───────────────────────────────────
+    // El inventario se lleva por variante: un traslado, un ingreso o una salida
+    // dicen exactamente qué combinaciones se mueven y cuántas de cada una. Sin
+    // esto el total se movía pero el POS seguía sin poder vender en la bodega
+    // destino, que es lo que hacía parecer que el traslado "no se reflejaba".
 
+    let _invVarQty = {};   // 'color||talla' → cantidad escrita en la cuadrícula
+
+    function invVarKey(color, size) { return (color || '') + '||' + (size || ''); }
+
+    // La bodega cuyas existencias importan para el movimiento en curso.
     function invBodegaDelMovimiento() {
       const type = document.getElementById('inv-modal-type').value;
       return type === 'traslado'
@@ -7763,230 +7798,295 @@
         : document.getElementById('inv-bodega-select').value;
     }
 
-    // Combinaciones conocidas del producto: las de la bodega y, si no hay,
-    // las que define el catálogo (para poder ingresar mercadería nueva).
+    // Combinaciones del producto: las que ya tienen existencia en la bodega y,
+    // además, las que define el catálogo (para poder ingresar mercadería que
+    // todavía no existe ahí). Un producto sin colores ni tallas devuelve una
+    // sola fila genérica, para que también se mueva por variante.
     function invCombinacionesDe(productId, bodegaId) {
-      let combos = (typeof getProductVariantStock === 'function' && bodegaId)
-        ? getProductVariantStock(productId, bodegaId) : [];
-      combos = combos.filter(c => c.color || c.size);
-      if (combos.length) return combos;
-      const prod = (typeof getAdminProducts === 'function' ? getAdminProducts() : [])
-        .find(p => p.id === productId);
-      const vars = (prod && Array.isArray(prod.variants)) ? prod.variants : [];
+      const idx = {};
       const out = [];
+      const add = (color, size, stock) => {
+        const k = invVarKey(color, size);
+        if (idx[k] !== undefined) {
+          out[idx[k]].stock = Math.max(out[idx[k]].stock, stock || 0);
+          return;
+        }
+        idx[k] = out.length;
+        out.push({ color: color || '', size: size || '', stock: stock || 0 });
+      };
+      if (bodegaId && typeof getProductVariantStock === 'function') {
+        getProductVariantStock(productId, bodegaId).forEach(c => add(c.color, c.size, c.stock));
+      }
+      const prod = (typeof getAdminProducts === 'function' ? getAdminProducts() : []).find(p => p.id === productId)
+                || getAllProducts().find(p => p.id === productId);
+      const vars = (prod && Array.isArray(prod.variants)) ? prod.variants : [];
       vars.forEach(v => {
         const sizes = Array.isArray(v.sizes) ? v.sizes : [];
-        if (!sizes.length) { out.push({ color: v.label || '', size: '', stock: 0 }); return; }
-        sizes.forEach(s => out.push({
-          color: v.label || '',
-          size: (typeof s === 'string' ? s : (s && s.size)) || '',
-          stock: 0,
-        }));
+        if (!sizes.length) { add(v.label || '', '', 0); return; }
+        sizes.forEach(s => add(v.label || '', (typeof s === 'string' ? s : (s && s.size)) || '', 0));
+      });
+      if (!out.length) add('', '', 0);
+      out.sort((a, b) => (a.color || '').localeCompare(b.color || '')
+                      || (a.size  || '').localeCompare(b.size  || ''));
+      return out;
+    }
+
+    function renderInvVarGrid() {
+      const productId = document.getElementById('inv-product-id').value;
+      const block = document.getElementById('inv-var-block');
+      if (!block) return;
+      if (!productId) { block.style.display = 'none'; return; }
+
+      const type   = document.getElementById('inv-modal-type').value;
+      const combos = invCombinacionesDe(productId, invBodegaDelMovimiento());
+      const filtro = (document.getElementById('inv-var-filter').value || '').toLowerCase();
+
+      block.style.display = '';
+      document.getElementById('inv-var-title').textContent =
+          type === 'traslado' ? 'Colores y tallas a trasladar'
+        : type === 'salida'   ? 'Colores y tallas a retirar'
+        : type === 'ajuste'   ? 'Conteo físico por color y talla'
+        : 'Colores y tallas que entran';
+
+      const visibles = combos.filter(c => !filtro
+        || (c.color || '').toLowerCase().includes(filtro)
+        || (c.size  || '').toLowerCase().includes(filtro));
+
+      const filas = visibles.map(c => {
+        const k       = invVarKey(c.color, c.size);
+        const agotado = (type === 'salida' || type === 'traslado') && c.stock <= 0;
+        const val     = _invVarQty[k] !== undefined ? _invVarQty[k]
+                      : (type === 'ajuste' ? c.stock : '');
+        return `<tr style="border-top:1px solid var(--warm-border);${agotado ? 'opacity:.45' : ''}">
+          <td style="padding:6px 10px;font-size:12.5px">${escapeHtml(c.color || '—')}</td>
+          <td style="padding:6px 10px;font-size:12.5px">${escapeHtml(c.size || 'única')}</td>
+          <td style="padding:6px 10px;font-size:12.5px;font-weight:600;color:${c.stock > 0 ? '#4CAF50' : '#E53935'}">${c.stock}</td>
+          <td style="padding:4px 10px">
+            <input class="form-input inv-var-qty" type="number" min="0" ${agotado ? 'disabled' : ''}
+                   data-color="${escapeAttr(c.color)}" data-size="${escapeAttr(c.size)}" data-disp="${c.stock}"
+                   value="${val === '' ? '' : val}" placeholder="0" oninput="onInvVarQty(this)"
+                   style="padding:5px 8px;font-size:12.5px;max-width:110px" />
+          </td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('inv-var-grid').innerHTML = visibles.length
+        ? `<table style="width:100%;border-collapse:collapse">
+             <thead><tr>
+               <th style="text-align:left;padding:7px 10px;font-size:11px;color:var(--warm-mid)">Color</th>
+               <th style="text-align:left;padding:7px 10px;font-size:11px;color:var(--warm-mid)">Talla</th>
+               <th style="text-align:left;padding:7px 10px;font-size:11px;color:var(--warm-mid)">${type === 'ingreso' ? 'Hay' : 'Disponible'}</th>
+               <th style="text-align:left;padding:7px 10px;font-size:11px;color:var(--warm-mid)">${type === 'ajuste' ? 'Contado' : 'Cantidad'}</th>
+             </tr></thead>
+             <tbody>${filas}</tbody>
+           </table>`
+        : `<div style="padding:14px;font-size:12.5px;color:var(--warm-mid)">Ninguna combinación coincide con el filtro.</div>`;
+
+      actualizarInvVarTotal();
+    }
+
+    // Al cambiar de bodega cambian las existencias disponibles: la cuadrícula
+    // se vuelve a armar para no arrastrar los saldos de la bodega anterior.
+    function onInvBodegaChange() {
+      _invVarQty = {};
+      renderInvVarGrid();
+      updateInvSelectedStockLabel();
+    }
+
+    function onInvVarQty(inp) {
+      const disp = parseInt(inp.dataset.disp) || 0;
+      const type = document.getElementById('inv-modal-type').value;
+      let v = inp.value === '' ? '' : Math.max(0, parseInt(inp.value) || 0);
+      if (v !== '' && (type === 'salida' || type === 'traslado') && v > disp) {
+        v = disp;
+        inp.value = v;
+      }
+      _invVarQty[invVarKey(inp.dataset.color, inp.dataset.size)] = v;
+      actualizarInvVarTotal();
+    }
+
+    function actualizarInvVarTotal() {
+      const type = document.getElementById('inv-modal-type').value;
+      const lineas = invVarLineas();
+      const total  = lineas.reduce((s, l) => s + l.qty, 0);
+      const box = document.getElementById('inv-var-total');
+      if (!box) return;
+      box.textContent = lineas.length
+        ? (type === 'ajuste'
+            ? `${lineas.length} combinación(es) con conteo nuevo · ${total} unidades`
+            : `${lineas.length} combinación(es) · ${total} unidades en total`)
+        : (type === 'ajuste'
+            ? 'Corrige el conteo de las combinaciones que hagan falta.'
+            : 'Escribe cuántas unidades mover de cada combinación.');
+    }
+
+    function invVarTodo() {
+      if (document.getElementById('inv-modal-type').value === 'ingreso') return;
+      document.querySelectorAll('#inv-var-grid .inv-var-qty').forEach(i => {
+        if (i.disabled) return;
+        i.value = parseInt(i.dataset.disp) || 0;
+        onInvVarQty(i);
+      });
+    }
+
+    function invVarLimpiar() {
+      _invVarQty = {};
+      document.querySelectorAll('#inv-var-grid .inv-var-qty').forEach(i => { i.value = ''; });
+      actualizarInvVarTotal();
+    }
+
+    // Líneas del movimiento. Se leen de `_invVarQty`, no del DOM, para no perder
+    // lo escrito en combinaciones que el filtro dejó fuera de pantalla.
+    function invVarLineas() {
+      const type      = document.getElementById('inv-modal-type').value;
+      const productId = document.getElementById('inv-product-id').value;
+      if (!productId) return [];
+      const out = [];
+      invCombinacionesDe(productId, invBodegaDelMovimiento()).forEach(c => {
+        const v = _invVarQty[invVarKey(c.color, c.size)];
+        if (v === undefined || v === '') return;
+        const qty = Number(v) || 0;
+        if (type !== 'ajuste' && qty <= 0) return;
+        if (type === 'ajuste' && qty === c.stock) return;   // sin cambio
+        out.push({ color: c.color, size: c.size, qty, disponible: c.stock });
       });
       return out;
     }
 
-    function fillInvVariantSelects() {
-      const productId = document.getElementById('inv-product-id').value;
-      const row = document.getElementById('inv-variant-row');
-      if (!productId) { row.style.display = 'none'; return; }
-      const combos = invCombinacionesDe(productId, invBodegaDelMovimiento());
-      if (!combos.length) { row.style.display = 'none'; return; }
-      row.style.display = '';
-      const colores = [...new Set(combos.map(c => c.color).filter(Boolean))];
-      const selColor = document.getElementById('inv-color');
-      selColor.innerHTML = colores.length
-        ? colores.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('')
-        : '<option value="">(sin color)</option>';
-      fillInvSizeSelect();
+    // Todos los movimientos pasan por el mismo motor (`moverInventario`): la
+    // base valida y aplica sumas/restas por variante, y al terminar volvemos a
+    // leer las existencias desde la base. Lo que queda en pantalla es lo que
+    // realmente quedó guardado, no lo que creía este navegador.
+    async function conBotonGuardando(fn) {
+      const btn  = document.getElementById('inv-modal-save-btn');
+      const prev = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try { return await fn(); }
+      finally { btn.disabled = false; btn.textContent = prev; }
     }
 
-    function fillInvSizeSelect() {
-      const productId = document.getElementById('inv-product-id').value;
-      const color  = document.getElementById('inv-color').value;
-      const combos = invCombinacionesDe(productId, invBodegaDelMovimiento())
-        .filter(c => (c.color || '') === (color || ''));
-      const tallas = [...new Set(combos.map(c => c.size).filter(Boolean))];
-      const selSize = document.getElementById('inv-size');
-      selSize.innerHTML = tallas.length
-        ? tallas.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')
-        : '<option value="">(talla única)</option>';
-    }
-
-    function onInvVariantChange() {
-      fillInvSizeSelect();
-      updateInvSelectedStockLabel();
-    }
-
-    function notesWithTallas(notes, tallasText) {
-      const detail = (tallasText || '').trim();
-      if (!detail) return notes || '';
-      return notes ? `${notes} · Tallas: ${detail}` : `Tallas: ${detail}`;
-    }
-
-    async function saveAdjustmentTallasDetail(productId, tallasText) {
-      const detail = (tallasText || '').trim();
-      if (!detail) return;
-      const cod = productSourceCodForAdmin(productId);
-      if (!cod) return;
-      try {
-        const list = getInventoryMasterItemsForAdmin();
-        const idx = list.findIndex(i => String(i.cod || i.id || '') === String(cod));
-        let currentObservation = '';
-        if (idx !== -1) {
-          const item = list[idx];
-          currentObservation = item.observation || '';
-          if (Object.prototype.hasOwnProperty.call(item, 'tallas')) item.tallas = detail;
-          else if (Object.prototype.hasOwnProperty.call(item, 'sizes')) item.sizes = detail;
-          else item.tallas_detalle = detail;
-          localStorage.setItem('laurean_inventory_master', JSON.stringify(list));
-        }
-        if (window.LAUREAN_DB) {
-          let observation = currentObservation;
-          const res = await window.LAUREAN_DB.from('inventory_items').select('observation').eq('cod', cod).maybeSingle();
-          if (!res.error && res.data) observation = res.data.observation || '';
-          const nextObservation = observation
-            ? `${observation}\nTallas: ${detail}`
-            : `Tallas: ${detail}`;
-          const { error } = await window.LAUREAN_DB.from('inventory_items').update({ observation: nextObservation }).eq('cod', cod);
-          if (error) console.warn('[supabase] inventory_items tallas update:', error.message);
-        }
-      } catch (err) {
-        console.warn('[inventory] tallas detail:', err && err.message ? err.message : err);
-      }
+    async function trasVariosMovimientos(fallos, hechos, mensajeOk) {
+      await refrescarExistencias();
+      renderInventarioStock();
+      renderInventarioMovimientos();
+      if (fallos.length && !hechos) { alert('No se registró el movimiento:\n\n' + fallos.join('\n')); return; }
+      if (fallos.length) { alert('Se registró en parte. Quedó pendiente:\n\n' + fallos.join('\n')); return; }
+      closeInvModal();
+      alert(mensajeOk);
     }
 
     async function saveInvMovement() {
-      const type        = document.getElementById('inv-modal-type').value;
-      const bodegaId    = document.getElementById('inv-bodega-select').value;
+      const type     = document.getElementById('inv-modal-type').value;
+      const bodegaId = document.getElementById('inv-bodega-select').value;
+      const notes    = document.getElementById('inv-notes').value;
 
-      // INGRESO múltiple: una o más líneas con costo y tallas
+      if (typeof moverInventario !== 'function') {
+        return alert('Recarga la página: falta cargar el módulo de inventario.');
+      }
+
+      // ── INGRESO: una o varias líneas (producto + color + tallas + costo) ──
       if (type === 'ingreso') {
         if (!bodegaId) return alert('Selecciona una bodega.');
         const provSel  = document.getElementById('inv-proveedor-select');
-        const provId   = provSel.value;
-        const provName = provId ? provSel.options[provSel.selectedIndex].dataset.name : null;
-        const paid     = document.getElementById('inv-paid').checked;
-        const notes    = document.getElementById('inv-notes').value;
-        const rows = Array.from(document.querySelectorAll('#inv-lines .inv-line'));
+        const provName = provSel.value ? provSel.options[provSel.selectedIndex].dataset.name : null;
+        const pagado   = document.getElementById('inv-paid').checked;
         const parsed = [];
-        for (const row of rows) {
+        for (const row of Array.from(document.querySelectorAll('#inv-lines .inv-line'))) {
           const pid   = row.querySelector('.inv-line-pid').value;
           const pname = row.querySelector('.inv-line-pname').value;
-          if (!pid) continue; // línea vacía: ignorar
+          if (!pid) continue;                        // línea vacía: se ignora
+          const color = row.querySelector('.inv-line-color')?.value || '';
           const sizes = readInvLineSizes(row);
           const qty   = sizes ? sizes.reduce((s, x) => s + x.qty, 0)
                               : parseInt(row.querySelector('.inv-line-qty').value);
           if (!qty || qty <= 0) return alert(`Ingresa la cantidad de "${pname}".`);
-          const unitCost = parseFloat(row.querySelector('.inv-line-cost').value) || 0;
-          parsed.push({ pid, pname, qty, unitCost, sizes });
+          parsed.push({
+            pid, pname, qty,
+            costo:  parseFloat(row.querySelector('.inv-line-cost').value) || 0,
+            lineas: sizes ? sizes.map(s => ({ color, size: s.size, qty: s.qty }))
+                          : [{ color, size: '', qty }],
+          });
         }
         if (!parsed.length) return alert('Agrega al menos un producto.');
-        parsed.forEach(l => updateStock(l.pid, bodegaId, l.qty, 'ingreso', {
-          productName: l.pname, proveedorId: provId, proveedorName: provName,
-          notes, unitCost: l.unitCost, sizes: l.sizes, paid,
-        }));
-        closeInvModal();
-        renderInventarioStock();
-        renderInventarioMovimientos();
-        alert(`Ingreso registrado: ${parsed.length} producto(s).`);
-        return;
+
+        return conBotonGuardando(async () => {
+          const fallos = [];
+          let hechos = 0;
+          for (const l of parsed) {
+            const r = await moverInventario({
+              tipo: 'ingreso', productId: l.pid, productName: l.pname,
+              destino: bodegaId, lineas: l.lineas,
+              notas: notes, proveedor: provName, costoUnit: l.costo, pagado,
+            });
+            if (r.ok) hechos++; else fallos.push(`${l.pname}: ${r.error}`);
+          }
+          await trasVariosMovimientos(fallos, hechos, `Ingreso registrado: ${hechos} producto(s).`);
+        });
       }
 
+      // ── SALIDA / AJUSTE / TRASLADO: un producto, varias combinaciones ──
       const productId   = document.getElementById('inv-product-id').value;
       const productName = document.getElementById('inv-product-name').value;
       if (!productId) return alert('Selecciona un producto.');
 
-      // Color y talla del movimiento (vacíos si el producto no maneja variantes).
-      const _vrow  = document.getElementById('inv-variant-row');
-      const _esVar = _vrow && _vrow.style.display !== 'none';
-      const mColor = _esVar ? (document.getElementById('inv-color').value || '') : '';
-      const mSize  = _esVar ? (document.getElementById('inv-size').value  || '') : '';
-      const aplicarVariante = (bod, delta) => {
-        if (!_esVar || typeof adjustVariantStock !== 'function') return;
-        adjustVariantStock(productId, bod, mColor, mSize, delta)
-          .catch(e => console.warn('[inventario] variante:', e && e.message));
-      };
+      const lineas = invVarLineas();
+      if (!lineas.length) {
+        return alert(type === 'ajuste'
+          ? 'Corrige el conteo de al menos una combinación.'
+          : 'Escribe cuántas unidades mover en al menos un color/talla.');
+      }
+      const total = lineas.reduce((s, l) => s + l.qty, 0);
 
       if (type === 'traslado') {
         const origen  = document.getElementById('inv-transfer-from').value;
         const destino = document.getElementById('inv-transfer-to').value;
-        const qty     = parseInt(document.getElementById('inv-qty').value);
-        const notes   = document.getElementById('inv-notes').value;
-        if (!origen) return alert('Selecciona la bodega origen.');
+        if (!origen)  return alert('Selecciona la bodega origen.');
         if (!destino) return alert('Selecciona la bodega destino.');
         if (origen === destino) return alert('La bodega destino debe ser distinta de la bodega origen.');
-        if (!qty || qty <= 0) return alert('Ingresa una cantidad válida.');
-        const dispOrigen = (_esVar && typeof getVariantStockFor === 'function')
-          ? getVariantStockFor(productId, origen, mColor, mSize)
-          : getStockValue(productId, origen);
-        if (qty > dispOrigen) {
-          const det = [mColor, mSize].filter(Boolean).join(' · ');
-          alert(`Stock insuficiente en la bodega origen${det ? ' para ' + det : ''}. Disponible: ${dispOrigen}.`);
-          return;
+        const sinStock = lineas.filter(l => l.qty > l.disponible);
+        if (sinStock.length) {
+          return alert('No hay suficiente existencia en la bodega origen:\n\n' + sinStock
+            .map(l => `· ${[l.color, l.size].filter(Boolean).join(' · ') || 'talla única'}: hay ${l.disponible}, pediste ${l.qty}`)
+            .join('\n'));
         }
         const bodegas = getBodegas();
-        const origenName = bodegas.find(b => b.id === origen)?.name || origen;
         const destinoName = bodegas.find(b => b.id === destino)?.name || destino;
-        const meta = {
-          productName,
-          motivo: 'traslado',
-          notes,
-          color: mColor,
-          size:  mSize,
-          fromBodega: origen,
-          toBodega: destino,
-          fromBodegaName: origenName,
-          toBodegaName: destinoName,
-        };
-        updateStock(productId, origen, -qty, 'transferencia', meta);
-        updateStock(productId, destino, qty, 'transferencia', meta);
-        aplicarVariante(origen, -qty);
-        aplicarVariante(destino, qty);
-        closeInvModal();
-        renderInventarioStock();
-        renderInventarioMovimientos();
-        alert('Traslado registrado correctamente.');
-        return;
+
+        return conBotonGuardando(async () => {
+          const r = await moverInventario({
+            tipo: 'traslado', productId, productName,
+            origen, destino, lineas, motivo: 'traslado', notas: notes,
+          });
+          await trasVariosMovimientos(r.ok ? [] : [r.error], r.ok ? 1 : 0,
+            `Traslado registrado: ${total} unidades en ${lineas.length} combinación(es) hacia ${destinoName}.`);
+        });
       }
 
       if (!bodegaId) return alert('Selecciona una bodega.');
 
-      if (type === 'ajuste') {
-        const newStock = parseInt(document.getElementById('inv-newstock').value);
-        if (isNaN(newStock) || newStock < 0) return alert('Ingresa un stock válido (0 o mayor).');
-        const tallasText = document.getElementById('inv-adjust-tallas')?.value.trim() || '';
-        const notes = notesWithTallas(document.getElementById('inv-notes').value, tallasText);
-        await saveAdjustmentTallasDetail(productId, tallasText);
-        ajustarStock(productId, bodegaId, newStock, notes);
-        if (_esVar && typeof getVariantStockFor === 'function') {
-          const actual = getVariantStockFor(productId, bodegaId, mColor, mSize);
-          aplicarVariante(bodegaId, newStock - actual);   // deja la variante en lo contado
+      if (type === 'salida') {
+        const sinStock = lineas.filter(l => l.qty > l.disponible);
+        if (sinStock.length) {
+          return alert('No hay suficiente existencia:\n\n' + sinStock
+            .map(l => `· ${[l.color, l.size].filter(Boolean).join(' · ') || 'talla única'}: hay ${l.disponible}, pediste ${l.qty}`)
+            .join('\n'));
         }
-      } else {
-        const qty = parseInt(document.getElementById('inv-qty').value);
-        if (!qty || qty <= 0) return alert('Ingresa una cantidad válida.');
-        if (type === 'salida') {
-          const current = (_esVar && typeof getVariantStockFor === 'function')
-            ? getVariantStockFor(productId, bodegaId, mColor, mSize)
-            : getStockValue(productId, bodegaId);
-          const detalle = [mColor, mSize].filter(Boolean).join(' · ');
-          if (qty > current) return alert(`Stock insuficiente${detalle ? ' de ' + detalle : ''}. Disponible: ${current} unidades.`);
-        }
-        const provSel  = document.getElementById('inv-proveedor-select');
-        const provId   = provSel.value;
-        const provName = provId ? provSel.options[provSel.selectedIndex].dataset.name : null;
-        const motivo   = document.getElementById('inv-motivo')?.value || null;
-        const notes    = document.getElementById('inv-notes').value;
-        updateStock(productId, bodegaId, type === 'ingreso' ? qty : -qty, type,
-          { productName, proveedorId: provId, proveedorName: provName, motivo, notes, color: mColor, size: mSize });
-        aplicarVariante(bodegaId, type === 'ingreso' ? qty : -qty);
       }
 
-      closeInvModal();
-      renderInventarioStock();
-      renderInventarioMovimientos();
-      alert('Movimiento registrado correctamente.');
+      const motivo = type === 'salida' ? (document.getElementById('inv-motivo')?.value || null) : null;
+      return conBotonGuardando(async () => {
+        const r = await moverInventario({
+          tipo: type === 'ajuste' ? 'ajuste' : 'salida',
+          productId, productName,
+          origen:  type === 'salida' ? bodegaId : null,
+          destino: type === 'ajuste' ? bodegaId : null,
+          lineas, motivo, notas: notes,
+        });
+        await trasVariosMovimientos(r.ok ? [] : [r.error], r.ok ? 1 : 0,
+          type === 'ajuste'
+            ? `Conteo actualizado en ${lineas.length} combinación(es).`
+            : `Salida registrada: ${total} unidades en ${lineas.length} combinación(es).`);
+      });
     }
 
     // ─── Combos ────────────────────────────────────────────────────────────────

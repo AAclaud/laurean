@@ -879,6 +879,15 @@ do $$ begin
 end $$;
 
 -- ════════════════════════════════════════════════════════════
--- FIN. Después de correr esto, ejecutar `seed.sql` para crear
--- usuarios y categorías base.
+-- INVENTARIO POR VARIANTE (color × talla) — en archivo aparte
+-- `movimientos-por-variante.sql` define la tabla `variant_stock`
+-- (fuente de verdad de las existencias), la función atómica
+-- `mover_inventario()` para ingresos/salidas/ajustes/traslados y
+-- el trigger que deja `inventory_stock` como total derivado.
+-- Ejecutarlo DESPUÉS de este archivo.
+-- ════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════
+-- FIN. Después de correr esto, ejecutar `movimientos-por-variante.sql`
+-- y luego `seed.sql` para crear usuarios y categorías base.
 -- ════════════════════════════════════════════════════════════

@@ -1000,6 +1000,10 @@ function getAdminProducts() {
 window.syncProductsFromSupabase = syncProductsFromSupabase;
 window.getAdminProducts = getAdminProducts;
 
+// Total por bodega. Sale de `inventory_stock` (el conteo por COD), pero los
+// productos creados a mano en el admin no tienen COD y ahí nunca aparecen: para
+// esos el total se arma sumando sus variantes, que es donde vive su existencia.
+// Requiere que syncVariantStockFromSupabase() haya corrido antes.
 async function syncStockFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
@@ -1014,6 +1018,25 @@ async function syncStockFromSupabase() {
     if (!inv[pid]) inv[pid] = {};
     inv[pid][r.bodega_id] = { stock: r.stock || 0, updatedAt: r.updated_at };
   });
+
+  // Relleno desde variantes para los pares (producto, bodega) sin conteo propio.
+  const vmap  = getVariantStock();
+  const suma  = {};
+  Object.keys(vmap).forEach(k => {
+    const p = k.split('|');
+    const pid = p[0], bod = p[1];
+    if (!pid || !bod) return;
+    if (inv[pid] && inv[pid][bod] !== undefined) return;
+    if (!suma[pid]) suma[pid] = {};
+    suma[pid][bod] = (suma[pid][bod] || 0) + (Number(vmap[k]) || 0);
+  });
+  Object.keys(suma).forEach(pid => {
+    if (!inv[pid]) inv[pid] = {};
+    Object.keys(suma[pid]).forEach(bod => {
+      inv[pid][bod] = { stock: suma[pid][bod], updatedAt: null };
+    });
+  });
+
   localStorage.setItem(KEYS.INVENTORY, JSON.stringify(inv));
   document.dispatchEvent(new CustomEvent('laurean:stock-synced'));
   return true;
@@ -1119,6 +1142,143 @@ async function applyVariantSale(items, bodegaId) {
   }
   return n;
 }
+
+// ─── Motor de movimientos de inventario ─────────────────────────────────────
+// Un solo camino para ingresos, salidas, ajustes y traslados. Lo resuelve la
+// base con `mover_inventario`: valida disponibilidad, suma/resta (no escribe
+// totales calculados en el navegador, que es lo que hacía que dos equipos se
+// pisaran) y deja la traza. Si la función todavía no está instalada en la base,
+// se cae a escrituras directas equivalentes — verificando errores, nunca en
+// silencio.
+//
+// mov = { tipo, productId, productName, origen, destino, lineas:[{color,size,qty}],
+//         motivo, notas, proveedor }
+// Devuelve { ok:true } o { ok:false, error:'…' }.
+async function moverInventario(mov) {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return { ok: false, error: 'Sin conexión con la base de datos. Vuelve a entrar e inténtalo de nuevo.' };
+
+  const lineas = (mov.lineas || [])
+    .map(l => ({ color: l.color || '', size: l.size || '', qty: Number(l.qty) || 0 }))
+    .filter(l => mov.tipo === 'ajuste' ? l.qty >= 0 : l.qty > 0);
+  if (!lineas.length) return { ok: false, error: 'No indicaste cantidades que mover.' };
+
+  const { data, error } = await sb.rpc('mover_inventario', {
+    p_tipo:         mov.tipo,
+    p_product_id:   mov.productId,
+    p_product_name: mov.productName || '',
+    p_origen:       mov.origen  || null,
+    p_destino:      mov.destino || null,
+    p_lineas:       lineas,
+    p_motivo:       mov.motivo    || null,
+    p_notas:        mov.notas     || null,
+    p_proveedor:    mov.proveedor || null,
+    p_costo_unit:   mov.costoUnit != null ? Number(mov.costoUnit) : null,
+    p_pagado:       mov.pagado === true,
+  });
+  if (!error) return { ok: true, data };
+  if (_movRpcAusente(error)) return _moverInventarioDirecto(mov, lineas);
+  return { ok: false, error: error.message || String(error) };
+}
+
+function _movRpcAusente(error) {
+  const code = (error && error.code) || '';
+  const msg  = ((error && error.message) || '').toLowerCase();
+  return code === 'PGRST202' || code === '42883'
+    || msg.includes('could not find the function')
+    || msg.includes('schema cache');
+}
+
+function _movEtiqueta(color, size) {
+  return [color, size].filter(Boolean).join(' · ') || 'talla única';
+}
+
+async function _movLeerVariante(productId, bodegaId, color, size) {
+  const sb = window.LAUREAN_DB;
+  const { data, error } = await sb.from('variant_stock').select('stock')
+    .eq('product_id', productId).eq('bodega_id', bodegaId)
+    .eq('color', color).eq('size', size).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? (Number(data.stock) || 0) : 0;
+}
+
+async function _movEscribirVariante(productId, bodegaId, color, size, valor) {
+  const sb = window.LAUREAN_DB;
+  const { error } = await sb.from('variant_stock').upsert({
+    product_id: productId, bodega_id: bodegaId,
+    color: color, size: size, stock: Math.max(0, valor),
+  }, { onConflict: 'product_id,bodega_id,color,size' });
+  if (error) throw new Error(error.message);
+}
+
+// Camino de respaldo: mismas reglas, pero desde el navegador. Se lee el valor
+// vigente en la base justo antes de escribir, no el del caché local.
+async function _moverInventarioDirecto(mov, lineas) {
+  const sb     = window.LAUREAN_DB;
+  const fallos = [];
+  let aplicadas = 0;
+
+  for (const l of lineas) {
+    try {
+      let antes = 0, despues = 0;
+      if (mov.origen) {
+        antes = await _movLeerVariante(mov.productId, mov.origen, l.color, l.size);
+        if (antes < l.qty) {
+          fallos.push(`${_movEtiqueta(l.color, l.size)}: hay ${antes}, pediste ${l.qty}`);
+          continue;
+        }
+        despues = antes - l.qty;
+        await _movEscribirVariante(mov.productId, mov.origen, l.color, l.size, despues);
+      }
+      if (mov.destino) {
+        const actual = await _movLeerVariante(mov.productId, mov.destino, l.color, l.size);
+        const nuevo  = mov.tipo === 'ajuste' ? l.qty : actual + l.qty;
+        await _movEscribirVariante(mov.productId, mov.destino, l.color, l.size, nuevo);
+        if (!mov.origen) { antes = actual; despues = nuevo; }
+      }
+      aplicadas++;
+
+      // La traza es deseable, no crítica: si RLS la rechaza, el stock ya se movió.
+      const tipoMov = mov.tipo === 'traslado' ? 'transferencia'
+                    : mov.tipo === 'ajuste'   ? 'ajuste'
+                    : mov.tipo;
+      const { error: errMov } = await sb.from('inventory_movements').insert({
+        product_id:     mov.productId,
+        product_name:   mov.productName || mov.productId,
+        type:           tipoMov,
+        from_bodega:    mov.origen  || null,
+        to_bodega:      mov.destino || null,
+        quantity:       mov.tipo === 'ajuste' ? (despues - antes) : l.qty,
+        previous_stock: antes,
+        new_stock:      despues,
+        color:          l.color || null,
+        size:           l.size  || null,
+        motivo:         mov.motivo || mov.tipo,
+        notes:          mov.notas  || null,
+      });
+      if (errMov) console.warn('[supabase] traza de movimiento:', errMov.message);
+    } catch (e) {
+      fallos.push(`${_movEtiqueta(l.color, l.size)}: ${e && e.message ? e.message : e}`);
+    }
+  }
+
+  if (!aplicadas) return { ok: false, error: fallos.join('\n') || 'No se movió nada.' };
+  if (fallos.length) return { ok: false, parcial: true, aplicadas, error: fallos.join('\n') };
+  return { ok: true, lineas: aplicadas };
+}
+
+// Refresca existencias desde la base tras un movimiento, para que la pantalla
+// muestre lo que quedó guardado y no lo que creía el navegador.
+async function refrescarExistencias() {
+  if (typeof syncVariantStockFromSupabase === 'function') await syncVariantStockFromSupabase();
+  if (typeof syncStockFromSupabase === 'function')        await syncStockFromSupabase();
+  if (typeof syncInventoryMovementsFromSupabase === 'function') {
+    try { await syncInventoryMovementsFromSupabase(); } catch (e) { /* la traza no bloquea */ }
+  }
+}
+
+window.moverInventario     = moverInventario;
+window.refrescarExistencias = refrescarExistencias;
 
 window.getVariantStock              = getVariantStock;
 window.saveVariantStock             = saveVariantStock;
@@ -2383,7 +2543,11 @@ function getInventoryMovements(filters = {}) {
   } else if (filters.productId) {
     list = list.filter(m => m.productId   === filters.productId);
   }
-  if (filters.bodegaId)   list = list.filter(m => m.bodegaId    === filters.bodegaId);
+  // Un traslado deja un solo movimiento con origen y destino: filtrar por
+  // bodega tiene que encontrarlo desde cualquiera de los dos lados.
+  if (filters.bodegaId)   list = list.filter(m => m.bodegaId === filters.bodegaId
+                                               || m.fromBodega === filters.bodegaId
+                                               || m.toBodega   === filters.bodegaId);
   if (filters.type)       list = list.filter(m => m.type        === filters.type);
   if (filters.proveedorId)list = list.filter(m => m.proveedorId === filters.proveedorId);
   if (filters.from)       list = list.filter(m => m.createdAt   >= filters.from);
@@ -2395,7 +2559,7 @@ async function syncInventoryMovementsFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
   const { data, error } = await sb.from('inventory_movements')
-    .select('id,local_id,cod,product_id,product_name,type,from_bodega,to_bodega,quantity,previous_stock,new_stock,motivo,notes,created_by_name,created_at')
+    .select('id,local_id,cod,product_id,product_name,type,from_bodega,to_bodega,quantity,previous_stock,new_stock,color,size,motivo,notes,created_by_name,created_at')
     .order('created_at', { ascending: false }).limit(2000);
   if (error || !data) { console.warn('[supabase] sync movements:', error && error.message); return false; }
   const list = JSON.parse(localStorage.getItem(KEYS.INV_MOVEMENTS) || '[]');
@@ -2413,6 +2577,7 @@ async function syncInventoryMovementsFromSupabase() {
       fromBodega: r.from_bodega || null, fromBodegaName: bodegaName(r.from_bodega),
       toBodega: r.to_bodega || null, toBodegaName: bodegaName(r.to_bodega),
       quantity: r.quantity, previousStock: r.previous_stock, newStock: r.new_stock,
+      color: r.color || null, size: r.size || null,
       motivo: r.motivo || null, notes: r.notes || '', createdByName: r.created_by_name || null,
       createdAt: r.created_at, _remote: true,
     });
