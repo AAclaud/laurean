@@ -2446,94 +2446,11 @@ function getStockValue(productId, bodegaId) {
   return (inv[productId] && inv[productId][bodegaId]) ? inv[productId][bodegaId].stock : 0;
 }
 
-// delta: positivo = entrada, negativo = salida
-function updateStock(productId, bodegaId, delta, type, meta = {}) {
-  const session  = getSession();
-  const inv      = getInventory();
-  if (!inv[productId]) inv[productId] = {};
-  if (!inv[productId][bodegaId]) inv[productId][bodegaId] = { stock: 0 };
-
-  const previousStock = inv[productId][bodegaId].stock;
-  const newStock      = Math.max(0, previousStock + delta);
-  inv[productId][bodegaId].stock     = newStock;
-  inv[productId][bodegaId].updatedAt = new Date().toISOString();
-  localStorage.setItem(KEYS.INVENTORY, JSON.stringify(inv));
-
-  const movements = getInventoryMovements();
-  const bodega    = getBodegas().find(b => b.id === bodegaId);
-  const fromBodega = meta.fromBodega || null;
-  const toBodega   = meta.toBodega   || null;
-  const fromBodegaName = meta.fromBodegaName || (fromBodega ? (getBodegas().find(b => b.id === fromBodega)?.name || fromBodega) : null);
-  const toBodegaName   = meta.toBodegaName   || (toBodega   ? (getBodegas().find(b => b.id === toBodega)?.name   || toBodega)   : null);
-  const movId = genId('mov');
-  movements.unshift({
-    id:            movId,
-    type,
-    productId,
-    productName:   meta.productName || productId,
-    bodegaId,
-    bodegaName:    bodega ? bodega.name : bodegaId,
-    fromBodega,
-    fromBodegaName,
-    toBodega,
-    toBodegaName,
-    quantity:      delta,
-    previousStock,
-    newStock,
-    proveedorId:   meta.proveedorId   || null,
-    proveedorName: meta.proveedorName || null,
-    motivo:        meta.motivo        || null,
-    notes:         meta.notes         || '',
-    unitCost:      meta.unitCost != null ? meta.unitCost : null,
-    totalCost:     meta.unitCost != null ? meta.unitCost * Math.abs(delta) : null,
-    sizes:         Array.isArray(meta.sizes) ? meta.sizes : null,
-    color:         meta.color || null,
-    size:          meta.size  || null,
-    paid:          meta.paid === true,
-    createdAt:     new Date().toISOString(),
-    createdBy:     session ? session.userId : null,
-    createdByName: session ? (session.userName || session.name || null) : null,
-  });
-  localStorage.setItem(KEYS.INV_MOVEMENTS, JSON.stringify(movements));
-
-  if (window.LAUREAN_DB) {
-    const prods = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
-    const p = prods.find(x => x.id === productId);
-    const cod = p && p.source_cod ? String(p.source_cod) : null;
-    if (cod) {
-      const movementType = type === 'ajuste'
-        ? 'ajuste'
-        : (type === 'transferencia' || type === 'traslado') ? 'transferencia' : (delta >= 0 ? 'ingreso' : 'salida');
-      window.LAUREAN_DB.from('inventory_stock')
-        .upsert({ cod, bodega_id: bodegaId, stock: newStock, updated_at: new Date().toISOString() }, { onConflict: 'cod,bodega_id' })
-        .then(({ error }) => { if (error) console.warn('[supabase] stock upsert:', error.message); });
-      window.LAUREAN_DB.from('inventory_movements').insert({
-        cod,
-        local_id: movId,
-        product_id: productId,
-        product_name: meta.productName || productId,
-        type: movementType,
-        from_bodega: (meta && meta.fromBodega) || (delta < 0 ? bodegaId : null),
-        to_bodega:   (meta && meta.toBodega)   || (delta >= 0 ? bodegaId : null),
-        quantity: Math.abs(delta),
-        previous_stock: previousStock,
-        new_stock: newStock,
-        color: (meta && meta.color) || null,
-        size:  (meta && meta.size)  || null,
-        motivo: (meta && meta.motivo) || type,
-        notes: (meta && meta.notes) || null,
-        created_by_name: session ? (session.name || session.email || session.userName || null) : null,
-      }).then(({ error }) => { if (error) console.warn('[supabase] movement insert:', error.message); });
-    }
-  }
-  return newStock;
-}
-
-function ajustarStock(productId, bodegaId, newStock, notes = '') {
-  const current = getStockValue(productId, bodegaId);
-  const delta   = newStock - current;
-  return updateStock(productId, bodegaId, delta, 'ajuste', { notes });
-}
+// Las existencias se mueven SIEMPRE por variante, con `moverInventario()`:
+// aplica deltas en la base, valida disponibilidad y deja `inventory_stock`
+// derivado por trigger. No escribir totales absolutos desde el navegador —
+// era lo que hacía que dos equipos se pisaran y que un movimiento se
+// perdiera si el producto no tenía COD.
 
 function getInventoryMovements(filters = {}) {
   let list = JSON.parse(localStorage.getItem(KEYS.INV_MOVEMENTS) || '[]');
