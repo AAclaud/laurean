@@ -1051,6 +1051,21 @@ function _vsKey(productId, bodegaId, color, size) {
   return [productId, bodegaId, color || '', size || ''].join('|');
 }
 
+// Las tallas se ordenan por tallaje, no alfabéticamente: "L, M, S" no se lee.
+// Lo que no esté en la lista conocida va al final, con orden numérico natural.
+const _ORDEN_TALLAS = ['XS','S','M','L','XL','2XL','3XL','4XL','1X','2X','3X',
+  '12M','18M','24M','1A','2A','4A','6A','8A','10A','12A','16A']
+  .reduce((m, s, i) => { m[s] = i; return m; }, {});
+function compararTallas(a, b) {
+  const ra = _ORDEN_TALLAS[String(a || '').toUpperCase()];
+  const rb = _ORDEN_TALLAS[String(b || '').toUpperCase()];
+  if (ra !== undefined && rb !== undefined) return ra - rb;
+  if (ra !== undefined) return -1;
+  if (rb !== undefined) return 1;
+  return String(a || '').localeCompare(String(b || ''), 'es', { numeric: true });
+}
+window.compararTallas = compararTallas;
+
 function getVariantStock() {
   try { return JSON.parse(localStorage.getItem(KEYS.VARIANT_STOCK) || '{}') || {}; }
   catch (e) { return {}; }
@@ -1092,7 +1107,7 @@ function getProductVariantStock(productId, bodegaId) {
     const partes = k.split('|');
     out.push({ color: partes[2] || '', size: partes[3] || '', stock: Number(map[k]) || 0 });
   });
-  out.sort((a, b) => (a.color || '').localeCompare(b.color || '') || (a.size || '').localeCompare(b.size || ''));
+  out.sort((a, b) => (a.color || '').localeCompare(b.color || '', 'es') || compararTallas(a.size, b.size));
   return out;
 }
 

@@ -5442,6 +5442,8 @@
     function sizeSetForCategory(catId) {
       return String(catId || '') === 'kids' ? [...KIDS_SIZES, ...STD_SIZES] : [...STD_SIZES, ...KIDS_SIZES];
     }
+    // El comparador de tallas por tallaje (no alfabético) vive en js/auth.js,
+    // que lo comparte con el POS y la tienda: `compararTallas(a, b)`.
     // Celda de talla (compartida): label arriba + input numérico que crece con el contenido.
     function sizeCellHtml(sz, qty, inputClass, extraAttrs) {
       return `
@@ -7710,6 +7712,34 @@
       sel.innerHTML = colores.length
         ? colores.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('')
         : '<option value="">(sin color)</option>';
+      sel.setAttribute('onchange', 'onInvLineColor(this)');
+      fillInvLineSizes(row, productId);
+    }
+
+    // Y las tallas, las del color elegido. Con la rejilla genérica se podían
+    // crear combinaciones que el producto no tiene y que luego nadie vende.
+    function fillInvLineSizes(row, productId) {
+      const grid = row.querySelector('.size-grid');
+      if (!grid) return;
+      const color  = row.querySelector('.inv-line-color')?.value || '';
+      const previo = {};
+      grid.querySelectorAll('.inv-line-size-qty').forEach(i => {
+        if (i.value) previo[i.dataset.size] = i.value;
+      });
+      const tallas = [...new Set(invCombinacionesDe(productId, '')
+        .filter(c => (c.color || '') === color)
+        .map(c => c.size).filter(Boolean))];
+      const prod = getAllProducts().find(p => p.id === productId);
+      const lista = tallas.length ? tallas : sizeSetForCategory(prod && prod.category);
+      grid.innerHTML = lista
+        .map(sz => sizeCellHtml(sz, previo[sz] != null ? previo[sz] : null,
+                                'inv-line-size-qty', 'oninput="syncInvLineQtyFromSizes(this)"'))
+        .join('');
+    }
+
+    function onInvLineColor(sel) {
+      const row = sel.closest('.inv-line');
+      if (row) fillInvLineSizes(row, row.querySelector('.inv-line-pid').value);
     }
 
     // Suma tallas "S:3, M:5" → cantidad total
@@ -7826,8 +7856,8 @@
         sizes.forEach(s => add(v.label || '', (typeof s === 'string' ? s : (s && s.size)) || '', 0));
       });
       if (!out.length) add('', '', 0);
-      out.sort((a, b) => (a.color || '').localeCompare(b.color || '')
-                      || (a.size  || '').localeCompare(b.size  || ''));
+      out.sort((a, b) => (a.color || '').localeCompare(b.color || '', 'es')
+                      || compararTallas(a.size, b.size));
       return out;
     }
 
