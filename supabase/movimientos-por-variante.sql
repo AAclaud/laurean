@@ -345,6 +345,16 @@ begin
   end loop;
 end $$;
 
+-- ── 4b. Realtime: que un traslado llegue al instante a los demás equipos ────
+-- Sin esto el cambio solo se veía en el otro equipo al refrescar la pestaña o
+-- al pasar el intervalo de resguardo (60s).
+do $$ begin
+  begin alter publication supabase_realtime add table public.variant_stock;
+  exception when duplicate_object then null; end;
+  begin alter publication supabase_realtime add table public.inventory_movements;
+  exception when duplicate_object then null; end;
+end $$;
+
 -- ── 5. Ya cuadrados: el trigger mantiene el total derivado para siempre ─────
 drop trigger if exists agregado_desde_variantes on public.variant_stock;
 create trigger agregado_desde_variantes
