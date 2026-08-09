@@ -39,4 +39,28 @@ Acceso restringido a roles `admin` y `superuser`.
 - Analitica (#5) usa `renderAnalytics()` en `admin.html` y lee [[modelo-datos-supabase|analytics_page_visits]] via Supabase.
 - Envios (#14) usa `window.Forza.*` de `js/forza-client.js`; requiere rol admin/superuser.
 - La vista Pagos (#15) ya existe (`renderPagos()` en admin.html); la pestaña Mayoreo (#10) usa `js/inventory-import.js`. Ambas se llenan con datos reales al activar [[qpaypro]] / importar el CSV.
-- Configuracion (#16) persiste en `localStorage` clave `laurean_settings`; incluye `discount_pin` (PIN requerido para aplicar descuentos manuales en POS).
+- Configuracion (#16) persiste en `localStorage` clave `laurean_settings`; incluye `discount_pin` (PIN requerido para aplicar descuentos manuales en POS **y** en el checkout de la tienda; si esta vacio, los descuentos manuales quedan deshabilitados).
+
+## Ayuda para quien opera el panel
+
+Tres capas, de la mas larga a la mas puntual. La idea es que alguien pueda
+sentarse a trabajar sin induccion previa.
+
+| Capa | Donde | Archivos |
+|------|-------|----------|
+| Manual del modulo | Boton flotante «?» abajo a la derecha; guia completa de la vista activa | `js/admin-manual.js` + `js/admin-manual-content.js` |
+| Franja de seccion | Bajo el titulo de cada vista: que es esta pantalla y con que otra parte se conecta | `js/admin-hints.js` + `js/admin-hints-content.js` (`secciones`) |
+| Insignia «i» de campo | Junto a la etiqueta: que se escribe, que ojo hay que tener y **donde se refleja** ese dato | `js/admin-hints.js` + `js/admin-hints-content.js` (`campos`) |
+
+Reglas al escribir estos textos:
+
+- Si la etiqueta del campo ya se explica sola, **no** se le pone insignia. La
+  ayuda que no aporta es ruido y entrena a la gente a ignorarla.
+- Si el campo ya tiene un `form-hint-text` debajo, la insignia tiene que decir
+  algo **distinto** (normalmente la consecuencia o el `destino`), nunca repetir.
+- `destino` es la parte que mas se agradece: responde "esto que lleno aqui, ¿a
+  donde va a parar?".
+- `ojo` solo cuando hay una trampa real. Ejemplo vivo: el campo *Stock
+  (unidades)* del modal de producto **no** mueve existencias de bodega; para eso
+  esta Inventario. Ver [[inventario-bodegas]].
+- Cero jerga: nada de nombres de tablas ni de terminos tecnicos.
