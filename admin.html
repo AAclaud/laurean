@@ -5356,6 +5356,41 @@
       el.className = 'field-hint' + (msg ? ' ' + (kind || 'error') : '');
     }
 
+    // Combinaciones con existencias que dejarían de estar declaradas si se
+    // guarda el producto con estas variantes. Devuelve [{ etiqueta, stock }].
+    function combinacionesQueQuedanHuerfanas(productId, variants) {
+      if (typeof getVariantStock !== 'function') return [];
+      const declaradas = new Set();
+      (Array.isArray(variants) ? variants : []).forEach(v => {
+        const sizes = Array.isArray(v.sizes) ? v.sizes : [];
+        if (!sizes.length) { declaradas.add((v.label || '') + '||'); return; }
+        sizes.forEach(s => declaradas.add(
+          (v.label || '') + '||' + ((typeof s === 'string' ? s : (s && s.size)) || '')));
+      });
+      // Sin variantes declaradas el producto pasa a ser simple: su existencia
+      // genérica sigue siendo válida y no hay nada que avisar.
+      if (!declaradas.size) return [];
+
+      const map = getVariantStock();
+      const suelto = {};
+      Object.keys(map).forEach(k => {
+        const p = k.split('|');
+        if (p[0] !== productId) return;
+        const stock = Number(map[k]) || 0;
+        if (stock <= 0) return;
+        const clave = (p[2] || '') + '||' + (p[3] || '');
+        if (declaradas.has(clave)) return;
+        suelto[clave] = (suelto[clave] || 0) + stock;
+      });
+      return Object.keys(suelto).map(clave => {
+        const partes = clave.split('||');
+        return {
+          etiqueta: [partes[0], partes[1]].filter(Boolean).join(' · ') || 'talla única',
+          stock: suelto[clave],
+        };
+      }).sort((a, b) => b.stock - a.stock);
+    }
+
     function saveProduct() {
       const errEl = document.getElementById('modal-product-error');
       errEl.classList.remove('show');
@@ -5440,6 +5475,25 @@
 
       // Si hay variantes con tallas, el stock total = suma de cantidades por talla
       const variants = collectVariants();
+
+      // Aviso antes de dejar existencias huérfanas: si se quita un color o una
+      // talla que todavía tiene unidades en alguna bodega, esas unidades quedan
+      // en el inventario sin que el producto las venda. Así apareció el único
+      // descuadre que teníamos (un short con L y XL guardadas que ya no se
+      // ofrecían). Es más barato avisarlo aquí que descubrirlo meses después.
+      if (id) {
+        const huerfanas = combinacionesQueQuedanHuerfanas(id, variants);
+        if (huerfanas.length) {
+          const lista = huerfanas.map(h => `· ${h.etiqueta}: ${h.stock} unidades`).join('\n');
+          const total = huerfanas.reduce((s, h) => s + h.stock, 0);
+          if (!confirm(
+            `Estás quitando colores o tallas que todavía tienen existencias:\n\n${lista}\n\n` +
+            `Son ${total} unidades que quedarán en el inventario sin poder venderse, ` +
+            `y el producto va a aparecer descuadrado en Inventario → Cuadre.\n\n` +
+            `Si de verdad ya no se venden, primero dales salida en Inventario.\n\n¿Guardar de todos modos?`)) return;
+        }
+      }
+
       const variantStock = variantsTotalStock(variants);
       const finalStock = variantStock > 0 ? variantStock : stock;
       const existingCustom = id ? getCustomProducts().find(p => p.id === id) : null;
@@ -7357,7 +7411,7 @@
       res.textContent = 'Revisando…';
       const { data, error } = await window.LAUREAN_DB
         .from('cuadre_inventario')
-        .select('producto,cod,catalogo,detalle,total_bodegas,dif_catalogo,estado')
+        .select('product_id,producto,cod,catalogo,detalle,total_bodegas,dif_catalogo,sueltas_unidades,sueltas_detalle,estado')
         .order('producto');
       if (error) {
         res.innerHTML = '<span style="color:var(--vino)">No se pudo leer el cuadre: ' + escapeHtml(error.message) + '</span>';
@@ -7376,6 +7430,7 @@
            <span style="color:var(--warm-mid)"> · ${filas.length} productos revisados</span>`;
 
       const etiqueta = {
+        'combinacion no declarada': ['Talla que no se vende', '#E53935'],
         'sin reparto':        ['Sin reparto por talla',   '#D4A017'],
         'detalle vs bodegas': ['No cuadra con bodegas',   '#E53935'],
         'detalle vs catalogo':['No cuadra con catálogo',  '#E53935'],
@@ -7384,8 +7439,12 @@
 
       caja.innerHTML = visible.length ? visible.map(f => {
         const [txt, col] = etiqueta[f.estado] || [f.estado, '#666'];
-        return `<tr>
-          <td><strong>${escapeHtml(f.producto)}</strong></td>
+        const nota = f.sueltas_detalle
+          ? `<div style="font-size:11.5px;color:#E53935;margin-top:3px">Sobran en el inventario: ${escapeHtml(f.sueltas_detalle)}</div>`
+          : '';
+        return `<tr style="cursor:pointer" title="Abrir la ficha de este producto"
+                    onclick="abrirProductoDesdeCuadre('${jsAttr(f.product_id)}')">
+          <td><strong>${escapeHtml(f.producto)}</strong>${nota}</td>
           <td class="td-muted">${escapeHtml(f.cod || '—')}</td>
           <td class="td-muted">${f.catalogo}</td>
           <td style="font-weight:600">${f.detalle}</td>
@@ -7396,6 +7455,16 @@
         </tr>`;
       }).join('')
         : `<tr><td colspan="7"><div class="empty-state"><p>Nada que revisar aquí.</p></div></td></tr>`;
+    }
+
+    // Desde el cuadre se salta a la ficha del producto para corregirlo ahí
+    // mismo: es donde se declaran los colores y las tallas que se venden.
+    function abrirProductoDesdeCuadre(productId) {
+      if (!productId) return;
+      showView('productos');
+      setTimeout(() => {
+        if (typeof openProductModal === 'function') openProductModal(productId);
+      }, 120);
     }
 
     function toggleCuadreFiltro() {
