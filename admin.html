@@ -1422,6 +1422,7 @@
           <button id="inv-tab-movimientos" class="inv-tab" onclick="switchInvTab('movimientos')">Movimientos</button>
           <button id="inv-tab-calendario" class="inv-tab" onclick="switchInvTab('calendario')">Calendario</button>
           <button id="inv-tab-mayoreo" class="inv-tab" onclick="switchInvTab('mayoreo')">Mayoreo</button>
+          <button id="inv-tab-cuadre" class="inv-tab" onclick="switchInvTab('cuadre')">Cuadre</button>
         </div>
 
         <!-- Tab Stock -->
@@ -1485,6 +1486,25 @@
         </div>
 
         <!-- Tab Mayoreo (Inventario Maestro) -->
+        <!-- Tab Cuadre: la auditoría de que las cifras cuentan lo mismo -->
+        <div id="inv-panel-cuadre" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+            <div id="cuadre-resumen" style="font-size:14px;"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-light" id="cuadre-filtro-btn" onclick="toggleCuadreFiltro()">Ver todos los productos</button>
+              <button class="btn btn-light" onclick="exportarCuadreCSV()">Exportar CSV</button>
+              <button class="btn btn-dark" onclick="renderCuadre()">Revisar de nuevo</button>
+            </div>
+          </div>
+          <table class="tbl">
+            <thead><tr>
+              <th>Producto</th><th>COD</th><th>Catálogo</th><th>Detalle por talla</th>
+              <th>Total bodegas</th><th>Diferencia</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="cuadre-tbody"></tbody>
+          </table>
+        </div>
+
         <div id="inv-panel-mayoreo" style="display:none;">
 
           <!-- Barra de importación -->
@@ -7224,18 +7244,95 @@
     }
 
     function switchInvTab(tab) {
-      document.getElementById('inv-panel-stock').style.display       = tab === 'stock'       ? '' : 'none';
-      document.getElementById('inv-panel-movimientos').style.display = tab === 'movimientos' ? '' : 'none';
-      document.getElementById('inv-panel-calendario').style.display  = tab === 'calendario'  ? '' : 'none';
-      document.getElementById('inv-panel-mayoreo').style.display     = tab === 'mayoreo'     ? '' : 'none';
-      document.getElementById('inv-tab-stock').className       = 'inv-tab' + (tab === 'stock'       ? ' inv-tab-active' : '');
-      document.getElementById('inv-tab-movimientos').className = 'inv-tab' + (tab === 'movimientos' ? ' inv-tab-active' : '');
-      document.getElementById('inv-tab-calendario').className  = 'inv-tab' + (tab === 'calendario'  ? ' inv-tab-active' : '');
-      document.getElementById('inv-tab-mayoreo').className     = 'inv-tab' + (tab === 'mayoreo'     ? ' inv-tab-active' : '');
+      ['stock', 'movimientos', 'calendario', 'mayoreo', 'cuadre'].forEach(t => {
+        const panel = document.getElementById('inv-panel-' + t);
+        const boton = document.getElementById('inv-tab-' + t);
+        if (panel) panel.style.display = tab === t ? '' : 'none';
+        if (boton) boton.className = 'inv-tab' + (tab === t ? ' inv-tab-active' : '');
+      });
       if (tab === 'stock')       renderInventarioStock();
       if (tab === 'movimientos') renderInventarioMovimientos();
       if (tab === 'calendario')  renderInventarioCalendar();
       if (tab === 'mayoreo')     renderMayoreo();
+      if (tab === 'cuadre')      renderCuadre();
+    }
+
+    // ─── Cuadre de inventario ───────────────────────────────────────────────
+    // Compara las tres cifras que deberían contar lo mismo y señala dónde no.
+    // Es la red de seguridad: si algún día una cantidad se mueve por un camino
+    // que no deja movimiento, aquí se ve al día siguiente y no meses después.
+    let _cuadreFiltro = 'descuadres';
+
+    async function renderCuadre() {
+      const caja = document.getElementById('cuadre-tbody');
+      const res  = document.getElementById('cuadre-resumen');
+      if (!window.LAUREAN_DB) {
+        res.innerHTML = '<span style="color:var(--vino)">Sin conexión con la base: el cuadre necesita leer los datos reales.</span>';
+        caja.innerHTML = '';
+        return;
+      }
+      res.textContent = 'Revisando…';
+      const { data, error } = await window.LAUREAN_DB
+        .from('cuadre_inventario')
+        .select('producto,cod,catalogo,detalle,total_bodegas,dif_catalogo,estado')
+        .order('producto');
+      if (error) {
+        res.innerHTML = '<span style="color:var(--vino)">No se pudo leer el cuadre: ' + escapeHtml(error.message) + '</span>';
+        caja.innerHTML = '';
+        return;
+      }
+
+      const filas   = data || [];
+      const malos   = filas.filter(f => f.estado !== 'ok');
+      const visible = _cuadreFiltro === 'todos' ? filas : malos;
+
+      res.innerHTML = malos.length
+        ? `<strong style="color:var(--vino)">${malos.length} producto(s) sin cuadrar</strong>
+           <span style="color:var(--warm-mid)"> · ${filas.length - malos.length} correctos de ${filas.length}</span>`
+        : `<strong style="color:#4A6B3E">Todo cuadra</strong>
+           <span style="color:var(--warm-mid)"> · ${filas.length} productos revisados</span>`;
+
+      const etiqueta = {
+        'sin reparto':        ['Sin reparto por talla',   '#D4A017'],
+        'detalle vs bodegas': ['No cuadra con bodegas',   '#E53935'],
+        'detalle vs catalogo':['No cuadra con catálogo',  '#E53935'],
+        'ok':                 ['Correcto',                '#4A6B3E'],
+      };
+
+      caja.innerHTML = visible.length ? visible.map(f => {
+        const [txt, col] = etiqueta[f.estado] || [f.estado, '#666'];
+        return `<tr>
+          <td><strong>${escapeHtml(f.producto)}</strong></td>
+          <td class="td-muted">${escapeHtml(f.cod || '—')}</td>
+          <td class="td-muted">${f.catalogo}</td>
+          <td style="font-weight:600">${f.detalle}</td>
+          <td class="td-muted">${f.total_bodegas}</td>
+          <td style="font-weight:600;color:${f.dif_catalogo === 0 ? 'var(--warm-mid)' : '#E53935'}">
+            ${f.dif_catalogo > 0 ? '+' : ''}${f.dif_catalogo}</td>
+          <td><span class="badge" style="background:${col}22;color:${col}">${txt}</span></td>
+        </tr>`;
+      }).join('')
+        : `<tr><td colspan="7"><div class="empty-state"><p>Nada que revisar aquí.</p></div></td></tr>`;
+    }
+
+    function toggleCuadreFiltro() {
+      _cuadreFiltro = _cuadreFiltro === 'descuadres' ? 'todos' : 'descuadres';
+      document.getElementById('cuadre-filtro-btn').textContent =
+        _cuadreFiltro === 'descuadres' ? 'Ver todos los productos' : 'Ver solo los que no cuadran';
+      renderCuadre();
+    }
+
+    function exportarCuadreCSV() {
+      const filas = Array.from(document.querySelectorAll('#cuadre-tbody tr'))
+        .map(tr => Array.from(tr.children).map(td => `"${(td.textContent || '').trim().replace(/"/g, '""')}"`).join(','))
+        .filter(l => l.replace(/[",]/g, '').trim());
+      const csv = ['"Producto","COD","Catálogo","Detalle","Bodegas","Diferencia","Estado"']
+        .concat(filas).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = 'cuadre-inventario-' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
 
     // ─── Calendario de ingresos ─────────────────────────────────────────────────

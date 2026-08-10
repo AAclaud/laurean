@@ -138,6 +138,55 @@ Si la funcion no estuviera instalada, cae a escrituras directas equivalentes
 vez de tragarselos. Despues de cada movimiento, `refrescarExistencias()` vuelve a
 leer de la base: lo que se ve en pantalla es lo guardado.
 
+## Candado: nada cambia sin su movimiento
+
+Ver [[supabase/candado-inventario.sql]]. Desde el 9 de agosto de 2026:
+
+- `variant_stock` e `inventory_movements` son **solo lectura** para cualquier
+  cliente. Se revocaron `insert/update/delete` a `authenticated` y `anon`.
+- La unica forma de cambiar una existencia es `mover_inventario()` o el trigger
+  de venta, ambas `security definer` y ambas dejan traza.
+- La bitacora es **append-only**: ni un administrador puede editar o borrar un
+  movimiento.
+- `inventory_stock` si sigue siendo escribible por admin, porque la pestana
+  Mayoreo la usa para repartir mercaderia que **todavia no esta publicada** al
+  catalogo (y por lo tanto no tiene variantes). Para lo que si esta publicado
+  manda el trigger, y el cuadro de abajo avisa si difieren.
+
+Del lado del navegador se eliminaron `adjustVariantStock`, `applyVariantSale` y
+el camino de respaldo que escribia directo: eran puertas para cambiar cantidades
+sin dejar movimiento. Si la funcion de la base no estuviera instalada, el admin
+ahora **avisa y no escribe nada**, en vez de improvisar.
+
+### Por que existe este candado
+
+El 8 de agosto una reconciliacion tomo el total por bodega como fuente buena. Era
+al reves: el detalle por color y talla coincidia exacto con `products.stock` en
+**105 de 121** productos; el total, solo en 34. La reconciliacion propago el
+numero equivocado y redujo 18 productos (Blusa Aitana paso de 958 a 118 en
+Central). Se revirtio con el respaldo `respaldo_variant_stock_20260808`.
+
+Leccion: **antes de elegir que fuente manda, medir cual coincide con una tercera
+referencia independiente.** Aqui esa referencia era el stock del catalogo.
+
+## Cuadre (auditoria)
+
+`Inventario → Cuadre` compara las tres cifras que deberian contar lo mismo:
+
+| Cifra | De donde sale |
+|-------|---------------|
+| Catalogo | `products.stock` |
+| Detalle por talla | suma de `variant_stock` |
+| Total bodegas | suma de `inventory_stock` |
+
+La vista `public.cuadre_inventario` clasifica cada producto en `ok`,
+`sin reparto`, `detalle vs bodegas` o `detalle vs catalogo`. La funcion
+`resumen_cuadre()` devuelve el conteo de una linea para alertas.
+
+Estado al 9 de agosto de 2026: **120 de 121 correctos**, 0 sin reparto. El unico
+descuadre (*Short deportivo con licra Importado*, catalogo 64 vs detalle 128)
+venia de antes y necesita conteo fisico.
+
 ## En el admin
 
 `admin.html` → Inventario:

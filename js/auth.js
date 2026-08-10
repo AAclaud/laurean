@@ -1124,39 +1124,11 @@ function getVariantStockAllBodegas(productId, color, size) {
   return total;
 }
 
-// Descuenta (delta negativo) o repone (positivo) una variante: local + Supabase.
-async function adjustVariantStock(productId, bodegaId, color, size, delta) {
-  const map   = getVariantStock();
-  const key   = _vsKey(productId, bodegaId, color, size);
-  const antes = Number(map[key]) || 0;
-  const nuevo = Math.max(0, antes + (Number(delta) || 0));
-  map[key] = nuevo;
-  saveVariantStock(map);
-
-  const sb = window.LAUREAN_DB;
-  if (sb) {
-    try {
-      await sb.from('variant_stock').upsert({
-        product_id: productId, bodega_id: bodegaId,
-        color: color || '', size: size || '', stock: nuevo,
-      }, { onConflict: 'product_id,bodega_id,color,size' });
-    } catch (e) { console.warn('[supabase] adjustVariantStock:', e && e.message); }
-  }
-  return nuevo;
-}
-
-// Aplica la venta de un pedido: descuenta cada línea de su variante.
-async function applyVariantSale(items, bodegaId) {
-  if (!bodegaId || !Array.isArray(items)) return 0;
-  let n = 0;
-  for (const it of items) {
-    const qty = Number(it && it.qty) || 0;
-    if (!it || !it.id || qty <= 0) continue;
-    await adjustVariantStock(it.id, bodegaId, it.color || '', it.size || '', -qty);
-    n++;
-  }
-  return n;
-}
+// Aquí vivían `adjustVariantStock` y `applyVariantSale`, que escribían la
+// existencia directo desde el navegador. Se quitaron: eran una segunda puerta
+// para cambiar cantidades sin dejar movimiento, y por puertas así fue que los
+// números se separaron. Hoy la base solo acepta escrituras de
+// `mover_inventario()` (movimientos del admin) y del trigger de venta.
 
 // ─── Motor de movimientos de inventario ─────────────────────────────────────
 // Un solo camino para ingresos, salidas, ajustes y traslados. Lo resuelve la
@@ -1192,7 +1164,10 @@ async function moverInventario(mov) {
     p_pagado:       mov.pagado === true,
   });
   if (!error) return { ok: true, data };
-  if (_movRpcAusente(error)) return _moverInventarioDirecto(mov, lineas);
+  if (_movRpcAusente(error)) {
+    return { ok: false, error: 'El motor de inventario no está instalado en la base. ' +
+      'No se movió nada. Avisa a soporte antes de seguir registrando movimientos.' };
+  }
   return { ok: false, error: error.message || String(error) };
 }
 
@@ -1202,84 +1177,6 @@ function _movRpcAusente(error) {
   return code === 'PGRST202' || code === '42883'
     || msg.includes('could not find the function')
     || msg.includes('schema cache');
-}
-
-function _movEtiqueta(color, size) {
-  return [color, size].filter(Boolean).join(' · ') || 'talla única';
-}
-
-async function _movLeerVariante(productId, bodegaId, color, size) {
-  const sb = window.LAUREAN_DB;
-  const { data, error } = await sb.from('variant_stock').select('stock')
-    .eq('product_id', productId).eq('bodega_id', bodegaId)
-    .eq('color', color).eq('size', size).maybeSingle();
-  if (error) throw new Error(error.message);
-  return data ? (Number(data.stock) || 0) : 0;
-}
-
-async function _movEscribirVariante(productId, bodegaId, color, size, valor) {
-  const sb = window.LAUREAN_DB;
-  const { error } = await sb.from('variant_stock').upsert({
-    product_id: productId, bodega_id: bodegaId,
-    color: color, size: size, stock: Math.max(0, valor),
-  }, { onConflict: 'product_id,bodega_id,color,size' });
-  if (error) throw new Error(error.message);
-}
-
-// Camino de respaldo: mismas reglas, pero desde el navegador. Se lee el valor
-// vigente en la base justo antes de escribir, no el del caché local.
-async function _moverInventarioDirecto(mov, lineas) {
-  const sb     = window.LAUREAN_DB;
-  const fallos = [];
-  let aplicadas = 0;
-
-  for (const l of lineas) {
-    try {
-      let antes = 0, despues = 0;
-      if (mov.origen) {
-        antes = await _movLeerVariante(mov.productId, mov.origen, l.color, l.size);
-        if (antes < l.qty) {
-          fallos.push(`${_movEtiqueta(l.color, l.size)}: hay ${antes}, pediste ${l.qty}`);
-          continue;
-        }
-        despues = antes - l.qty;
-        await _movEscribirVariante(mov.productId, mov.origen, l.color, l.size, despues);
-      }
-      if (mov.destino) {
-        const actual = await _movLeerVariante(mov.productId, mov.destino, l.color, l.size);
-        const nuevo  = mov.tipo === 'ajuste' ? l.qty : actual + l.qty;
-        await _movEscribirVariante(mov.productId, mov.destino, l.color, l.size, nuevo);
-        if (!mov.origen) { antes = actual; despues = nuevo; }
-      }
-      aplicadas++;
-
-      // La traza es deseable, no crítica: si RLS la rechaza, el stock ya se movió.
-      const tipoMov = mov.tipo === 'traslado' ? 'transferencia'
-                    : mov.tipo === 'ajuste'   ? 'ajuste'
-                    : mov.tipo;
-      const { error: errMov } = await sb.from('inventory_movements').insert({
-        product_id:     mov.productId,
-        product_name:   mov.productName || mov.productId,
-        type:           tipoMov,
-        from_bodega:    mov.origen  || null,
-        to_bodega:      mov.destino || null,
-        quantity:       mov.tipo === 'ajuste' ? (despues - antes) : l.qty,
-        previous_stock: antes,
-        new_stock:      despues,
-        color:          l.color || null,
-        size:           l.size  || null,
-        motivo:         mov.motivo || mov.tipo,
-        notes:          mov.notas  || null,
-      });
-      if (errMov) console.warn('[supabase] traza de movimiento:', errMov.message);
-    } catch (e) {
-      fallos.push(`${_movEtiqueta(l.color, l.size)}: ${e && e.message ? e.message : e}`);
-    }
-  }
-
-  if (!aplicadas) return { ok: false, error: fallos.join('\n') || 'No se movió nada.' };
-  if (fallos.length) return { ok: false, parcial: true, aplicadas, error: fallos.join('\n') };
-  return { ok: true, lineas: aplicadas };
 }
 
 // Refresca existencias desde la base tras un movimiento, para que la pantalla
@@ -1301,8 +1198,6 @@ window.syncVariantStockFromSupabase = syncVariantStockFromSupabase;
 window.getVariantStockFor           = getVariantStockFor;
 window.getProductVariantStock       = getProductVariantStock;
 window.getVariantStockAllBodegas    = getVariantStockAllBodegas;
-window.adjustVariantStock           = adjustVariantStock;
-window.applyVariantSale             = applyVariantSale;
 
 function createOrder(data) {
   const session = getSession();
