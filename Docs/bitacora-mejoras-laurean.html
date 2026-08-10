@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bitácora de mejoras — Laurean</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crema:#F5F2ED; --crema-d:#EDE7DD; --piedra:#E8E3DC;
+    --carbon:#1A1916; --carbon-2:#2A2925;
+    --warm:#9B8E7F; --warm-d:#7A6E60;
+    --gold:#B89968; --vino:#8E3833; --green:#4A6B3E;
+    --white:#FFFFFF; --line:#E4DDD2;
+    --fd:'Cormorant Garamond', Georgia, serif;
+    --fb:'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { background:var(--crema); color:var(--carbon); font-family:var(--fb);
+               font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  body { padding:32px 16px; }
+  .doc { max-width:860px; margin:0 auto; background:var(--white); border-radius:4px;
+         overflow:hidden; box-shadow:0 2px 24px rgba(26,25,22,.07); }
+
+  /* ── Portada ─────────────────────────────────────────────── */
+  .hero { background:var(--carbon); color:var(--crema); padding:52px 52px 44px; }
+  .hero img.logo { height:46px; width:auto; margin-bottom:30px; opacity:.95; }
+  .kicker { font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold);
+            margin-bottom:16px; font-weight:500; }
+  .hero h1 { font-family:var(--fd); font-size:46px; line-height:1.05; font-weight:400;
+             max-width:20ch; margin-bottom:16px; }
+  .hero h1 em { font-style:italic; color:var(--gold); }
+  .hero p.lead { font-size:14.5px; color:#CFC7BB; max-width:60ch; }
+
+  .partes { display:grid; grid-template-columns:1fr 1fr; gap:26px; padding:26px 52px;
+            background:var(--carbon-2); color:var(--crema); }
+  .parte .rol { font-size:10px; letter-spacing:.24em; text-transform:uppercase;
+                color:var(--gold); margin-bottom:7px; }
+  .parte .nom { font-family:var(--fd); font-size:23px; font-weight:500; line-height:1.15; }
+  .parte .nom .sw { display:block; font-size:12px; font-family:var(--fb); font-weight:300;
+                    letter-spacing:.12em; opacity:.62; margin-top:5px; text-transform:uppercase; }
+  .parte .det { font-size:12.5px; color:#B8B0A4; margin-top:6px; }
+
+  /* ── Cuerpo ──────────────────────────────────────────────── */
+  section { padding:40px 52px; border-bottom:1px solid var(--line); }
+  section:last-child { border-bottom:0; }
+  h2 { font-family:var(--fd); font-size:29px; font-weight:400; margin-bottom:6px; }
+  h2 em { font-style:italic; color:var(--vino); }
+  .sub { font-size:13.5px; color:var(--warm-d); margin-bottom:26px; max-width:66ch; }
+
+  .cifras { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:8px; }
+  .cifra { background:var(--crema); border:1px solid var(--line); border-radius:6px;
+           padding:18px 16px; text-align:center; }
+  .cifra .n { font-family:var(--fd); font-size:32px; line-height:1; color:var(--vino); }
+  .cifra .l { font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+              color:var(--warm-d); margin-top:8px; line-height:1.35; }
+
+  /* ── Línea de tiempo ─────────────────────────────────────── */
+  .etapa { position:relative; padding-left:34px; padding-bottom:34px; }
+  .etapa:last-child { padding-bottom:0; }
+  .etapa::before { content:''; position:absolute; left:9px; top:22px; bottom:0; width:1px;
+                   background:var(--line); }
+  .etapa:last-child::before { display:none; }
+  .etapa::after { content:''; position:absolute; left:4px; top:9px; width:11px; height:11px;
+                  border-radius:50%; background:var(--gold); border:2px solid var(--white);
+                  box-shadow:0 0 0 1px var(--line); }
+  .etapa.hito::after { background:var(--vino); }
+  .etapa .fecha { font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+                  color:var(--warm); margin-bottom:3px; }
+  .etapa h3 { font-family:var(--fd); font-size:24px; font-weight:500; margin-bottom:4px; }
+  .etapa .resumen { font-size:13.5px; color:var(--warm-d); margin-bottom:16px; max-width:64ch; }
+
+  .bloque { margin-bottom:16px; }
+  .bloque:last-child { margin-bottom:0; }
+  .bloque h4 { font-size:12.5px; font-weight:600; letter-spacing:.04em; margin-bottom:7px;
+               display:flex; align-items:baseline; gap:8px; }
+  .bloque h4::before { content:''; width:5px; height:5px; border-radius:50%;
+                       background:var(--gold); flex:none; }
+  .bloque ul { list-style:none; padding-left:13px; }
+  .bloque li { font-size:13.5px; line-height:1.6; padding:2.5px 0 2.5px 15px; position:relative; }
+  .bloque li::before { content:''; position:absolute; left:0; top:12px; width:6px; height:1px;
+                       background:var(--warm); }
+
+  .hito-card { background:var(--crema); border:1px solid var(--line);
+               border-left:3px solid var(--vino); border-radius:6px; padding:16px 20px;
+               margin-bottom:16px; }
+  .hito-card strong { font-family:var(--fd); font-size:19px; font-weight:500;
+                      display:block; margin-bottom:3px; }
+  .hito-card span { font-size:13px; color:var(--warm-d); }
+
+  /* ── Traducción a negocio ────────────────────────────────── */
+  .antes-ahora { display:grid; grid-template-columns:1fr 1fr; gap:0;
+                 border:1px solid var(--line); border-radius:6px; overflow:hidden;
+                 margin-bottom:12px; }
+  .antes-ahora > div { padding:15px 18px; }
+  .antes-ahora .a { background:var(--crema-d); border-right:1px solid var(--line); }
+  .antes-ahora .b { background:var(--white); }
+  .antes-ahora .et { font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+                     color:var(--warm); margin-bottom:6px; }
+  .antes-ahora .a .et { color:var(--warm-d); }
+  .antes-ahora .b .et { color:var(--green); }
+  .antes-ahora p { font-size:13.5px; line-height:1.55; }
+
+  .nota { background:var(--crema); border-left:3px solid var(--gold); border-radius:6px;
+          padding:15px 19px; font-size:13.5px; color:var(--warm-d); line-height:1.6; }
+
+  /* ── Cierre ──────────────────────────────────────────────── */
+  .cierre { background:var(--carbon); color:var(--crema); text-align:center; padding:46px 52px; }
+  .cierre img.logo { height:40px; width:auto; margin-bottom:22px;
+                     opacity:.95; }
+  .cierre p { font-size:14px; color:#CFC7BB; max-width:56ch; margin:0 auto 6px; }
+  .cierre .firma { font-family:var(--fd); font-size:20px; color:var(--gold); margin-top:20px; }
+  .cierre .pie { font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+                 color:#8D857A; margin-top:9px; }
+
+  @media (max-width:720px) {
+    body { padding:0; }
+    .hero, .partes, section, .cierre { padding-left:26px; padding-right:26px; }
+    .hero h1 { font-size:34px; }
+    .partes, .cifras, .antes-ahora { grid-template-columns:1fr; }
+    .antes-ahora .a { border-right:0; border-bottom:1px solid var(--line); }
+  }
+  @media print {
+    body { padding:0; background:var(--white); }
+    .doc { box-shadow:none; max-width:100%; }
+    section { page-break-inside:avoid; }
+    .etapa { page-break-inside:avoid; }
+    .cierre { page-break-before:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <!-- ══ PORTADA ══ -->
+  <div class="hero">
+    <img class="logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyOTc2LjM3IDEzMjYuODEiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTIgeyBmaWxsOiAjRjFFQ0U4OyB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8ZyBpZD0iTE9HT1RJUE9TIj4KICAgIDxnPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yNTEwLjc2LDc0Ny4wMmMtMTYuMzgtNi40NC02MS4zNi0xMy4xNC02My4wOS0xMi44My03Ny01LjAzLTU0LjY2LDcuMDItMTIyLjY2LTYuMTktMTYuNTctNS42NC0zMi41My03LjY3LTQ2LjAxLTE0Ljc5LS4wNi0uMDMtLjExLS4wNi0uMTctLjA4LTEuNjctLjk4LTMuMjYtMS45Mi00LjgtMi44Ny0uMDYtLjAzLS4xMS0uMDYtLjE3LS4xMS04LjcxLTUuNDEtMTUuNDYtMTAuODgtMjAuNTYtMTYuMy0zNi45MS0zOS4xMiwxMC40NC03Ni45LDEzLjI4LTkxLjMuMDgtLjM2LjA4LS43My4wMy0xLjEyLTUuOTQtNDUuNzktMTIwLjkzLDQzLjAzLTEzMS4zNyw0Mi4wOC00LjIxLjAzLTEyLTkuNzktLjgxLTIzLjI0LDEwLjgtMTIuOTUsMTAuNTItMTYuMDIsMTAuNDQtMjMuMTYsMC0uNTMtLjExLTEuMDktLjM2LTEuNTYtMjAuNzktNDIuMDUtMTAwLjgxLDEyLjgzLTE0MS44Myw0MC42NS0uMTcuMDYtLjMzLjE0LS41LjIyLDMuMzgtMy4xLTYyLjUzLDM5LjI2LTcyLjY2LDIyLjMyLS4zMy0uNTMtLjQ1LTEuMTctLjQyLTEuNzksMS43My01MS43Niw0NC41LTY0LjQsMzYuMTYtODMuNzEtMS40NS02LjMxLTguNDgtNi45OC0xMy40Mi02Ljk1LTEyLjc4LS4zOS0xNS4xMiwxMS42Ni0yMC45MywxMS4zNi0xLjMxLS4wOC0yLjQtMS4wOS0yLjc5LTIuMzQtMS43Ni01LjMzLTMuMjEtMTAuMjctNi42MS0xNi4xMy0uNDItLjc1LTEuMTQtMS4zNC0xLjk4LTEuNTktMTcuMDUtNS4xMS0yOC4wNywzLjQzLTUzLjQzLDE2LjEzLS4wNi4wMy0uMTEuMDYtLjE3LjA4LTI1LjM5LDE0LjUxLTY0LjQ4LDM2LjUyLTgzLjcxLDYzLjc2LTQ2Ljg4LDI0LjIyLTE0OC41NSw2MC42OS0xNjkuNjcsMzQuNC0uNjQtLjg0LS44OS0xLjk4LS41Ni0yLjk2LDQuODUtMTQuMDEsNjQuNzEtMzMuMzQsNzQuODEtNDAuMTUsMzcuNzUtMjQuNzUsODYuMDUtNDYuNzYsODYuMTEtOTIuMjIsMC0uMjgtLjAzLS41Ni0uMDgtLjg0LTYuMDgtMzAuMTEtNjUuNzktMTEuNzItODkuMzIuODYtMzQuNzQsMTguMzYtODAuMzYsNTkuNDYtOTkuMTcsMTAwLjczLTMxLjMxLDE4Ljc1LTExMS4zLDU4LjUxLTExNC4wOSw0My45NS0uMDMtMy41MiwyLjc5LTcuNzYsNS41OC0xMiwxMS41OC0xOC41LDI2LjU0LTM0LjgyLDI5LjkxLTU0LjY5LjA2LS4yNS4wOC0uNS4wNi0uNzUtLjI4LTE4Ljg2LTE0LjI2LTM3LjU4LTE0LjI5LTQzLjg5LjY0LTExLjcyLTcuOTgtMzcuODktMjguNDktMjQuODEtLjMxLjE5LS42MS40NS0uODYuNzUtMTMuMzksMTYuMTYtMjAuNCw0Ni4zMi0zNS45NCw2MC4zLTUuODksNy4wMy0yNy4xMiwyNC45Ny00MS4xLDM2LjEzLTE3Ljk0LDEwLjk0LTM3LjYxLDMwLjUtNDEuNzQtNS4xMy0uMDMtLjIyLS4wNi0uNDItLjAzLS42NC41Ni0xMS4xLDM0LjE1LTU3LjU5LDM0LjE1LTYyLjUtLjAzLTguNDUtNy43OC05LjgyLTE0LjEyLTkuNzktMjQuNjQuMTQtMzIuMjMsMzMuMjYtNDEuMjcsNTAuMi0xNy40NCwzMS43NS02MS41OCw3NC45Mi0xMDAuMzEsNzUuMTEtOC40My4wNi0xMi43LTkuNzktMTIuNzItMTYuODItNC4zMi00Ny44NSw3OC40OS04Ni4zMyw0OC4xOS0xMTIuMjgtLjk1LS44MS0yLjIzLTEuMTItMy40LS43My0yNC43OCw4Ljg3LTU5LjU0LDUyLjYtNzEuMDcsODguNTYtNC4wMiwyLjA0LTguNDUsMy40OS0xMy45NSwzLjUyLTE2LjIxLjA4LTI3LjUxLTExLjExLTI3LjYtMjcuMzItLjExLTIxLjgyLDQwLjU3LTQ5LjQ3LDQwLjQ5LTY0LjI2LS4wMy03LjczLTkuODgtNy42Ny0xNS41MS03LjY0LTExLjk3LjA2LTIyLjQ2LDE0LjE3LTM2LjUyLDE0LjI2LTkuMTUuMDMtMTIuMDMtMTEuMjItMzEuMDMtMTEuMS0yOS4yNy0zLjQ2LTEyNS43OCw4Ny41My0xMzEsMTExLjQ0LS4wNi4yOC0uMDguNTktLjA2Ljg5LjQyLDI2LjMxLDI1LjU5LDI4Ljk2LDQ2LjYsMjguODUsNDIuOTQtLjIsNjEuNzItNDMuMjIsODguNDgtNDMuMzYsNC4xMy0uMDMsNi4yNSwyLjY1LDguOTksNS4zOS4xMS4xNC4yNS4yNS4zNi4zMyw4LjcxLDYuOTIsMzUuODUsMTAuOTQsNDcuMDQsMTAuODgsNC4wNy0uMDMsMTItMy4xLDIwLjMxLTcuNDgtLjY3LDUuMTEtLjcsOS45MS4wOCwxNC4yLjAzLjE0LjA2LjI4LjA2LjQyLjE0LDE1LjQsNi41NiwzMC4wMiwyNC4wOCwyOS45NCwyMy45NC0uMTEsODUuMDUtMjQuMzYsMTAxLjg0LTQwLjYzLDQuOTEtNC45NywxMS44OS0xOS4wOCwxOC45Mi0xOS4xMSw0LjI0LS4wMyw0Ljk3LDQuMjEsNC45Nyw3LjczLTYuMjIsNDMuNzgsMjMuNTUsMjAuNDUsNDMuNyw2LjgxLDEuNTYtLjk1LDcuMTQtNC4xMywxMi44Ni03LjYyLDkuNDYtNC42OSwyNS43LTE2Ljc0LDM2LjIyLTI1LjcsMTYuMjEtMTMuOTIsNDAuMDQtNDIuNjEsNTAuMzYtMTUuMDQuMTcuNDUuMjUuOTUuMjIsMS40LTEuMDksMTIuNS0zMC4yMiw2MC40MS00My45Miw4MS4xNy02Ljk4LDEwLjYsMi4yNiwyNS4zNCwyNi4xNywyNS4yMi0xLjk1LDQuOCw4MS4xNy0zOC42NCwxMjMuMDItNjYuMzgtMS4wOSw0LjMtMS44MSw4LjU3LTIuMTUsMTIuNzUtLjA2LjU5LjA4LDEuMjMuMzQsMS43OSw5LjA3LDE5LjE0LDE3LjA1LDMyLjA5LDQ0LjY0LDMxLjk4LjExLDAsLjIyLDAsLjMzLjAzLDQzLjU2LDUuNDQsMTE0LjI5LTI1Ljg3LDE1Mi42My00OC4zNi0yLjA5LDUuNjEtMy4xNSwxMS40NC0zLjAxLDE3LjQxLDAsLjQyLjA2LjgxLjIsMS4xNyw0Ljg4LDEzLjUzLDM0LjA3LDE4Ljg5LDQ0LjcsMTguOTIuMTksMCwuMzMsMCwuNTMtLjAzLDE1LjQtMS45Miw2MS42MS0zMi4zMSw3OC4xLTUwLjExLjE0LS4xNy4zMS0uMzEuNDctLjQyLDI1LjUtMTguNzIsMS43NiwyMS42Miw2Ljc4LDM1LjYuMTEuMzEuMjguNTkuNDcuODYsMS45LDIuNTEsOC43MSw5LjYsMTMuMzQsMTAuMDUuMzMuMDMuNjcsMCwuOTgtLjA2LDI1LjU5LTUuMDIsNTcuNzYtMTcuODYsODQuMDEtMzguODEsMjguMjYtMTMuOTgsNzYuOS00Mi4yMiw4OC45OC0zOC43LDYuMzMtLjAzLDExLjMsMy40NiwxMS4zMywxMy4zMSwwLDMuNTQtMTIuNjEsOS45My0xMi42MSwxMi4wMywyLjgyLjctNDEuMzIsNDEuNzQtNDEuMjcsNDkuNS4wOCwxNy4wMiw4LjY1LDE1LjU0LDEzLjY0LDE1LjQuMzMsMCwuNjctLjA2Ljk4LS4xNCwyOC4yMS04Ljg3LDEwMC4yOC01Ny4wNiwxMzIuOTMtNzAuOTMsNC45MS0uMDMsMi4xMiwyLjEyLDQuMjEsMi43OS4wNiw3Ljc2LTEwLjQ2LDE0LjE1LTEwLjQzLDIxLjg4LjAzLDMuOTMsMS42Nyw4LjIzLDQuNTUsMTIuNjctLjE0LS4wMy0uMjUtLjA2LS4zOS0uMDguMzkuNDIuNzguODQsMS4xNywxLjI2LDEzLjczLDIwLjAxLDUwLjkyLDQyLjc1LDczLjUyLDQ5LjIybC4zMS0uMDNjMzYuNDEsMTUuMTgsNzcuODgsMjMuNjYsMTE5LjM0LDI4LjQzLTE1OC41NywyNS41Ni0zMDEuMjMsMTAuOTQtNDYxLjI1LDI0LjU2LTI4NC4zOCwyNC4xOS01ODYuNjEsOC4yOC04NjcuODksNTguODQuOTgsMCw4Ljk4LDMuMjQsOS41NywzLjUyLDE4LjUsMy44OCwzOC45LDE0LjI5LDU3LjkzLDEzLjc4LDQ2MS43Ni04Mi45Myw5MzMuNzEtMTEuNzIsMTM5NS40NC05NC42Ny0xLDAtOS42My0zLjQ5LTkuNjMtMy41NFpNMTYyNC4xNCw2MjYuMzdjOTYuODgtMTI3LjIxLDIwNC41LTc2LjksMTAuNTgsNS41OC0xNy41NSw3LjExLTEwLjU4LTUuNTgtMTAuNTgtNS41OFpNMTAxMi42LDY1OS4wMmMwLTMuOTMuNTktNy44NywxLjc5LTExLjguMTctLjU5LjUtMS4xMi45NS0xLjUzLDguNzEtOC4xMiw3Ny43OS03Mi40MSw4Ni45Ny02Ny4zOCw1OC4zNC41LTg2LjY0LDEzMC41LTg5LjcxLDgwLjcyWk0xOTA3LjEyLDYwMi44MmMtLjA4LjItLjE5LjM5LS4zMS41OS0xMS42NCwxOC42Ny0xOS41LDIxLjMyLTQ0LjQyLDM5LjE1LS4xNy4xNC0uMzYuMjUtLjU2LjMzLTEyLjQ0LDUuNTItNDAuNzQsMjYuNDUtNTEuMjMsMTYuOTQtLjkyLS44NC0xLjI4LTIuMTItMS0zLjM1LDMuMTMtMTQuMDksNDMuNDctNDUuOTgsNjEuMzktNTUuMjUuMDYtLjAzLjExLS4wNi4xNy0uMTEsMTYuNTctMTAuMyw0Ni41Ny0yNC4wOCwzNS45NywxLjdaIi8+CiAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTExNDUuMDUsMzA4LjIyYzEuMDctMjYuNzMtMTYuNDktNTIuOTktNDUuNjMtMzQuMzEtMTIyLjc0LDEwNS4yLTk2LjIxLDI2OC4zNy0yNTUuNjksMzU5LjU5LTc1LjM2LDU3LjYzLTE3Ni4zNywxMzMuMTctMjc2Ljg5LDEwMy45OC0yMy4xNy03LjkxLTQ0LjA0LTI3LjQtNDYuNTktNTIuNzgtMi4yNi0xNC45NCw0LjYyLTM0Ljc5LDYuNjQtNDMuMy40MS0yLjYxLDEuMjYtNS44Mi0xLjItNy4zOC0yMi45My4yLTYyLjksMTguMDYtNTYuMjgsNDguNDQsMy44NiwxOS44OSwxNC45MiwzOS40MywzMS44Miw1Mi4xOSwxMzcuNDYsNjkuOTgsMjkwLjI4LTQyLjc0LDM5NC43OS0xMjguMjUsNy43Ni01Ljk1LDE2LjA4LTEzLjE2LDE0LjI3LTQuNzUtNTAuMjksMTI5LjkzLTEyOS4wOCwzMjMuOTItMTgyLjE2LDQ1OC4yLTYuNTgsMTYuOTktMTQuMTYsMjkuODYsMi41OSwyMy4zNywxNS40Ni01Ljk5LDQ2Ljk2LTIwLjIzLDUzLjI0LTQxLjE1LDYwLjktMTcxLjksMTE0LjctNDEzLjY4LDIzOS43My01NDYuODUsNDUuMi01Mi42NSwxMTMuNzItMTE1Ljc3LDEyMS4zNS0xODYuOThaTTk5OC4wNiw0OTkuNTRjLTI4LjcxLDEwLjQzLDg1LjMtMjA3LjEsMTMwLjI4LTE5Mi45OSwyMS45MywxMi40Ni02Ny44OSwxMzYuNzQtMTMwLjI4LDE5Mi45OVoiLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo=" alt="Laurean" />
+    <div class="kicker">Soporte y evolución del sistema</div>
+    <h1>Bitácora de <em>mejoras</em></h1>
+    <p class="lead">Registro de las actualizaciones aplicadas a la plataforma de Laurean
+      desde su construcción hasta hoy: qué se agregó, qué se corrigió y qué significa
+      cada cambio para la operación diaria de la tienda.</p>
+  </div>
+
+  <div class="partes">
+    <div class="parte">
+      <div class="rol">Desarrollo y soporte</div>
+      <div class="nom">AA Projects</div>
+      <div class="det">Diseño, desarrollo y mantenimiento de la plataforma</div>
+    </div>
+    <div class="parte">
+      <div class="rol">Cliente</div>
+      <div class="nom">Laurean<span class="sw">by Seong Woo</span></div>
+      <div class="det">laureans.com — tienda, panel y punto de venta</div>
+    </div>
+  </div>
+
+  <!-- ══ RESUMEN ══ -->
+  <section>
+    <h2>El período en <em>números</em></h2>
+    <p class="sub">Del 14 de mayo al 9 de agosto de 2026. Cada actualización quedó
+      registrada con fecha y detalle; aquí están agrupadas por lo que aportan al negocio.</p>
+    <div class="cifras">
+      <div class="cifra"><div class="n">126</div><div class="l">Actualizaciones<br>aplicadas</div></div>
+      <div class="cifra"><div class="n">3</div><div class="l">Meses de<br>trabajo continuo</div></div>
+      <div class="cifra"><div class="n">21</div><div class="l">Módulos en<br>el panel</div></div>
+      <div class="cifra"><div class="n">13</div><div class="l">Mejoras después<br>de la entrega</div></div>
+    </div>
+  </section>
+
+  <!-- ══ LÍNEA DE TIEMPO ══ -->
+  <section>
+    <h2>Qué se hizo, <em>paso a paso</em></h2>
+    <p class="sub">Tres etapas: la construcción de la plataforma, la entrega formal, y el
+      soporte que sigue corriendo desde entonces.</p>
+
+    <!-- Etapa 1 -->
+    <div class="etapa">
+      <div class="fecha">Mayo — junio 2026</div>
+      <h3>Construcción de la base</h3>
+      <p class="resumen">Se levanta la plataforma completa: la tienda que ve el cliente,
+        el panel de administración y el punto de venta, los tres sobre una misma base de
+        datos en la nube.</p>
+
+      <div class="bloque">
+        <h4>Para quien compra</h4>
+        <ul>
+          <li>Tienda con carrito, favoritos y botones para compartir por WhatsApp, Facebook y X</li>
+          <li>Precio público y precio de vendedora, con selector de envío en el checkout</li>
+          <li>Lookbook editorial con las colecciones Women, Men y Kids</li>
+          <li>Páginas legales e informativas, con los datos del negocio editables desde el panel</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Para que la encuentren</h4>
+        <ul>
+          <li>Posicionamiento en buscadores: títulos, descripciones, mapa del sitio y datos estructurados</li>
+          <li>Accesibilidad: navegación con teclado, etiquetas y foco visible</li>
+          <li>Medición: analítica propia de visitas, Google Analytics y Meta Pixel</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Infraestructura</h4>
+        <ul>
+          <li>Cambio de hospedaje a Cloudflare: sitio más rápido y más estable</li>
+          <li>Imágenes servidas desde la nube y tipografías propias para que la marca se vea igual en todo equipo</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Etapa 2 -->
+    <div class="etapa">
+      <div class="fecha">Julio 2026</div>
+      <h3>El sistema se vuelve multi-equipo</h3>
+      <p class="resumen">El mes más intenso del proyecto. La plataforma pasa de funcionar
+        bien en una computadora a funcionar bien en todas a la vez, que es lo que un
+        equipo de verdad necesita.</p>
+
+      <div class="bloque">
+        <h4>Una sola verdad, en todos los equipos</h4>
+        <ul>
+          <li>Se llevaron a la nube pedidos, clientes, comisiones, combos, bodegas, proveedores, cotizaciones, códigos de descuento, configuración y precios</li>
+          <li>Sincronización continua: lo que cambia una computadora aparece en las demás en segundos</li>
+          <li>Los borrados también se propagan; antes un registro eliminado reaparecía al rato</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Los pedidos dejan de perderse</h4>
+        <ul>
+          <li>Un pedido hecho con la sesión vencida ya no se pierde: el sistema lo reintenta solo</li>
+          <li>Los pedidos se ven y se cuentan igual desde cualquier computadora</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Precios, descuentos y comisiones</h4>
+        <ul>
+          <li>Precio por bodega en el punto de venta, para que cada sucursal cobre lo suyo</li>
+          <li>Historial de cambios de precio: qué cambió, quién lo cambió y cuándo</li>
+          <li>Códigos de descuento y de referido validados contra la nube, no contra el navegador</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Combos y envíos</h4>
+        <ul>
+          <li>Combos visibles en la tienda y en el punto de venta, con portada automática y categoría propia</li>
+          <li>Departamento y municipio obligatorios en el checkout, con el código de municipio resuelto automáticamente para las guías</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Control del equipo</h4>
+        <ul>
+          <li>Apartados visibles por usuario y modo solo lectura</li>
+          <li>Registro de actividad: quién hizo qué y cuándo</li>
+          <li>Panel de alertas y buscador de productos</li>
+          <li>Manual de uso dentro del propio panel, un capítulo por módulo</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Hito -->
+    <div class="etapa hito">
+      <div class="fecha">26 de julio de 2026</div>
+      <h3>Entrega del proyecto</h3>
+      <div class="hito-card">
+        <strong>Acta de entrega firmada</strong>
+        <span>Plataforma completa en producción: tienda, panel de administración y punto
+          de venta, con la pasarela de pagos activa y el equipo capacitado.</span>
+      </div>
+    </div>
+
+    <!-- Etapa 3 -->
+    <div class="etapa">
+      <div class="fecha">Del 26 de julio a hoy</div>
+      <h3>Soporte: la plataforma sigue mejorando</h3>
+      <p class="resumen">Todo lo que sigue se aplicó <strong>después</strong> de la entrega,
+        dentro del servicio de soporte. No son correcciones pendientes: son capacidades
+        nuevas y refuerzos que surgieron del uso real.</p>
+
+      <div class="bloque">
+        <h4>Inventario por color y talla, de punta a punta</h4>
+        <ul>
+          <li>El punto de venta pide color y talla al vender, y descuenta esa combinación exacta</li>
+          <li>Lo mismo al armar un combo: se elige color y talla de cada prenda</li>
+          <li>Los movimientos de inventario (ingreso, salida, ajuste y traslado) se hacen por combinación, con una cuadrícula que muestra lo disponible</li>
+          <li>La pantalla de existencias despliega el desglose por color y talla de cada bodega</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Un solo inventario, imposible de descuadrar</h4>
+        <ul>
+          <li>El inventario vivía en dos lugares que podían separarse; ahora hay uno solo y el total se calcula a partir de él</li>
+          <li>Los traslados se aplican de forma completa o no se aplican: nunca a medias</li>
+          <li>Si no alcanza la existencia, el sistema lo dice con nombre, talla y cantidad, en vez de guardar en silencio</li>
+          <li>Dos personas trabajando a la vez ya no se pisan los cambios</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Alcance comercial</h4>
+        <ul>
+          <li>Catálogo conectado a Meta Commerce Manager para publicar en Facebook e Instagram</li>
+          <li>Imagen de vista previa al compartir el enlace por WhatsApp o Facebook</li>
+          <li>Logotipo de Laurean en el ticket del pedido</li>
+        </ul>
+      </div>
+      <div class="bloque">
+        <h4>Que cualquiera pueda operarlo</h4>
+        <ul>
+          <li>Manuales del panel ampliados con paso a paso módulo por módulo</li>
+          <li>Ayuda contextual en las 21 pantallas: una nota bajo cada título que explica para qué sirve y con qué se conecta</li>
+          <li>83 campos del panel con una guía breve que dice qué escribir, qué cuidar y dónde se refleja ese dato</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ QUÉ SIGNIFICA ══ -->
+  <section>
+    <h2>Qué cambió <em>en la práctica</em></h2>
+    <p class="sub">Traducido a la operación del día a día, sin tecnicismos.</p>
+
+    <div class="antes-ahora">
+      <div class="a"><div class="et">Antes</div><p>Cada computadora tenía su propia copia de la información y los números no siempre coincidían.</p></div>
+      <div class="b"><div class="et">Ahora</div><p>Hay una sola fuente en la nube. Lo que se cambia en una computadora aparece en las demás en segundos.</p></div>
+    </div>
+    <div class="antes-ahora">
+      <div class="a"><div class="et">Antes</div><p>Se vendía por producto: el sistema no sabía qué talla ni qué color salía de cada bodega.</p></div>
+      <div class="b"><div class="et">Ahora</div><p>Cada venta descuenta la combinación exacta. Se sabe qué hay de cada color y talla, bodega por bodega.</p></div>
+    </div>
+    <div class="antes-ahora">
+      <div class="a"><div class="et">Antes</div><p>Si una operación fallaba, el mensaje decía que se había guardado igual.</p></div>
+      <div class="b"><div class="et">Ahora</div><p>El sistema avisa qué pasó y qué hacer, y no cierra la ventana para no perder lo escrito.</p></div>
+    </div>
+    <div class="antes-ahora">
+      <div class="a"><div class="et">Antes</div><p>Para usar el panel había que preguntarle a alguien qué hacía cada campo.</p></div>
+      <div class="b"><div class="et">Ahora</div><p>Cada pantalla y cada campo se explican solos. Una persona nueva puede sentarse a trabajar.</p></div>
+    </div>
+
+    <div class="nota">
+      Las mejoras de esta última etapa nacieron del uso real del sistema por parte del
+      equipo de Laurean. Ese ida y vuelta es justamente lo que cubre el servicio mensual:
+      la plataforma no se queda quieta en el estado en que se entregó.
+    </div>
+  </section>
+
+  <!-- ══ CIERRE ══ -->
+  <div class="cierre">
+    <img class="logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyOTc2LjM3IDEzMjYuODEiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTIgeyBmaWxsOiAjRjFFQ0U4OyB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8ZyBpZD0iTE9HT1RJUE9TIj4KICAgIDxnPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yNTEwLjc2LDc0Ny4wMmMtMTYuMzgtNi40NC02MS4zNi0xMy4xNC02My4wOS0xMi44My03Ny01LjAzLTU0LjY2LDcuMDItMTIyLjY2LTYuMTktMTYuNTctNS42NC0zMi41My03LjY3LTQ2LjAxLTE0Ljc5LS4wNi0uMDMtLjExLS4wNi0uMTctLjA4LTEuNjctLjk4LTMuMjYtMS45Mi00LjgtMi44Ny0uMDYtLjAzLS4xMS0uMDYtLjE3LS4xMS04LjcxLTUuNDEtMTUuNDYtMTAuODgtMjAuNTYtMTYuMy0zNi45MS0zOS4xMiwxMC40NC03Ni45LDEzLjI4LTkxLjMuMDgtLjM2LjA4LS43My4wMy0xLjEyLTUuOTQtNDUuNzktMTIwLjkzLDQzLjAzLTEzMS4zNyw0Mi4wOC00LjIxLjAzLTEyLTkuNzktLjgxLTIzLjI0LDEwLjgtMTIuOTUsMTAuNTItMTYuMDIsMTAuNDQtMjMuMTYsMC0uNTMtLjExLTEuMDktLjM2LTEuNTYtMjAuNzktNDIuMDUtMTAwLjgxLDEyLjgzLTE0MS44Myw0MC42NS0uMTcuMDYtLjMzLjE0LS41LjIyLDMuMzgtMy4xLTYyLjUzLDM5LjI2LTcyLjY2LDIyLjMyLS4zMy0uNTMtLjQ1LTEuMTctLjQyLTEuNzksMS43My01MS43Niw0NC41LTY0LjQsMzYuMTYtODMuNzEtMS40NS02LjMxLTguNDgtNi45OC0xMy40Mi02Ljk1LTEyLjc4LS4zOS0xNS4xMiwxMS42Ni0yMC45MywxMS4zNi0xLjMxLS4wOC0yLjQtMS4wOS0yLjc5LTIuMzQtMS43Ni01LjMzLTMuMjEtMTAuMjctNi42MS0xNi4xMy0uNDItLjc1LTEuMTQtMS4zNC0xLjk4LTEuNTktMTcuMDUtNS4xMS0yOC4wNywzLjQzLTUzLjQzLDE2LjEzLS4wNi4wMy0uMTEuMDYtLjE3LjA4LTI1LjM5LDE0LjUxLTY0LjQ4LDM2LjUyLTgzLjcxLDYzLjc2LTQ2Ljg4LDI0LjIyLTE0OC41NSw2MC42OS0xNjkuNjcsMzQuNC0uNjQtLjg0LS44OS0xLjk4LS41Ni0yLjk2LDQuODUtMTQuMDEsNjQuNzEtMzMuMzQsNzQuODEtNDAuMTUsMzcuNzUtMjQuNzUsODYuMDUtNDYuNzYsODYuMTEtOTIuMjIsMC0uMjgtLjAzLS41Ni0uMDgtLjg0LTYuMDgtMzAuMTEtNjUuNzktMTEuNzItODkuMzIuODYtMzQuNzQsMTguMzYtODAuMzYsNTkuNDYtOTkuMTcsMTAwLjczLTMxLjMxLDE4Ljc1LTExMS4zLDU4LjUxLTExNC4wOSw0My45NS0uMDMtMy41MiwyLjc5LTcuNzYsNS41OC0xMiwxMS41OC0xOC41LDI2LjU0LTM0LjgyLDI5LjkxLTU0LjY5LjA2LS4yNS4wOC0uNS4wNi0uNzUtLjI4LTE4Ljg2LTE0LjI2LTM3LjU4LTE0LjI5LTQzLjg5LjY0LTExLjcyLTcuOTgtMzcuODktMjguNDktMjQuODEtLjMxLjE5LS42MS40NS0uODYuNzUtMTMuMzksMTYuMTYtMjAuNCw0Ni4zMi0zNS45NCw2MC4zLTUuODksNy4wMy0yNy4xMiwyNC45Ny00MS4xLDM2LjEzLTE3Ljk0LDEwLjk0LTM3LjYxLDMwLjUtNDEuNzQtNS4xMy0uMDMtLjIyLS4wNi0uNDItLjAzLS42NC41Ni0xMS4xLDM0LjE1LTU3LjU5LDM0LjE1LTYyLjUtLjAzLTguNDUtNy43OC05LjgyLTE0LjEyLTkuNzktMjQuNjQuMTQtMzIuMjMsMzMuMjYtNDEuMjcsNTAuMi0xNy40NCwzMS43NS02MS41OCw3NC45Mi0xMDAuMzEsNzUuMTEtOC40My4wNi0xMi43LTkuNzktMTIuNzItMTYuODItNC4zMi00Ny44NSw3OC40OS04Ni4zMyw0OC4xOS0xMTIuMjgtLjk1LS44MS0yLjIzLTEuMTItMy40LS43My0yNC43OCw4Ljg3LTU5LjU0LDUyLjYtNzEuMDcsODguNTYtNC4wMiwyLjA0LTguNDUsMy40OS0xMy45NSwzLjUyLTE2LjIxLjA4LTI3LjUxLTExLjExLTI3LjYtMjcuMzItLjExLTIxLjgyLDQwLjU3LTQ5LjQ3LDQwLjQ5LTY0LjI2LS4wMy03LjczLTkuODgtNy42Ny0xNS41MS03LjY0LTExLjk3LjA2LTIyLjQ2LDE0LjE3LTM2LjUyLDE0LjI2LTkuMTUuMDMtMTIuMDMtMTEuMjItMzEuMDMtMTEuMS0yOS4yNy0zLjQ2LTEyNS43OCw4Ny41My0xMzEsMTExLjQ0LS4wNi4yOC0uMDguNTktLjA2Ljg5LjQyLDI2LjMxLDI1LjU5LDI4Ljk2LDQ2LjYsMjguODUsNDIuOTQtLjIsNjEuNzItNDMuMjIsODguNDgtNDMuMzYsNC4xMy0uMDMsNi4yNSwyLjY1LDguOTksNS4zOS4xMS4xNC4yNS4yNS4zNi4zMyw4LjcxLDYuOTIsMzUuODUsMTAuOTQsNDcuMDQsMTAuODgsNC4wNy0uMDMsMTItMy4xLDIwLjMxLTcuNDgtLjY3LDUuMTEtLjcsOS45MS4wOCwxNC4yLjAzLjE0LjA2LjI4LjA2LjQyLjE0LDE1LjQsNi41NiwzMC4wMiwyNC4wOCwyOS45NCwyMy45NC0uMTEsODUuMDUtMjQuMzYsMTAxLjg0LTQwLjYzLDQuOTEtNC45NywxMS44OS0xOS4wOCwxOC45Mi0xOS4xMSw0LjI0LS4wMyw0Ljk3LDQuMjEsNC45Nyw3LjczLTYuMjIsNDMuNzgsMjMuNTUsMjAuNDUsNDMuNyw2LjgxLDEuNTYtLjk1LDcuMTQtNC4xMywxMi44Ni03LjYyLDkuNDYtNC42OSwyNS43LTE2Ljc0LDM2LjIyLTI1LjcsMTYuMjEtMTMuOTIsNDAuMDQtNDIuNjEsNTAuMzYtMTUuMDQuMTcuNDUuMjUuOTUuMjIsMS40LTEuMDksMTIuNS0zMC4yMiw2MC40MS00My45Miw4MS4xNy02Ljk4LDEwLjYsMi4yNiwyNS4zNCwyNi4xNywyNS4yMi0xLjk1LDQuOCw4MS4xNy0zOC42NCwxMjMuMDItNjYuMzgtMS4wOSw0LjMtMS44MSw4LjU3LTIuMTUsMTIuNzUtLjA2LjU5LjA4LDEuMjMuMzQsMS43OSw5LjA3LDE5LjE0LDE3LjA1LDMyLjA5LDQ0LjY0LDMxLjk4LjExLDAsLjIyLDAsLjMzLjAzLDQzLjU2LDUuNDQsMTE0LjI5LTI1Ljg3LDE1Mi42My00OC4zNi0yLjA5LDUuNjEtMy4xNSwxMS40NC0zLjAxLDE3LjQxLDAsLjQyLjA2LjgxLjIsMS4xNyw0Ljg4LDEzLjUzLDM0LjA3LDE4Ljg5LDQ0LjcsMTguOTIuMTksMCwuMzMsMCwuNTMtLjAzLDE1LjQtMS45Miw2MS42MS0zMi4zMSw3OC4xLTUwLjExLjE0LS4xNy4zMS0uMzEuNDctLjQyLDI1LjUtMTguNzIsMS43NiwyMS42Miw2Ljc4LDM1LjYuMTEuMzEuMjguNTkuNDcuODYsMS45LDIuNTEsOC43MSw5LjYsMTMuMzQsMTAuMDUuMzMuMDMuNjcsMCwuOTgtLjA2LDI1LjU5LTUuMDIsNTcuNzYtMTcuODYsODQuMDEtMzguODEsMjguMjYtMTMuOTgsNzYuOS00Mi4yMiw4OC45OC0zOC43LDYuMzMtLjAzLDExLjMsMy40NiwxMS4zMywxMy4zMSwwLDMuNTQtMTIuNjEsOS45My0xMi42MSwxMi4wMywyLjgyLjctNDEuMzIsNDEuNzQtNDEuMjcsNDkuNS4wOCwxNy4wMiw4LjY1LDE1LjU0LDEzLjY0LDE1LjQuMzMsMCwuNjctLjA2Ljk4LS4xNCwyOC4yMS04Ljg3LDEwMC4yOC01Ny4wNiwxMzIuOTMtNzAuOTMsNC45MS0uMDMsMi4xMiwyLjEyLDQuMjEsMi43OS4wNiw3Ljc2LTEwLjQ2LDE0LjE1LTEwLjQzLDIxLjg4LjAzLDMuOTMsMS42Nyw4LjIzLDQuNTUsMTIuNjctLjE0LS4wMy0uMjUtLjA2LS4zOS0uMDguMzkuNDIuNzguODQsMS4xNywxLjI2LDEzLjczLDIwLjAxLDUwLjkyLDQyLjc1LDczLjUyLDQ5LjIybC4zMS0uMDNjMzYuNDEsMTUuMTgsNzcuODgsMjMuNjYsMTE5LjM0LDI4LjQzLTE1OC41NywyNS41Ni0zMDEuMjMsMTAuOTQtNDYxLjI1LDI0LjU2LTI4NC4zOCwyNC4xOS01ODYuNjEsOC4yOC04NjcuODksNTguODQuOTgsMCw4Ljk4LDMuMjQsOS41NywzLjUyLDE4LjUsMy44OCwzOC45LDE0LjI5LDU3LjkzLDEzLjc4LDQ2MS43Ni04Mi45Myw5MzMuNzEtMTEuNzIsMTM5NS40NC05NC42Ny0xLDAtOS42My0zLjQ5LTkuNjMtMy41NFpNMTYyNC4xNCw2MjYuMzdjOTYuODgtMTI3LjIxLDIwNC41LTc2LjksMTAuNTgsNS41OC0xNy41NSw3LjExLTEwLjU4LTUuNTgtMTAuNTgtNS41OFpNMTAxMi42LDY1OS4wMmMwLTMuOTMuNTktNy44NywxLjc5LTExLjguMTctLjU5LjUtMS4xMi45NS0xLjUzLDguNzEtOC4xMiw3Ny43OS03Mi40MSw4Ni45Ny02Ny4zOCw1OC4zNC41LTg2LjY0LDEzMC41LTg5LjcxLDgwLjcyWk0xOTA3LjEyLDYwMi44MmMtLjA4LjItLjE5LjM5LS4zMS41OS0xMS42NCwxOC42Ny0xOS41LDIxLjMyLTQ0LjQyLDM5LjE1LS4xNy4xNC0uMzYuMjUtLjU2LjMzLTEyLjQ0LDUuNTItNDAuNzQsMjYuNDUtNTEuMjMsMTYuOTQtLjkyLS44NC0xLjI4LTIuMTItMS0zLjM1LDMuMTMtMTQuMDksNDMuNDctNDUuOTgsNjEuMzktNTUuMjUuMDYtLjAzLjExLS4wNi4xNy0uMTEsMTYuNTctMTAuMyw0Ni41Ny0yNC4wOCwzNS45NywxLjdaIi8+CiAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTExNDUuMDUsMzA4LjIyYzEuMDctMjYuNzMtMTYuNDktNTIuOTktNDUuNjMtMzQuMzEtMTIyLjc0LDEwNS4yLTk2LjIxLDI2OC4zNy0yNTUuNjksMzU5LjU5LTc1LjM2LDU3LjYzLTE3Ni4zNywxMzMuMTctMjc2Ljg5LDEwMy45OC0yMy4xNy03LjkxLTQ0LjA0LTI3LjQtNDYuNTktNTIuNzgtMi4yNi0xNC45NCw0LjYyLTM0Ljc5LDYuNjQtNDMuMy40MS0yLjYxLDEuMjYtNS44Mi0xLjItNy4zOC0yMi45My4yLTYyLjksMTguMDYtNTYuMjgsNDguNDQsMy44NiwxOS44OSwxNC45MiwzOS40MywzMS44Miw1Mi4xOSwxMzcuNDYsNjkuOTgsMjkwLjI4LTQyLjc0LDM5NC43OS0xMjguMjUsNy43Ni01Ljk1LDE2LjA4LTEzLjE2LDE0LjI3LTQuNzUtNTAuMjksMTI5LjkzLTEyOS4wOCwzMjMuOTItMTgyLjE2LDQ1OC4yLTYuNTgsMTYuOTktMTQuMTYsMjkuODYsMi41OSwyMy4zNywxNS40Ni01Ljk5LDQ2Ljk2LTIwLjIzLDUzLjI0LTQxLjE1LDYwLjktMTcxLjksMTE0LjctNDEzLjY4LDIzOS43My01NDYuODUsNDUuMi01Mi42NSwxMTMuNzItMTE1Ljc3LDEyMS4zNS0xODYuOThaTTk5OC4wNiw0OTkuNTRjLTI4LjcxLDEwLjQzLDg1LjMtMjA3LjEsMTMwLjI4LTE5Mi45OSwyMS45MywxMi40Ni02Ny44OSwxMzYuNzQtMTMwLjI4LDE5Mi45OVoiLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo=" alt="Laurean" />
+    <p>Gracias por la confianza. Seguimos acompañando el crecimiento de Laurean
+      con mejoras continuas, atención a lo que surja y un sistema que se mantiene
+      al día con la operación.</p>
+    <div class="firma">AA Projects</div>
+    <div class="pie">Documento generado el 9 de agosto de 2026</div>
+  </div>
+
+</div>
+</body>
+</html>

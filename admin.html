@@ -3586,6 +3586,7 @@
         { n: low,  label:'Inventario bajo',    sub:'Bajo mínimo / agotado',      view:'inventario' },
         { n: apps, label:'Solicitudes nuevas', sub:'Vendedoras por revisar',     view:'solicitudes' },
         { n: com,  label:'Comisiones',         sub:'Por liquidar',               view:'comisiones' },
+        { n: _cuadreDescuadres, label:'Inventario sin cuadrar', sub:'Revisar en Inventario → Cuadre', view:'inventario' },
       ];
       const anyAlert = cards.some(c => c.n > 0);
       if (!anyAlert) { el.innerHTML = `<div class="dash-alerts-ok">✓ Todo al día — sin alertas pendientes</div>`; return; }
@@ -3596,9 +3597,24 @@
         </div>`).join('');
     }
 
+    // Descuadres de inventario: se consultan a la base y se recuerdan para que
+    // la tarjeta del panel no dependa de que alguien entre a la pestaña Cuadre.
+    let _cuadreDescuadres = 0;
+
+    async function revisarCuadreEnSegundoPlano() {
+      if (!window.LAUREAN_DB) return;
+      try {
+        const { data, error } = await window.LAUREAN_DB.rpc('resumen_cuadre');
+        if (error || !data) return;
+        const n = Number(data.descuadres) || 0;
+        if (n !== _cuadreDescuadres) { _cuadreDescuadres = n; renderDashAlerts(); }
+      } catch (e) { /* si falla, la tarjeta simplemente no aparece */ }
+    }
+
     function renderDashboard() {
       renderBirthdaysWidget();
       renderDashAlerts();
+      revisarCuadreEnSegundoPlano();
       const orders      = getOrders();
       const commissions = getCommissions();
       const users       = getUsers();
@@ -6642,22 +6658,64 @@
       return ids;
     }
 
-    // Construye las filas del kardex (movimientos cronológicos + saldo corrido)
-    function buildKardexRows(productId, sourceCod) {
-      const movs = getInventoryMovements({ productIds: getKardexProductIds(productId, sourceCod) })
+    // Cuánto suma o resta un movimiento al saldo que se está mirando.
+    // El signo NO se puede leer de `quantity`: los movimientos viejos lo traían
+    // con signo y los nuevos guardan la magnitud. Se deduce del tipo, que es lo
+    // único fiable en ambos.
+    // Un traslado no cambia el total del producto (solo lo cambia de lugar);
+    // sí cambia el saldo cuando se está viendo una bodega concreta.
+    function kardexDelta(m, bodega) {
+      const q = Math.abs(Number(m.quantity) || 0);
+      if (m.type === 'transferencia') {
+        if (!bodega) return 0;
+        if (m.toBodega === bodega)   return  q;
+        if (m.fromBodega === bodega) return -q;
+        return 0;
+      }
+      // Un movimiento de otra bodega no cuenta para el saldo de esta. La lista
+      // ya viene filtrada, pero se comprueba igual: así la función es correcta
+      // por sí sola y no depende de que quien la llame se haya acordado.
+      if (bodega && m.bodegaId !== bodega && m.toBodega !== bodega && m.fromBodega !== bodega) return 0;
+      if (m.type === 'ingreso') return  q;
+      if (m.type === 'salida')  return -q;
+      return Number(m.quantity) || 0;   // ajuste: ya viene con signo
+    }
+
+    // Construye las filas del kardex (movimientos cronológicos + saldo corrido).
+    // Se puede acotar a una bodega y a una combinación de color y talla, que es
+    // lo que permite auditar "de dónde salieron estas 3 unidades de Negro / M".
+    function buildKardexRows(productId, sourceCod, bodega, variante) {
+      const ids = getKardexProductIds(productId, sourceCod);
+      let movs = getInventoryMovements({ productIds: ids })
         .slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      if (bodega) {
+        movs = movs.filter(m => m.bodegaId === bodega || m.fromBodega === bodega || m.toBodega === bodega);
+      }
+      if (variante) {
+        movs = movs.filter(m => ((m.color || '') + '||' + (m.size || '')) === variante);
+      }
+
       let saldo = 0;
       return movs.map(m => {
-        const delta = m.quantity || 0;
+        const delta = kardexDelta(m, bodega);
         saldo += delta;
-        const entrada = delta > 0 ? delta : 0;
-        const salida  = delta < 0 ? Math.abs(delta) : 0;
         let detalle = '';
         if (m.type === 'ingreso') detalle = m.proveedorName ? ('Proveedor: ' + m.proveedorName) : 'Ingreso';
         else if (m.type === 'salida') detalle = m.motivo ? ('Motivo: ' + m.motivo) : 'Salida';
+        else if (m.type === 'transferencia') detalle = (m.fromBodegaName || m.fromBodega || '—') + ' → ' + (m.toBodegaName || m.toBodega || '—');
         else detalle = m.notes ? m.notes : 'Ajuste';
         if (Array.isArray(m.sizes) && m.sizes.length) detalle += ' · ' + m.sizes.map(s => s.size + ':' + s.qty).join(', ');
-        return { createdAt: m.createdAt, tipo: m.type, detalle, bodega: m.bodegaName || '—', entrada, salida, saldo };
+        return {
+          createdAt: m.createdAt, tipo: m.type, detalle,
+          variante: [m.color, m.size].filter(Boolean).join(' · ') || 'talla única',
+          bodega: m.type === 'transferencia'
+            ? ((m.fromBodegaName || m.fromBodega || '—') + ' → ' + (m.toBodegaName || m.toBodega || '—'))
+            : (m.bodegaName || '—'),
+          entrada: delta > 0 ? delta : 0,
+          salida:  delta < 0 ? Math.abs(delta) : 0,
+          saldo,
+        };
       });
     }
 
@@ -6666,33 +6724,57 @@
       _kardexProductName = productName || productId;
       _kardexSourceCod = sourceCod || '';
       document.getElementById('kardex-title').textContent = 'Kardex · ' + _kardexProductName;
-      const rows = buildKardexRows(productId, _kardexSourceCod);
+
+      // Filtros: bodegas registradas y combinaciones que este producto tiene
+      const selB = document.getElementById('kardex-bodega');
+      selB.innerHTML = '<option value="">Todas las bodegas</option>' +
+        getBodegas().map(b => `<option value="${escapeAttr(b.id)}">${escapeHtml(b.name)}</option>`).join('');
+      const combos = (typeof invCombinacionesDe === 'function') ? invCombinacionesDe(productId, '') : [];
+      const selV = document.getElementById('kardex-variante');
+      selV.innerHTML = '<option value="">Todos los colores y tallas</option>' +
+        combos.map(c => {
+          const v = (c.color || '') + '||' + (c.size || '');
+          const t = [c.color, c.size].filter(Boolean).join(' · ') || 'talla única';
+          return `<option value="${escapeAttr(v)}">${escapeHtml(t)}</option>`;
+        }).join('');
+
+      renderKardex();
+      document.getElementById('kardex-modal').style.display = 'flex';
+    }
+
+    function renderKardex() {
+      const bodega   = document.getElementById('kardex-bodega').value;
+      const variante = document.getElementById('kardex-variante').value;
+      const rows = buildKardexRows(_kardexProductId, _kardexSourceCod, bodega, variante);
       let totalIn = 0, totalOut = 0;
       const html = rows.length ? rows.map(r => {
         totalIn += r.entrada; totalOut += r.salida;
         return `<tr>
           <td>${escapeHtml(fmtDate(r.createdAt))}</td>
           <td>${escapeHtml(KARDEX_TIPO[r.tipo] || r.tipo)}</td>
+          <td class="td-muted">${escapeHtml(r.variante)}</td>
           <td class="td-muted" style="font-size:12px">${escapeHtml(r.detalle)}</td>
           <td>${escapeHtml(r.bodega)}</td>
           <td style="text-align:right;color:#2e7d32">${r.entrada || ''}</td>
           <td style="text-align:right;color:#b00">${r.salida || ''}</td>
           <td style="text-align:right;font-weight:600">${r.saldo}</td>
         </tr>`;
-      }).join('') : `<tr><td colspan="7" class="td-muted">Sin movimientos registrados para este producto.</td></tr>`;
+      }).join('') : `<tr><td colspan="8" class="td-muted">Sin movimientos que coincidan con el filtro.</td></tr>`;
       document.getElementById('kardex-tbody').innerHTML = html;
       const saldoFinal = rows.length ? rows[rows.length - 1].saldo : 0;
+      const nota = bodega ? ' en esta bodega' : ' (un traslado no cambia el total, solo lo cambia de lugar)';
       document.getElementById('kardex-summary').textContent =
-        `${rows.length} movimiento(s) · Entradas: ${totalIn} · Salidas: ${totalOut} · Saldo actual: ${saldoFinal}`;
+        `${rows.length} movimiento(s) · Entradas: ${totalIn} · Salidas: ${totalOut} · Saldo${bodega ? '' : ' total'}: ${saldoFinal}${nota}`;
       document.getElementById('kardex-print-btn').style.display = rows.length ? '' : 'none';
-      document.getElementById('kardex-modal').style.display = 'flex';
     }
 
     function closeKardex() { document.getElementById('kardex-modal').style.display = 'none'; }
 
     // Kardex imprimible con marca Laurean
     function printKardex() {
-      const rows = buildKardexRows(_kardexProductId, _kardexSourceCod);
+      const rows = buildKardexRows(_kardexProductId, _kardexSourceCod,
+        document.getElementById('kardex-bodega').value,
+        document.getElementById('kardex-variante').value);
       if (!rows.length) return alert('No hay movimientos para imprimir.');
       let totalIn = 0, totalOut = 0;
       const body = rows.map(r => {
@@ -6700,6 +6782,7 @@
         return `<tr>
           <td>${escapeHtml(fmtDate(r.createdAt))}</td>
           <td>${escapeHtml(KARDEX_TIPO[r.tipo] || r.tipo)}</td>
+          <td>${escapeHtml(r.variante)}</td>
           <td>${escapeHtml(r.detalle)}</td>
           <td>${escapeHtml(r.bodega)}</td>
           <td style="text-align:right">${r.entrada || ''}</td>
@@ -6740,7 +6823,7 @@
       <div class="kx-meta">${escapeHtml(_kardexProductName)} · ${escapeHtml(today)}</div>
     </div>
     <table>
-      <thead><tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Bodega</th><th style="text-align:right">Entrada</th><th style="text-align:right">Salida</th><th style="text-align:right">Saldo</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Movimiento</th><th>Color / Talla</th><th>Detalle</th><th>Bodega</th><th style="text-align:right">Entrada</th><th style="text-align:right">Salida</th><th style="text-align:right">Saldo</th></tr></thead>
       <tbody>${body}</tbody>
       <tfoot><tr><td colspan="4">Totales</td><td style="text-align:right">${totalIn}</td><td style="text-align:right">${totalOut}</td><td style="text-align:right">${saldoFinal}</td></tr></tfoot>
     </table>
@@ -9593,10 +9676,16 @@
   <div class="modal-overlay" id="kardex-modal" onclick="if(event.target===this)closeKardex()" style="display:none">
     <div class="modal" style="max-width:760px">
       <h2 class="modal-title" id="kardex-title">Kardex</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <select class="form-input" id="kardex-bodega" style="width:190px;padding:7px 9px;font-size:12.5px"
+                onchange="renderKardex()"><option value="">Todas las bodegas</option></select>
+        <select class="form-input" id="kardex-variante" style="width:210px;padding:7px 9px;font-size:12.5px"
+                onchange="renderKardex()"><option value="">Todos los colores y tallas</option></select>
+      </div>
       <div id="kardex-summary" style="font-size:13px;color:var(--warm-mid);margin-bottom:12px"></div>
       <div style="max-height:50vh;overflow-y:auto">
         <table class="tbl">
-          <thead><tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Bodega</th><th style="text-align:right">Entrada</th><th style="text-align:right">Salida</th><th style="text-align:right">Saldo</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Movimiento</th><th>Color / Talla</th><th>Detalle</th><th>Bodega</th><th style="text-align:right">Entrada</th><th style="text-align:right">Salida</th><th style="text-align:right">Saldo</th></tr></thead>
           <tbody id="kardex-tbody"></tbody>
         </table>
       </div>
