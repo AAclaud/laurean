@@ -736,7 +736,7 @@ function saveBodegaPrice(productId, bodegaId, gtq, usd) {
 async function syncPriceOverridesFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('price_overrides').select('product_id,data').limit(5000);
+  const { data, error } = await leerTodo(sb, 'price_overrides', 'product_id,data');
   if (error || !data) { console.warn('[supabase] sync price_overrides:', error && error.message); return false; }
   const overrides = getPriceOverrides();
   data.forEach(r => { if (r && r.product_id && r.data) overrides[r.product_id] = { ...(overrides[r.product_id] || {}), ...r.data }; });
@@ -835,11 +835,9 @@ function saveOrders(orders)   { localStorage.setItem(KEYS.ORDERS, JSON.stringify
 async function syncOrdersFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('orders')
-    .select('id,local_id,order_number,customer_name,customer_phone,customer_email,customer_address,customer_township_code,customer_department,customer_city,subtotal_gtq,discount_gtq,shipping_gtq,total_gtq,items,notes,status,payment_method,payment_status,origin,channel,shipping_method,referral_code,bodega_id,forza_guide_number,forza_tracking_status,created_at')
-    .order('created_at', { ascending: false })
-    .limit(1000);
-  if (error || !data) { console.warn('[supabase] sync orders:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'orders', 'id,local_id,order_number,customer_name,customer_phone,customer_email,customer_address,customer_township_code,customer_department,customer_city,subtotal_gtq,discount_gtq,shipping_gtq,total_gtq,items,notes,status,payment_method,payment_status,origin,channel,shipping_method,referral_code,bodega_id,forza_guide_number,forza_tracking_status,created_at',
+    { columna: 'created_at', ascendente: false });
+  if (error || !data) return false;
   const local = getOrders();
   const byRemote = {};
   const localById = {};
@@ -983,11 +981,10 @@ window.retryPendingOrderPushes = retryPendingOrderPushes;
 async function syncProductsFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('products')
-    .select('id,name,image_url,description,price_gtq,price_usd,parent_id,subcat_id,stock,is_new_arrival,active,show_price,gallery,variants,source_cod')
-    .order('name')
-    .limit(2000);
-  if (error || !data) { console.warn('[supabase] sync products:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'products',
+    'id,name,image_url,description,price_gtq,price_usd,parent_id,subcat_id,stock,is_new_arrival,active,show_price,gallery,variants,source_cod',
+    { columna: 'name', ascendente: true });
+  if (error || !data) return false;
   localStorage.setItem('laurean_admin_products', JSON.stringify(data));
   document.dispatchEvent(new CustomEvent('laurean:admin-products-synced'));
   return true;
@@ -1007,8 +1004,8 @@ window.getAdminProducts = getAdminProducts;
 async function syncStockFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('inventory_stock').select('cod,bodega_id,stock,updated_at').limit(5000);
-  if (error || !data) { console.warn('[supabase] sync stock:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'inventory_stock', 'cod,bodega_id,stock,updated_at');
+  if (error || !data) return false;
   const prods = (typeof getAdminProducts === 'function') ? getAdminProducts() : [];
   const byCod = {};
   prods.forEach(p => { if (p.source_cod) byCod[String(p.source_cod)] = p.id; });
@@ -1076,13 +1073,39 @@ function saveVariantStock(map) {
   document.dispatchEvent(new CustomEvent('laurean:variant-stock-synced'));
 }
 
-// Autoritativo: si la lectura fue completa, lo que ya no está en la BD se quita del caché.
+// ─── Lectura completa de una tabla, por páginas ─────────────────────────────
+// Pedir `.limit(20000)` NO trae 20.000 filas: el servidor corta en 1.000 por
+// respuesta y no avisa. Con 1.859 filas de existencias, faltaban 859 y el
+// navegador las daba por cero — colores con stock que aparecían agotados en el
+// POS y en los traslados. Hay que paginar con `range` hasta agotar la tabla.
+const _PAGINA = 1000;
+
+async function leerTodo(sb, tabla, columnas, ordenar) {
+  const filas = [];
+  for (let desde = 0; ; desde += _PAGINA) {
+    let q = sb.from(tabla).select(columnas).range(desde, desde + _PAGINA - 1);
+    if (ordenar) q = q.order(ordenar.columna, { ascending: !!ordenar.ascendente });
+    const { data, error } = await q;
+    if (error) { console.warn(`[supabase] ${tabla}:`, error.message); return { data: null, error }; }
+    if (!data || !data.length) break;
+    filas.push(...data);
+    if (data.length < _PAGINA) break;
+    if (filas.length > 100000) {           // freno de seguridad
+      console.warn(`[supabase] ${tabla}: lectura demasiado grande, se corta`);
+      break;
+    }
+  }
+  return { data: filas, error: null };
+}
+
+// Autoritativo: lo que ya no está en la BD se quita del caché. Por eso la
+// lectura tiene que ser completa: si se truncara, se borrarían existencias
+// buenas del caché local.
 async function syncVariantStockFromSupabase() {
   const sb = window.LAUREAN_DB || window.LAUREAN_DB_ANON;
   if (!sb) return false;
-  const { data, error } = await sb.from('variant_stock')
-    .select('product_id,bodega_id,color,size,stock').limit(20000);
-  if (error || !data) { console.warn('[supabase] sync variant_stock:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'variant_stock', 'product_id,bodega_id,color,size,stock');
+  if (error || !data) return false;
   const map = {};
   data.forEach(r => {
     map[_vsKey(r.product_id, r.bodega_id, r.color, r.size)] = Number(r.stock) || 0;
@@ -1389,10 +1412,10 @@ window.reconcileCommissionsFromOrders = reconcileCommissionsFromOrders;
 async function syncCommissionsFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('commissions')
-    .select('id,order_id,vendor_id,vendor_name,vendor_code,order_total,commission_rate,commission_amount,status,created_at')
-    .order('created_at', { ascending: false }).limit(2000);
-  if (error || !data) { console.warn('[supabase] sync commissions:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'commissions',
+    'id,order_id,vendor_id,vendor_name,vendor_code,order_total,commission_rate,commission_amount,status,created_at',
+    { columna: 'created_at', ascendente: false });
+  if (error || !data) return false;
   const byId = {};
   getCommissions().forEach(c => { if (c && c.id) byId[c.id] = c; });
   data.forEach(r => {
@@ -1547,10 +1570,10 @@ window.reconcileCustomersFromOrders = reconcileCustomersFromOrders;
 async function syncCustomersFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('customers')
-    .select('id,name,phone,email,address,notes,order_count,total_spent_gtq,first_order_at,last_order_at,created_at,created_by')
-    .order('last_order_at', { ascending: false }).limit(5000);
-  if (error || !data) { console.warn('[supabase] sync customers:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'customers',
+    'id,name,phone,email,address,notes,order_count,total_spent_gtq,first_order_at,last_order_at,created_at,created_by',
+    { columna: 'last_order_at', ascendente: false });
+  if (error || !data) return false;
   const byId = {};
   getCustomers().forEach(c => { if (c && c.id) byId[c.id] = c; });
   data.forEach(r => {
@@ -2385,10 +2408,10 @@ function getInventoryMovements(filters = {}) {
 async function syncInventoryMovementsFromSupabase() {
   const sb = window.LAUREAN_DB;
   if (!sb) return false;
-  const { data, error } = await sb.from('inventory_movements')
-    .select('id,local_id,cod,product_id,product_name,type,from_bodega,to_bodega,quantity,previous_stock,new_stock,color,size,motivo,notes,created_by_name,created_at')
-    .order('created_at', { ascending: false }).limit(2000);
-  if (error || !data) { console.warn('[supabase] sync movements:', error && error.message); return false; }
+  const { data, error } = await leerTodo(sb, 'inventory_movements',
+    'id,local_id,cod,product_id,product_name,type,from_bodega,to_bodega,quantity,previous_stock,new_stock,color,size,motivo,notes,created_by_name,created_at',
+    { columna: 'created_at', ascendente: false });
+  if (error || !data) return false;
   const list = JSON.parse(localStorage.getItem(KEYS.INV_MOVEMENTS) || '[]');
   const haveIds = new Set(list.map(m => m && m.id).filter(Boolean));
   const bodegas = (typeof getBodegas === 'function') ? getBodegas() : [];
