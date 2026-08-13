@@ -76,13 +76,13 @@ tallas as (
   -- Una fila por producto y talla normalizada. Sin depender de la extension
   -- `unaccent`: minusculas, sin espacios y con las vocales acentuadas del
   -- español traducidas a mano alcanza para los casos que se dan.
-  select vs.product_id,
+  select distinct
+         vs.product_id,
          translate(lower(regexp_replace(vs.size, '\s', '', 'g')),
                    'áéíóúüñ', 'aeiouun')                   as clave,
          vs.size                                           as escrita
     from public.variant_stock vs
    where coalesce(vs.size, '') <> ''
-   group by vs.product_id, 2, vs.size
 ),
 duplicadas as (
   select product_id,
