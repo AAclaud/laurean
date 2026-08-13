@@ -1990,6 +1990,21 @@ async function syncCategoriesFromSupabase() {
 }
 window.syncCategoriesFromSupabase = syncCategoriesFromSupabase;
 
+// Aviso visible cuando una escritura a la base falla. El patrón de guardar en
+// el navegador y reportar el fallo solo por consola hace que el usuario crea que
+// su trabajo quedó guardado; el siguiente sync lo revierte y parece que el
+// sistema "se comió" los cambios.
+let _ultimoAvisoGuardado = 0;
+window.avisarFalloGuardado = function (que, nombre, detalle) {
+  const ahora = Date.now();
+  if (ahora - _ultimoAvisoGuardado < 4000) return;   // no encadenar avisos
+  _ultimoAvisoGuardado = ahora;
+  const msg = `No se pudo guardar ${que}${nombre ? ` "${nombre}"` : ''} en la nube.\n\n` +
+    `El cambio quedó solo en este equipo y se va a perder cuando la página se ` +
+    `sincronice. Vuelve a intentarlo.\n\nDetalle: ${detalle || 'sin detalle'}`;
+  try { alert(msg); } catch (e) { console.error(msg); }
+};
+
 // ─── Productos personalizados ──────────────────────────────────────────────────
 function getCustomProducts() {
   return JSON.parse(localStorage.getItem('laurean_custom_products') || '[]');
@@ -2000,38 +2015,67 @@ function saveCustomProduct(product) {
   const eraNuevo = !product.id ||
     (!products.some(p => p.id === product.id) &&
      !(window.LAUREAN_DATA?.products || []).some(p => p.id === product.id));
+
+  // `product` puede traer solo algunos campos (la importación de CSV, por
+  // ejemplo, no trae colores ni galería). Se fusiona con lo que ya se sabía del
+  // producto y se guarda el RESULTADO, no el parche: escribir el parche crudo
+  // en la base mandaba `variants: []` y borraba los colores y tallas que
+  // alguien había configurado a mano. El caché local sí conservaba lo suyo, así
+  // que el trabajo parecía intacto hasta que el sync traía la versión pelada.
+  let guardado;
   if (product.id) {
     const idx = products.findIndex(p => p.id === product.id);
-    if (idx !== -1) { products[idx] = { ...products[idx], ...product }; }
-    else            { products.push(product); }
+    const previo = idx !== -1 ? products[idx]
+                 : ((window.LAUREAN_DATA?.products || []).find(p => p.id === product.id) || {});
+    guardado = { ...previo, ...product };
+    if (idx !== -1) products[idx] = guardado;
+    else            products.push(guardado);
   } else {
     product.id        = genId('prd');
     product.createdAt = new Date().toISOString();
-    products.push(product);
+    guardado = product;
+    products.push(guardado);
   }
   localStorage.setItem('laurean_custom_products', JSON.stringify(products));
-  // Dual-write a Supabase (fire-and-forget) si está conectado
+
+  // Los colores y la galería solo se envían si el producto realmente los trae:
+  // así un guardado parcial nunca los borra en la base.
   if (window.LAUREAN_DB) {
-    const parentId = product.category || product.parent || product.category_parent || null;
-    const subcatId = product.subcat || product.subcat_id || null;
-    window.LAUREAN_LAST_PRODUCT_WRITE = window.LAUREAN_DB.from('products').upsert({
-      id: product.id,
-      name: product.name,
-      image_url: product.image || product.image_url || null,
-      description: product.description || null,
-      price_gtq: product.price_gtq || 0,
-      price_usd: product.price_usd || 0,
+    const parentId = guardado.category || guardado.parent || guardado.category_parent || null;
+    const subcatId = guardado.subcat || guardado.subcat_id || null;
+    const fila = {
+      id: guardado.id,
+      name: guardado.name,
+      image_url: guardado.image || guardado.image_url || null,
+      description: guardado.description || null,
+      price_gtq: guardado.price_gtq || 0,
+      price_usd: guardado.price_usd || 0,
       parent_id: parentId || null,
       subcat_id: subcatId || null,
-      stock: product.stock ?? 0,
-      is_new_arrival: !!product.is_new_arrival,
-      gallery: Array.isArray(product.gallery) ? product.gallery : [],
-      variants: Array.isArray(product.variants) ? product.variants : [],
-      active: product.active !== false,
-    }).then(({ error }) => { if (error) console.warn('[supabase] upsert product:', error.message); });
+      stock: guardado.stock ?? 0,
+      is_new_arrival: !!guardado.is_new_arrival,
+      active: guardado.active !== false,
+    };
+    // Se mira lo que trae QUIEN LLAMA, no la fusión con el caché: si el que
+    // guarda no dijo nada de colores o galería, esas columnas no se tocan y la
+    // base conserva las suyas. Mandar las del caché las pisaría con una copia
+    // que puede estar vieja.
+    if (Array.isArray(product.gallery))  fila.gallery  = product.gallery;
+    if (Array.isArray(product.variants)) fila.variants = product.variants;
+
+    window.LAUREAN_LAST_PRODUCT_WRITE = window.LAUREAN_DB.from('products').upsert(fila)
+      .then(({ error }) => {
+        if (!error) return;
+        // Callar aquí costaba el trabajo del usuario: se guardaba local, el
+        // sync lo revertía y nadie se enteraba de por qué.
+        console.warn('[supabase] upsert product:', error.message);
+        if (typeof window.avisarFalloGuardado === 'function') {
+          window.avisarFalloGuardado('producto', guardado.name || guardado.id, error.message);
+        }
+      });
   }
-  logActivity(eraNuevo ? 'crear' : 'editar', 'producto', product.id, product.name);
-  return product;
+  logActivity(eraNuevo ? 'crear' : 'editar', 'producto', guardado.id, guardado.name);
+  return guardado;
 }
 
 function deleteCustomProduct(id) {

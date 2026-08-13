@@ -5859,7 +5859,15 @@
 
     function importConfirm() {
       if (!importValidRows.length) return;
-      if (!confirm(`Se importarán ${importValidRows.length} productos. ¿Continuar?`)) return;
+      // El CSV no trae colores, tallas ni galería. Se conservan los que ya
+      // tenga cada producto, pero conviene decirlo: no es evidente y aquí se
+      // perdió trabajo antes de que el guardado respetara lo que no viene.
+      const yaExisten = importValidRows.filter(r => getAllProducts().some(p => p.id === r.id)).length;
+      const nota = yaExisten
+        ? `\n\n${yaExisten} de ellos ya existen: se actualizarán nombre, precios, categoría y stock. ` +
+          `Sus colores, tallas y galería se conservan tal como están.`
+        : '';
+      if (!confirm(`Se importarán ${importValidRows.length} productos.${nota}\n\n¿Continuar?`)) return;
       importValidRows.forEach(rec => saveCustomProduct({ ...rec }));
       closeImportModal();
       renderProducts();
