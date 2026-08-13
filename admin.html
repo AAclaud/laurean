@@ -5318,6 +5318,24 @@
       document.getElementById('mp-gallery-files')?.click();
     }
 
+    // Una foto recién salida del teléfono pesa varios MB y mide 4000 px de
+    // lado. En la tienda se ve exactamente igual a 1400 px y pesa la décima
+    // parte. La diferencia no la paga el servidor: la paga cada cliente que
+    // abre la ficha desde su plan de datos, y el consumo de la cuenta.
+    // Si por lo que sea no se puede comprimir, se sube el original: mejor una
+    // foto pesada que quedarse sin foto.
+    async function achicarParaWeb(file) {
+      if (typeof comprimirImagen !== 'function' || !/^image\//.test(file.type || '')) return file;
+      try {
+        const { blob } = await comprimirImagen(file, window.IMAGEN_MAX_DIM || 1400,
+                                                     window.IMAGEN_CALIDAD || 0.82);
+        return (blob && blob.size && blob.size < file.size) ? blob : file;
+      } catch (err) {
+        console.warn('[admin] no se pudo comprimir, se sube el original:', err);
+        return file;
+      }
+    }
+
     async function uploadGalleryImages(input) {
       const files = Array.from(input?.files || []);
       if (!files.length) return;
@@ -5336,11 +5354,11 @@
         if (btn) btn.disabled = true;
         for (let i = 0; i < files.length; i++) {
           if (btn) btn.textContent = `Subiendo… (${i + 1}/${files.length})`;
-          const file = files[i];
+          const file = await achicarParaWeb(files[i]);
           const path = `products/gallery/${stamp}_${i + 1}.jpg`;
           const { data, error } = await window.LAUREAN_DB.storage
             .from('product-images')
-            .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true, cacheControl: '3600' });
+            .upload(path, file, { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
           if (error) throw error;
           const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
           if (pub?.publicUrl) urls.push(pub.publicUrl);
@@ -8509,7 +8527,7 @@
         if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
         const path = `combos/${Date.now()}.jpg`;
         const { data, error } = await window.LAUREAN_DB.storage.from('product-images')
-          .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true, cacheControl: '3600' });
+          .upload(path, await achicarParaWeb(file), { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
         if (error) throw error;
         const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
         _comboImage = pub.publicUrl;

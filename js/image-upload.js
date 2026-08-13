@@ -384,4 +384,11 @@
 
   global.initImageUploader = initImageUploader;
   global.refreshImageUploader = refreshImageUploader;
+  // Se expone para las subidas que no pasan por el componente (galería,
+  // portada de combo). Sin esto cada una reinventaba el suyo — o se olvidaba
+  // de comprimir, que es lo que pasó: la galería subía el archivo tal cual
+  // salía del teléfono y se llevó el 91% del almacenamiento.
+  global.comprimirImagen = compressImage;
+  global.IMAGEN_MAX_DIM = DEFAULT_OPTS.maxDim;
+  global.IMAGEN_CALIDAD = DEFAULT_OPTS.quality;
 })(window);
