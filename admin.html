@@ -1471,7 +1471,7 @@
           </table>
         </div>
 
-        <!-- Tab Calendario de ingresos -->
+        <!-- Tab Calendario: todos los movimientos por fecha -->
         <div id="inv-panel-calendario" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
             <div style="display:flex;gap:10px;align-items:center;">
@@ -1479,7 +1479,17 @@
               <span id="cal-month-label" style="font-family:var(--fd);font-size:20px;min-width:200px;text-align:center;"></span>
               <button class="btn btn-light" onclick="calMonthShift(1)" title="Mes siguiente">›</button>
             </div>
-            <span class="td-muted" style="font-size:12px;">Cada día muestra los ingresos registrados (unidades).</span>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <select class="form-input" id="cal-filter-type" style="width:180px;padding:7px 9px;font-size:12.5px"
+                      onchange="renderInventarioCalendar()">
+                <option value="">Todos los movimientos</option>
+                <option value="ingreso">Solo ingresos</option>
+                <option value="salida">Solo salidas</option>
+                <option value="ajuste">Solo ajustes</option>
+                <option value="transferencia">Solo traslados</option>
+              </select>
+              <span class="td-muted" style="font-size:12px;">Haz clic en un día para ver el detalle.</span>
+            </div>
           </div>
           <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;"></div>
           <div id="cal-day-detail" style="margin-top:18px;"></div>
@@ -7524,22 +7534,34 @@
       renderInventarioCalendar();
     }
 
+    // Tipos de movimiento que pinta el calendario, con su color.
+    const CAL_TIPOS = [
+      { k: 'ingreso',       n: 'Ingresos',       c: '#4CAF50' },
+      { k: 'salida',        n: 'Salidas',        c: '#E53935' },
+      { k: 'ajuste',        n: 'Ajustes',        c: '#4A90D9' },
+      { k: 'transferencia', n: 'Traslados',      c: '#D4A017' },
+    ];
+
     function renderInventarioCalendar() {
       const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       const DIAS  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
       document.getElementById('cal-month-label').textContent = `${MESES[_calMonth]} ${_calYear}`;
       document.getElementById('cal-day-detail').innerHTML = '';
 
-      // Agrupar ingresos del mes por día
-      const ingresos = getInventoryMovements({ type: 'ingreso' });
-      const byDay = {}; // day → { count, units, movs[] }
-      ingresos.forEach(m => {
+      // Todos los movimientos del mes, agrupados por día. Antes solo se veían
+      // los ingresos, así que un ajuste o una salida rara no dejaban rastro en
+      // el calendario y había que ir a buscarlos a la lista.
+      const filtro = document.getElementById('cal-filter-type')?.value || '';
+      const movs = getInventoryMovements(filtro ? { type: filtro } : {});
+      const byDay = {};   // día → { count, units, movs[], tipos:{} }
+      movs.forEach(m => {
         const d = new Date(m.createdAt);
         if (d.getFullYear() !== _calYear || d.getMonth() !== _calMonth) return;
         const day = d.getDate();
-        if (!byDay[day]) byDay[day] = { count: 0, units: 0, movs: [] };
+        if (!byDay[day]) byDay[day] = { count: 0, units: 0, movs: [], tipos: {} };
         byDay[day].count += 1;
         byDay[day].units += Math.abs(m.quantity || 0);
+        byDay[day].tipos[m.type] = (byDay[day].tipos[m.type] || 0) + 1;
         byDay[day].movs.push(m);
       });
 
@@ -7558,8 +7580,10 @@
                style="border:1px solid ${isToday ? 'var(--vino)' : 'var(--warm-border)'};border-radius:8px;min-height:64px;padding:6px;
                       ${has ? 'cursor:pointer;background:#FBF7F0;' : 'background:#fff;'}">
             <div style="font-size:12px;font-weight:600;color:${isToday ? 'var(--vino)' : 'var(--carbon)'}">${day}</div>
-            ${has ? `<div style="margin-top:4px;font-size:11px;color:var(--vino)">${info.count} ingreso(s)</div>
-                     <div style="font-size:11px;color:var(--warm-mid)">${info.units} u.</div>` : ''}
+            ${has ? `<div style="margin-top:4px;font-size:10.5px;line-height:1.45">${CAL_TIPOS
+                       .filter(t => info.tipos[t.k])
+                       .map(t => `<span style="color:${t.c}">${info.tipos[t.k]} ${t.n}</span>`).join('<br>')}</div>
+                     <div style="font-size:10.5px;color:var(--warm-mid);margin-top:2px">${info.units} u.</div>` : ''}
           </div>`;
       }
       document.getElementById('cal-grid').innerHTML = cells;
@@ -7573,22 +7597,32 @@
       const detail = document.getElementById('cal-day-detail');
       if (!info) { detail.innerHTML = ''; return; }
       const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-      const rows = info.movs.map(m => {
-        const sizesTxt = Array.isArray(m.sizes) ? m.sizes.map(s => `${s.size}:${s.qty}`).join(', ') : '—';
-        const costo = m.totalCost != null ? fmtQ(m.totalCost) : (m.unitCost != null ? fmtQ(m.unitCost * Math.abs(m.quantity || 0)) : '—');
-        return `<tr>
-          <td>${escapeHtml(m.productName || '—')}</td>
-          <td class="td-muted" style="font-size:11px">${escapeHtml(sizesTxt)}</td>
-          <td style="text-align:right">${Math.abs(m.quantity || 0)}</td>
-          <td style="text-align:right">${costo}</td>
-          <td>${escapeHtml(m.bodegaName || '—')}</td>
-          <td class="td-muted" style="font-size:11px">${escapeHtml(m.proveedorName || '—')}</td>
-          <td>${m.paid ? '<span style="color:#2e7d32">Pagado</span>' : '<span style="color:#b00">Pend.</span>'}</td>
-        </tr>`;
-      }).join('');
+      const rows = info.movs
+        .slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        .map(m => {
+          const t = CAL_TIPOS.find(x => x.k === m.type) || { n: m.type, c: '#666' };
+          const variante = [m.color, m.size].filter(Boolean).join(' · ')
+            || (Array.isArray(m.sizes) && m.sizes.length ? m.sizes.map(s => `${s.size}:${s.qty}`).join(', ') : '')
+            || 'talla única';
+          const donde = m.type === 'transferencia'
+            ? `${m.fromBodegaName || m.fromBodega || '—'} → ${m.toBodegaName || m.toBodega || '—'}`
+            : (m.bodegaName || '—');
+          const hora = new Date(m.createdAt).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' });
+          return `<tr>
+            <td class="td-muted" style="white-space:nowrap">${hora}</td>
+            <td><span class="badge" style="background:${t.c}22;color:${t.c}">${escapeHtml(t.n)}</span></td>
+            <td>${escapeHtml(m.productName || '—')}</td>
+            <td class="td-muted" style="font-size:11.5px">${escapeHtml(variante)}</td>
+            <td style="text-align:right;font-weight:600">${Math.abs(m.quantity || 0)}</td>
+            <td>${escapeHtml(donde)}</td>
+            <td class="td-muted" style="font-size:11px">${escapeHtml(m.createdByName || m.proveedorName || '—')}</td>
+          </tr>`;
+        }).join('');
+      const resumen = CAL_TIPOS.filter(t => info.tipos[t.k])
+        .map(t => `${info.tipos[t.k]} ${t.n.toLowerCase()}`).join(' · ');
       detail.innerHTML = `
-        <div class="config-title" style="margin-bottom:10px">Ingresos del ${day} de ${MESES[_calMonth]} · ${info.count} movimiento(s), ${info.units} unidades</div>
-        <table class="tbl"><thead><tr><th>Producto</th><th>Tallas</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo Q</th><th>Bodega</th><th>Proveedor</th><th>Pago</th></tr></thead>
+        <div class="config-title" style="margin-bottom:10px">Movimientos del ${day} de ${MESES[_calMonth]} · ${resumen} · ${info.units} unidades</div>
+        <table class="tbl"><thead><tr><th>Hora</th><th>Tipo</th><th>Producto</th><th>Color / Talla</th><th style="text-align:right">Cant.</th><th>Bodega</th><th>Quién</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
       detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -8308,6 +8342,23 @@
           const qty   = sizes ? sizes.reduce((s, x) => s + x.qty, 0)
                               : parseInt(row.querySelector('.inv-line-qty').value);
           if (!qty || qty <= 0) return alert(`Ingresa la cantidad de "${pname}".`);
+
+          // Si ese color se vende por talla, no se acepta un ingreso "suelto":
+          // crearía una existencia sin talla que el producto no ofrece, nadie
+          // podría venderla y el producto quedaría descuadrado. Es exactamente
+          // así como aparecieron las combinaciones huérfanas que encontramos.
+          if (!sizes) {
+            const conTalla = invCombinacionesDe(pid, '')
+              .filter(c => (c.color || '') === color && c.size);
+            if (conTalla.length) {
+              return alert(
+                `"${pname}" se vende por talla${color ? ` en ${color}` : ''}.\n\n` +
+                `Escribe cuántas unidades entran en cada talla (${conTalla.map(c => c.size).join(', ')}) ` +
+                `en vez de una cantidad suelta.\n\n` +
+                `Si de verdad entraron sin talla definida, primero agrega esa talla al producto.`);
+            }
+          }
+
           parsed.push({
             pid, pname, qty,
             costo:  parseFloat(row.querySelector('.inv-line-cost').value) || 0,
