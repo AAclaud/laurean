@@ -362,16 +362,43 @@
     }
   }
 
+  // Si el COD ya es un producto publicado CON colores y tallas, su total por
+  // bodega no se escribe a mano: lo recalcula solo un trigger, sumando el
+  // detalle de cada combinación. Repartirlo desde aquí deja las dos cifras
+  // peleadas hasta que alguien mueva una talla y el trigger pise el número.
+  function productoPublicadoConVariantes(cod) {
+    if (!cod) return null;
+    const lista = (typeof getAllProducts === 'function' ? getAllProducts() : null)
+               || (window.LAUREAN_DATA && window.LAUREAN_DATA.products)
+               || [];
+    return lista.find(p => p && p.source_cod === cod
+                        && Array.isArray(p.variants) && p.variants.length) || null;
+  }
+
+  // Devuelve true solo si de verdad se escribió en la base.
   async function upsertStock(rows) {
     // rows: [{ cod, bodega_id, stock }]
     if (!hasSupabase()) {
       alert('El stock por bodega requiere Supabase. Por favor configure js/config.js.');
-      return;
+      return false;
     }
+
+    const publicado = productoPublicadoConVariantes(rows[0] && rows[0].cod);
+    if (publicado && !confirm(
+        `«${publicado.name}» ya se vende por color y talla.\n\n` +
+        `Su total por bodega se calcula solo, sumando el detalle de cada ` +
+        `combinación, así que lo que pongas aquí se va a perder en cuanto ` +
+        `alguien mueva una talla.\n\n` +
+        `Para cambiar sus existencias usa Inventario → Movimientos.\n\n` +
+        `¿Guardar de todas formas?`)) {
+      return false;
+    }
+
     const { error } = await window.LAUREAN_DB
       .from('inventory_stock')
       .upsert(rows, { onConflict: 'cod,bodega_id' });
-    if (error) alert('Error guardando stock: ' + error.message);
+    if (error) { alert('Error guardando stock: ' + error.message); return false; }
+    return true;
   }
 
   async function saveLegendEntry(num, color, label) {
@@ -778,7 +805,9 @@
       stock: parseInt(document.getElementById('bm-stock-' + b.id)?.value || '0', 10) || 0,
     }));
 
-    await upsertStock(rows);
+    // Si no se guardó (cancelado o error), el modal se queda abierto con lo
+    // que el usuario escribió: no tiene sentido reflejar algo que no se grabó.
+    if (!await upsertStock(rows)) return;
 
     // Actualizar cache local
     if (!_stockCache[cod]) _stockCache[cod] = {};

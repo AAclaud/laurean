@@ -5558,6 +5558,16 @@
     }
     // El comparador de tallas por tallaje (no alfabético) vive en js/auth.js,
     // que lo comparte con el POS y la tienda: `compararTallas(a, b)`.
+    // "4 A", "4A" y "4a" son la misma talla. Si se comparan tal cual, la segunda
+    // grafía crea una línea aparte y la existencia queda partida en dos: el
+    // cliente ve una talla que no vende y las cuentas dejan de cuadrar.
+    function tallaEquivalente(t) {
+      return String(t || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
     // Celda de talla (compartida): label arriba + input numérico que crece con el contenido.
     function sizeCellHtml(sz, qty, inputClass, extraAttrs) {
       return `
@@ -5642,7 +5652,23 @@
       const grid = rowEl.querySelector('.size-grid');
       const sz = (inp.value || '').trim();
       if (!sz || !grid) return;
-      if (grid.querySelector(`input[data-size="${CSS.escape(sz)}"]`)) { inp.value = ''; return; }
+      // Comparación tolerante: la talla ya puede estar escrita de otra forma
+      // ("4a" vs "4 A"). Si se cuela como celda nueva, esa existencia queda en
+      // una talla aparte que el producto no vende.
+      const clave = tallaEquivalente(sz);
+      const yaEsta = Array.from(grid.querySelectorAll('input[data-size]'))
+        .find(i => tallaEquivalente(i.dataset.size) === clave);
+      if (yaEsta) {
+        inp.value = '';
+        yaEsta.focus();
+        yaEsta.select();
+        if (yaEsta.dataset.size !== sz) {
+          alert(`Esa talla ya está en la lista, escrita como «${yaEsta.dataset.size}».\n\n` +
+                `Se marcó para que anotes ahí la cantidad. Si la agregáramos otra vez ` +
+                `como «${sz}», la existencia quedaría partida en dos tallas distintas.`);
+        }
+        return;
+      }
       const qtyClass = grid.querySelector('input.inv-line-size-qty') ? 'inv-line-size-qty' : 'mpv-size-qty';
       const extra = qtyClass === 'inv-line-size-qty' ? 'oninput="syncInvLineQtyFromSizes(this)"' : '';
       grid.insertAdjacentHTML('beforeend', sizeCellHtml(sz, null, qtyClass, extra));
@@ -7455,7 +7481,9 @@
       res.textContent = 'Revisando…';
       const { data, error } = await window.LAUREAN_DB
         .from('cuadre_inventario')
-        .select('product_id,producto,cod,catalogo,detalle,total_bodegas,dif_catalogo,sueltas_unidades,sueltas_detalle,estado')
+        .select('product_id,producto,cod,catalogo,detalle,total_bodegas,dif_catalogo,' +
+                'sueltas_unidades,sueltas_detalle,faltantes_combinaciones,faltantes_detalle,' +
+                'tallas_duplicadas,estado')
         .order('producto');
       if (error) {
         res.innerHTML = '<span style="color:var(--vino)">No se pudo leer el cuadre: ' + escapeHtml(error.message) + '</span>';
@@ -7474,18 +7502,23 @@
            <span style="color:var(--warm-mid)"> · ${filas.length} productos revisados</span>`;
 
       const etiqueta = {
-        'combinacion no declarada': ['Talla que no se vende', '#E53935'],
+        'combinacion no declarada':    ['Talla que no se vende',  '#E53935'],
+        'combinacion sin existencias': ['Falta en el inventario', '#E53935'],
+        'talla escrita de dos formas': ['Talla repetida',         '#D4A017'],
         'sin reparto':        ['Sin reparto por talla',   '#D4A017'],
         'detalle vs bodegas': ['No cuadra con bodegas',   '#E53935'],
         'detalle vs catalogo':['No cuadra con catálogo',  '#E53935'],
         'ok':                 ['Correcto',                '#4A6B3E'],
       };
+      const notaHtml = (texto, valor, color) => valor
+        ? `<div style="font-size:11.5px;color:${color};margin-top:3px">${texto}: ${escapeHtml(valor)}</div>`
+        : '';
 
       caja.innerHTML = visible.length ? visible.map(f => {
         const [txt, col] = etiqueta[f.estado] || [f.estado, '#666'];
-        const nota = f.sueltas_detalle
-          ? `<div style="font-size:11.5px;color:#E53935;margin-top:3px">Sobran en el inventario: ${escapeHtml(f.sueltas_detalle)}</div>`
-          : '';
+        const nota = notaHtml('Sobran en el inventario', f.sueltas_detalle, '#E53935')
+                   + notaHtml('La ficha las ofrece pero el inventario no las tiene', f.faltantes_detalle, '#E53935')
+                   + notaHtml('Misma talla escrita de dos formas', f.tallas_duplicadas, '#9A6F00');
         return `<tr style="cursor:pointer" title="Abrir la ficha de este producto"
                     onclick="abrirProductoDesdeCuadre('${jsAttr(f.product_id)}')">
           <td><strong>${escapeHtml(f.producto)}</strong>${nota}</td>
