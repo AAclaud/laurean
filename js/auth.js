@@ -2022,11 +2022,11 @@ function saveCustomProduct(product) {
   // en la base mandaba `variants: []` y borraba los colores y tallas que
   // alguien había configurado a mano. El caché local sí conservaba lo suyo, así
   // que el trabajo parecía intacto hasta que el sync traía la versión pelada.
-  let guardado;
+  let guardado, previo = null;
   if (product.id) {
     const idx = products.findIndex(p => p.id === product.id);
-    const previo = idx !== -1 ? products[idx]
-                 : ((window.LAUREAN_DATA?.products || []).find(p => p.id === product.id) || {});
+    previo = idx !== -1 ? products[idx]
+           : ((window.LAUREAN_DATA?.products || []).find(p => p.id === product.id) || {});
     guardado = { ...previo, ...product };
     if (idx !== -1) products[idx] = guardado;
     else            products.push(guardado);
@@ -2074,8 +2074,33 @@ function saveCustomProduct(product) {
         }
       });
   }
-  logActivity(eraNuevo ? 'crear' : 'editar', 'producto', guardado.id, guardado.name);
+  logActivity(eraNuevo ? 'crear' : 'editar', 'producto', guardado.id, guardado.name,
+              cambiosDelProducto(previo, product, guardado));
   return guardado;
+}
+
+// Resume el guardado para la bitácora: qué campos mandó quien guarda y cómo
+// quedaron los colores. Sin esto el registro solo dice "editar" y, cuando
+// alguien reclama que configuró unas tallas y desaparecieron, no hay forma de
+// saber si llegó a guardarlas o si tocó otra cosa. Costó una investigación
+// entera averiguarlo una vez; con esta línea habría sido una consulta.
+function cambiosDelProducto(previo, parche, guardado) {
+  try {
+    const cuenta = v => (Array.isArray(v) ? v.length : null);
+    const det = { campos: Object.keys(parche || {}).filter(k => k !== 'id') };
+    if (Array.isArray(parche && parche.variants)) {
+      det.colores_antes   = cuenta(previo && previo.variants) || 0;
+      det.colores_despues = parche.variants.length;
+      det.tallas_despues  = parche.variants.reduce(
+        (n, v) => n + (Array.isArray(v && v.sizes) ? v.sizes.length : 0), 0);
+    } else {
+      // Guardado parcial: los colores no se tocan. Se anota cuántos quedan,
+      // para poder distinguir "no los mandó" de "los dejó en cero".
+      det.colores_sin_tocar = cuenta(guardado && guardado.variants) || 0;
+    }
+    if (Array.isArray(parche && parche.gallery)) det.fotos = parche.gallery.length;
+    return det;
+  } catch (e) { return null; }
 }
 
 function deleteCustomProduct(id) {
