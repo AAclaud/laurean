@@ -12,6 +12,12 @@
 //   if (window.LAUREAN_DB) { const { data } = await window.LAUREAN_DB.from('products').select('*'); }
 // ============================================================
 
+// Las fotos se guardan con un nombre que lleva marca de tiempo, asi que el
+// archivo de una URL nunca cambia: se puede cachear para siempre. Estaba en
+// una hora, y con eso cada visitante que volvia al dia siguiente se bajaba
+// otra vez todas las fotos del producto. Eso es lo que se cobra como egress.
+window.LAUREAN_CACHE_FOTOS = 'max-age=31536000, immutable';
+
 (async function () {
   const cfg = window.LAUREAN_CONFIG || {};
   const URL  = cfg.SUPABASE_URL;
@@ -45,7 +51,7 @@
         const path = `products/${idHint || ('p_' + Date.now())}.jpg`;
         const { data, error } = await window.LAUREAN_DB.storage
           .from('product-images')
-          .upload(path, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
+          .upload(path, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: window.LAUREAN_CACHE_FOTOS });
         if (error) throw error;
         const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
         return pub.publicUrl;
@@ -54,7 +60,7 @@
         const path = `categories/${idHint || ('c_' + Date.now())}.jpg`;
         const { data, error } = await window.LAUREAN_DB.storage
           .from('product-images')
-          .upload(path, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
+          .upload(path, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: window.LAUREAN_CACHE_FOTOS });
         if (error) throw error;
         const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
         return pub.publicUrl;

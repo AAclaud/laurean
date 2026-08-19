@@ -3246,7 +3246,7 @@
           try {
             const { data, error } = await window.LAUREAN_DB.storage
               .from('product-images')
-              .upload(`lookbook/${idHint}.jpg`, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
+              .upload(`lookbook/${idHint}.jpg`, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: window.LAUREAN_CACHE_FOTOS });
             if (error) throw error;
             const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
             return pub.publicUrl;
@@ -5358,7 +5358,7 @@
           const path = `products/gallery/${stamp}_${i + 1}.jpg`;
           const { data, error } = await window.LAUREAN_DB.storage
             .from('product-images')
-            .upload(path, file, { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
+            .upload(path, file, { contentType: 'image/jpeg', upsert: true, cacheControl: window.LAUREAN_CACHE_FOTOS });
           if (error) throw error;
           const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
           if (pub?.publicUrl) urls.push(pub.publicUrl);
@@ -8527,7 +8527,7 @@
         if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
         const path = `combos/${Date.now()}.jpg`;
         const { data, error } = await window.LAUREAN_DB.storage.from('product-images')
-          .upload(path, await achicarParaWeb(file), { contentType: 'image/jpeg', upsert: true, cacheControl: '3600' });
+          .upload(path, await achicarParaWeb(file), { contentType: 'image/jpeg', upsert: true, cacheControl: window.LAUREAN_CACHE_FOTOS });
         if (error) throw error;
         const { data: pub } = window.LAUREAN_DB.storage.from('product-images').getPublicUrl(data.path);
         _comboImage = pub.publicUrl;
