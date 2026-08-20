@@ -3804,6 +3804,47 @@
            + 'letter-spacing:.04em;text-transform:uppercase">solo aquí</span>';
     }
 
+    // Un pedido que no subió se puede subir a mano, pero no sin decir lo que
+    // implica: insertarlo descuenta el inventario EN ESE MOMENTO, no en la
+    // fecha de la venta. Si esa mercadería ya se descontó o ya se contó en un
+    // ajuste posterior, subirlo la descuenta dos veces. Por eso el reenvío
+    // automático solo toca lo de las últimas 48 horas y esto queda a mano.
+    function avisoPedidoSoloLocal(o) {
+      if (typeof pedidoSoloLocal !== 'function' || !pedidoSoloLocal(o)) return '';
+      return `<div style="margin-top:10px;padding:10px 12px;border-radius:8px;
+                   background:#9A6F0014;border:1px solid #9A6F0033;font-size:12.5px;line-height:1.5">
+          <strong style="color:#9A6F00">Este pedido no llegó al servidor.</strong>
+          Solo existe en este equipo: no lo ve nadie más y no cuenta en los ingresos
+          que ven los demás.
+          <div style="margin-top:8px;color:var(--warm-mid);font-size:11.5px">
+            Subirlo descuenta el inventario ahora, no en la fecha de la venta.
+            Si esa mercadería ya se descontó o ya la contaste en un ajuste, se
+            descontaría dos veces.
+          </div>
+          <button type="button" class="btn btn-light" style="margin-top:9px;padding:5px 12px;font-size:11.5px"
+                  onclick="subirPedidoDesdeDetalle('${jsAttr(o.id)}')">Subir al servidor</button>
+        </div>`;
+    }
+
+    async function subirPedidoDesdeDetalle(id) {
+      const o = getOrders().find(x => x.id === id);
+      if (!o) return;
+      const cuando = fmtDate(o.createdAt);
+      if (!confirm(
+        `Vas a subir al servidor una venta del ${cuando} por ${fmtQ(o.total_gtq || 0)}.\n\n` +
+        `El inventario se descuenta AHORA, no en la fecha de la venta.\n\n` +
+        `Confirma solo si esas unidades todavía están contadas como disponibles. ` +
+        `Si ya las descontaste o ya hiciste un conteo después de esa fecha, ` +
+        `subirlo las va a restar dos veces.\n\n¿Subir de todas formas?`)) return;
+      const r = await subirPedidoLocal(id);
+      if (!r.ok) { alert(r.error); return; }
+      if (typeof syncOrdersFromSupabase === 'function') await syncOrdersFromSupabase();
+      if (typeof refrescarExistencias === 'function') await refrescarExistencias();
+      renderOrders(); renderDashboard();
+      openOrderDetail(id);
+      alert('Pedido subido. Ya lo ven todos los equipos.');
+    }
+
     // ─── Productos / Precios ───────────────────────────────────────────────────
     function getNormalizedSubcatsForSelect() {
       const base = (window.LAUREAN_DATA && LAUREAN_DATA.subcategories) ? LAUREAN_DATA.subcategories : [];
@@ -4744,7 +4785,7 @@
       badge.style.background = statusColor(o.status) + '22';
       badge.style.color = statusColor(o.status);
       document.getElementById('od-meta').textContent = fmtDate(o.createdAt) + (o.createdAt ? ' · ' + new Date(o.createdAt).toLocaleTimeString('es-GT', {hour:'2-digit',minute:'2-digit'}) : '');
-      document.getElementById('od-origin').innerHTML = originBadge(o);
+      document.getElementById('od-origin').innerHTML = originBadge(o) + avisoPedidoSoloLocal(o);
       const customerDept = o.customerDepartment || o.customer_department || '';
       const customerMuni = o.customerCity || o.customer_city || '';
       const shippingMethod = shippingMethodLabel(o.shipping_method || o.shippingMethod || '');

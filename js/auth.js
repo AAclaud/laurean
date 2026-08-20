@@ -1003,67 +1003,107 @@ window.retryPendingOrderPushes = retryPendingOrderPushes;
 // nunca: se quedaba en ese navegador para siempre. Asi es como el panel mostraba
 // dos pedidos en un equipo y uno en otro, con ingresos distintos.
 // Necesita sesion: el insert anonimo solo puede crear pedidos de tienda.
-async function reenviarPedidosLocales() {
+// Sube UN pedido local. Devuelve 'ok' | 'ya-estaba' | 'error'.
+// OJO con el efecto de fondo: insertar en `orders` DESCUENTA el inventario en
+// la base (comprobado: un pedido del 20/08 a las 04:22 bajo su variante a las
+// 04:22:31) y ese descuento NO deja movimiento, asi que no se ve venir.
+async function subirUnPedido(o) {
   const sb = window.LAUREAN_DB;
-  if (!sb) return { subidos: 0, fallidos: 0 };
-  const pendientes = getOrders().filter(o =>
+  if (!sb) return 'error';
+  const session = (typeof getSession === 'function') ? getSession() : null;
+  const esPos = o.origin === 'pos' || o.channel === 'pos';
+  const items = (o.items || []).map(it => ({
+    id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq,
+    image: it.image, cost_price: it.cost_price ?? 0,
+    color: it.color || null, size: it.size || null,
+  }));
+  const { data: row, error } = await sb.from('orders').insert({
+    local_id: o.id,
+    customer_name: o.customerName || o.userName || 'Cliente',
+    customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
+    customer_address: o.address || null, customer_township_code: o.customer_township_code || null,
+    customer_department: o.customerDepartment || null, customer_city: o.customerCity || null,
+    subtotal_gtq: o.subtotal_gtq || 0,
+    discount_gtq: (o.discount_gtq || 0) + (o.manual_discount_gtq || 0) + (o.discountCode_gtq || 0) + (o.referral_discount_gtq || 0),
+    shipping_gtq: o.shipping_gtq || 0, total_gtq: o.total_gtq || 0, items,
+    notes: o.notes || null,
+    status: o.status || (esPos ? 'completado' : 'pendiente'),
+    payment_method: o.pay_method || o.payment_method || null,
+    payment_status: o.payment_status || (esPos ? 'pagado' : 'pendiente'),
+    origin: o.origin || (esPos ? 'pos' : 'store'),
+    channel: o.channel || (esPos ? 'pos' : 'web'),
+    shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
+    created_by: session ? session.userId : null,
+    bodega_id: o.bodegaId || null,
+    created_at: o.createdAt || null,
+  }).select('id,order_number').single();
+
+  const all = getOrders();
+  const idx = all.findIndex(x => x.id === o.id);
+  if (error) {
+    // 23505 = el insert original si habia entrado. Se marca y no se insiste.
+    if (String(error.code) === '23505' || /duplicate/i.test(error.message || '')) {
+      if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
+      return 'ya-estaba';
+    }
+    console.warn('[supabase] subir pedido:', error.message);
+    return 'error';
+  }
+  if (idx !== -1 && row) {
+    all[idx].supabase_id  = row.id;
+    all[idx].order_number = row.order_number || all[idx].order_number;
+    all[idx].push_done    = true;
+    saveOrders(all);
+  }
+  return 'ok';
+}
+window.subirUnPedido = subirUnPedido;
+
+// Los reintentos de tienda solo cubren pedidos PENDIENTES. Una venta de POS
+// —que nace completada— o cualquier pedido ya completado cuyo insert fallara no
+// se reintentaba nunca: se quedaba en ese navegador para siempre. Asi es como
+// el panel mostraba dos pedidos en un equipo y uno en otro, con ingresos
+// distintos.
+//
+// Solo se reenvia lo RECIENTE. Reenviar una venta vieja descontaria hoy
+// mercaderia que los ajustes posteriores ya contaron, y como el descuento no
+// deja movimiento nadie lo relacionaria. Lo viejo se devuelve en `antiguos`
+// para que lo decida una persona.
+const HORAS_REENVIO_AUTO = 48;
+
+async function reenviarPedidosLocales() {
+  if (!window.LAUREAN_DB) return { subidos: 0, fallidos: 0, antiguos: [] };
+  const corte = Date.now() - HORAS_REENVIO_AUTO * 3600 * 1000;
+  const candidatos = getOrders().filter(o =>
     o && !o.supabase_id && !o.push_done
     && ((o.origin === 'pos' || o.channel === 'pos') || o.status !== 'pendiente')
     && o.pay_method !== 'card' && o.payment_method !== 'card');
-  if (!pendientes.length) return { subidos: 0, fallidos: 0 };
+  const reciente = o => new Date(o.createdAt || 0).getTime() > corte;
+  const antiguos = candidatos.filter(o => !reciente(o));
 
-  const session = (typeof getSession === 'function') ? getSession() : null;
   let subidos = 0, fallidos = 0;
-  for (const o of pendientes) {
-    const esPos = o.origin === 'pos' || o.channel === 'pos';
-    const items = (o.items || []).map(it => ({
-      id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq,
-      image: it.image, cost_price: it.cost_price ?? 0,
-      color: it.color || null, size: it.size || null,
-    }));
-    const { data: row, error } = await sb.from('orders').insert({
-      local_id: o.id,
-      customer_name: o.customerName || o.userName || 'Cliente',
-      customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
-      customer_address: o.address || null, customer_township_code: o.customer_township_code || null,
-      customer_department: o.customerDepartment || null, customer_city: o.customerCity || null,
-      subtotal_gtq: o.subtotal_gtq || 0,
-      discount_gtq: (o.discount_gtq || 0) + (o.manual_discount_gtq || 0) + (o.discountCode_gtq || 0) + (o.referral_discount_gtq || 0),
-      shipping_gtq: o.shipping_gtq || 0, total_gtq: o.total_gtq || 0, items,
-      notes: o.notes || null,
-      status: o.status || (esPos ? 'completado' : 'pendiente'),
-      payment_method: o.pay_method || o.payment_method || null,
-      payment_status: o.payment_status || (esPos ? 'pagado' : 'pendiente'),
-      origin: o.origin || (esPos ? 'pos' : 'store'),
-      channel: o.channel || (esPos ? 'pos' : 'web'),
-      shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
-      created_by: session ? session.userId : null,
-      bodega_id: o.bodegaId || null,
-      created_at: o.createdAt || null,
-    }).select('id,order_number').single();
-
-    const all = getOrders(); const idx = all.findIndex(x => x.id === o.id);
-    if (error) {
-      // 23505 = el insert original si habia entrado. Se enlaza y no se reintenta mas.
-      if (String(error.code) === '23505' || /duplicate/i.test(error.message || '')) {
-        if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
-      } else {
-        fallidos++;
-        console.warn('[supabase] reenviar pedido:', error.message);
-      }
-      continue;
-    }
-    if (idx !== -1 && row) {
-      all[idx].supabase_id = row.id;
-      all[idx].order_number = row.order_number || all[idx].order_number;
-      all[idx].push_done = true;
-      saveOrders(all);
-    }
-    subidos++;
+  for (const o of candidatos.filter(reciente)) {
+    const r = await subirUnPedido(o);
+    if (r === 'ok') subidos++;
+    else if (r === 'error') fallidos++;
   }
-  return { subidos, fallidos };
+  return { subidos, fallidos, antiguos };
 }
 window.reenviarPedidosLocales = reenviarPedidosLocales;
+
+// Subida a mano de un pedido viejo, cuando una persona confirma que el
+// descuento de inventario todavia no se aplico. Va aparte del automatico
+// precisamente porque esa decision no la puede tomar el codigo.
+async function subirPedidoLocal(orderId) {
+  const o = getOrders().find(x => x.id === orderId);
+  if (!o) return { ok: false, error: 'No encuentro ese pedido en este equipo.' };
+  if (o.supabase_id) return { ok: true, error: null };
+  const r = await subirUnPedido(o);
+  if (r === 'ok')        return { ok: true,  error: null };
+  if (r === 'ya-estaba') return { ok: true,  error: null };
+  return { ok: false, error: 'No se pudo subir. Revisa la conexion e intenta de nuevo.' };
+}
+window.subirPedidoLocal = subirPedidoLocal;
 
 // ─── Productos admin desde Supabase ───────────────────────────────────────────
 async function syncProductsFromSupabase() {
