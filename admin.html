@@ -2421,8 +2421,13 @@
           <select class="form-select" id="mp-subcat"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Stock (unidades)</label>
-          <input type="number" class="form-input" id="mp-stock" placeholder="0" min="0" step="1" />
+          <label class="form-label">Stock (unidades)
+            <span style="color:var(--warm-mid);font-weight:400;font-size:11px">— lo calcula el inventario</span>
+          </label>
+          <input type="number" class="form-input" id="mp-stock" placeholder="0" min="0" step="1"
+                 readonly tabindex="-1" title="Sale de sumar las existencias de todas las bodegas. Para cambiarlo, registra un movimiento en Inventario."
+                 style="background:var(--piedra);color:var(--warm-mid);cursor:not-allowed" />
+          <div id="mp-stock-hint" class="form-hint" style="font-size:11px;color:var(--warm-mid)"></div>
         </div>
       </div>
       <div class="form-row">
@@ -5450,6 +5455,7 @@
         fillCategoryOptions(p.category || p.parent || p.parent_id || '');
         fillSubcatOptions(p.subcat || p.subcat_id || '');
         document.getElementById('mp-stock').value      = (p.stock != null ? p.stock : '');
+        pintarOrigenDelStock(p.id);
         document.getElementById('mp-price-gtq').value  = p.price_gtq;
         document.getElementById('mp-price-usd').value  = p.price_usd;
         document.getElementById('mp-image').value      = p.image || p.image_url || '';
@@ -5603,7 +5609,6 @@
       const name     = document.getElementById('mp-name').value.trim();
       const category = document.getElementById('mp-category').value;
       const subcat   = document.getElementById('mp-subcat').value;
-      const stockRaw = document.getElementById('mp-stock').value.trim();
       const gtqRaw   = document.getElementById('mp-price-gtq').value.trim();
       const usdRaw   = document.getElementById('mp-price-usd').value.trim();
       const image    = document.getElementById('mp-image').value.trim();
@@ -5655,16 +5660,6 @@
         }
       }
 
-      // Stock: opcional, entero >= 0
-      let stock = 0;
-      if (stockRaw !== '' && stockRaw != null) {
-        stock = parseInt(stockRaw, 10);
-        if (isNaN(stock) || stock < 0 || !Number.isInteger(Number(stockRaw))) {
-          document.getElementById('mp-stock').classList.add('invalid');
-          errors.push('El stock debe ser un número entero ≥ 0.');
-        }
-      }
-
       if (errors.length) {
         errEl.innerHTML = errors.map(e => escapeHtml(e)).join('<br>');
         errEl.classList.add('show');
@@ -5677,7 +5672,6 @@
       const galleryRaw = document.getElementById('mp-gallery').value.trim();
       const gallery = galleryRaw ? galleryRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-      // Si hay variantes con tallas, el stock total = suma de cantidades por talla
       const variants = collectVariants();
 
       // Aviso antes de dejar existencias huérfanas: si se quita un color o una
@@ -5698,8 +5692,10 @@
         }
       }
 
+      // Lo declarado por talla. Ya no fija el stock del producto —eso lo calcula
+      // la base sumando las existencias reales— pero sirve para avisar si lo que
+      // dice la ficha y lo que hay en bodega no coinciden.
       const variantStock = variantsTotalStock(variants);
-      const finalStock = variantStock > 0 ? variantStock : stock;
       const existingCustom = id ? getCustomProducts().find(p => p.id === id) : null;
       const existingAdmin = id && typeof getAdminProducts === 'function' ? getAdminProducts().find(p => p.id === id) : null;
       const existingActive = existingCustom
@@ -5711,7 +5707,6 @@
         name,
         category,
         subcat: subcat || undefined,
-        stock: finalStock,
         price_gtq: gtq,
         price_usd: usd,
         cost_price: parseFloat(document.getElementById('mp-cost').value) || 0,
@@ -5746,6 +5741,22 @@
           abrirAjusteDesdeFicha(idGuardado, name, variants);
         }
       }
+    }
+
+    // El stock ya no se escribe aquí: lo calcula la base sumando las existencias
+    // de todas las bodegas, con el mismo disparador que mantiene el total por
+    // bodega. Se muestra de dónde sale para que el número no parezca sacado de
+    // la nada — y para que se vea enseguida si una bodega quedó en cero.
+    function pintarOrigenDelStock(productId) {
+      const caja = document.getElementById('mp-stock-hint');
+      if (!caja) return;
+      if (!productId || typeof getProductVariantStock !== 'function') { caja.textContent = ''; return; }
+      const partes = getBodegas()
+        .map(b => ({ nombre: b.name, n: getProductVariantStock(productId, b.id).reduce((s, c) => s + (c.stock || 0), 0) }))
+        .filter(x => x.n > 0);
+      caja.textContent = partes.length
+        ? 'Suma de ' + partes.map(x => `${x.nombre}: ${x.n}`).join(' · ')
+        : 'Sin existencias en ninguna bodega. Regístralas en Inventario → Ingreso.';
     }
 
     // ─── Editor de variantes (modal de producto) ────────────────────────────────
@@ -6135,8 +6146,10 @@
       // perdió trabajo antes de que el guardado respetara lo que no viene.
       const yaExisten = importValidRows.filter(r => getAllProducts().some(p => p.id === r.id)).length;
       const nota = yaExisten
-        ? `\n\n${yaExisten} de ellos ya existen: se actualizarán nombre, precios, categoría y stock. ` +
-          `Sus colores, tallas y galería se conservan tal como están.`
+        ? `\n\n${yaExisten} de ellos ya existen: se actualizarán nombre, precios y categoría. ` +
+          `Sus colores, tallas y galería se conservan tal como están.\n\n` +
+          `El stock del CSV se ignora: las existencias salen del inventario por ` +
+          `bodega. Para cambiarlas, registra un movimiento en Inventario.`
         : '';
       if (!confirm(`Se importarán ${importValidRows.length} productos.${nota}\n\n¿Continuar?`)) return;
       importValidRows.forEach(rec => saveCustomProduct({ ...rec }));

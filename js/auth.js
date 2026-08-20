@@ -2190,10 +2190,15 @@ function saveCustomProduct(product) {
       price_usd: guardado.price_usd || 0,
       parent_id: parentId || null,
       subcat_id: subcatId || null,
-      stock: guardado.stock ?? 0,
       is_new_arrival: !!guardado.is_new_arrival,
       active: guardado.active !== false,
     };
+    // `stock` NO se manda: lo calcula la base sumando variant_stock, en el
+    // mismo disparador que mantiene el total por bodega. Escribirlo desde aquí
+    // era lo que desalineaba el catálogo — una salida de 4555 bajaba el
+    // inventario y el producto seguía diciendo 10555 en la tienda, y editar la
+    // ficha volvía a pisar el número bueno con el declarado.
+    //
     // Se mira lo que trae QUIEN LLAMA, no la fusión con el caché: si el que
     // guarda no dijo nada de colores o galería, esas columnas no se tocan y la
     // base conserva las suyas. Mandar las del caché las pisaría con una copia
