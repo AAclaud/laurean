@@ -1725,6 +1725,18 @@
                   </div>
                 </div>
                 <div id="inv-var-grid" style="max-height:250px;overflow-y:auto;border:1px solid var(--warm-border);border-radius:8px"></div>
+                <!-- Sin esto, un producto que entró como "talla única" no tenía
+                     forma de repartirse: la rejilla solo mostraba lo ya declarado. -->
+                <div id="inv-var-nueva" style="display:none;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+                  <input class="form-input" id="inv-nueva-color" list="inv-nueva-colores" autocomplete="off"
+                         placeholder="Color" style="width:150px;padding:6px 8px;font-size:12px" />
+                  <datalist id="inv-nueva-colores"></datalist>
+                  <input class="form-input" id="inv-nueva-talla" autocomplete="off"
+                         placeholder="Talla" style="width:110px;padding:6px 8px;font-size:12px" />
+                  <button type="button" class="btn btn-light" style="padding:6px 10px;font-size:11px"
+                          onclick="agregarCombinacionNueva()">+ Agregar combinación</button>
+                  <span style="font-size:11.5px;color:var(--warm-mid)">Para repartir lo que está en «talla única»</span>
+                </div>
                 <div id="inv-var-total" style="font-size:12px;color:var(--warm-mid);margin-top:6px"></div>
               </div>
               <div class="form-row">
@@ -2768,20 +2780,113 @@
         });
         // Edición en curso: si el usuario modificó cualquier campo de la vista y aún no
         // guarda/navega, el live-sync NO repinta (le borraría lo escrito).
-        window._viewDirty = false;
+        //
+        // Se lleva por separado de dónde vino la edición: cerrar un modal
+        // descarta lo que se escribió DENTRO del modal, pero no lo que el
+        // usuario tenga a medias en la pantalla de atrás. Antes cerrar un modal
+        // sin guardar no bajaba nada, así que el refresco quedaba congelado el
+        // resto de la sesión y el aviso se quedaba colgado.
+        window._viewDirty    = false;
+        window._dirtyEnModal = false;
+        window._dirtyEnVista = false;
+        // Un solo punto para bajarlas. Con los flags sueltos, guardar dejaba
+        // las submarcas puestas y el aviso reaparecía solo en cuanto se
+        // cerrara cualquier modal.
+        window._limpiarEdicion = function () {
+          window._viewDirty    = false;
+          window._dirtyEnModal = false;
+          window._dirtyEnVista = false;
+        };
         document.addEventListener('input', (e) => {
           const t = e.target;
           if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') && t.closest && t.closest('.view.active')) {
+            if (t.closest('.modal-overlay')) window._dirtyEnModal = true;
+            else                             window._dirtyEnVista = true;
             window._viewDirty = true;
           }
         }, true);
-        // Indicador visible de que el refresco automático está en pausa por edición.
+
+        function _hayModalAbierto() {
+          return Array.prototype.some.call(
+            document.querySelectorAll('.modal-overlay'),
+            (m) => m.classList.contains('open') || (m.style.display && m.style.display !== 'none')
+          );
+        }
+
+        // Indicador de que el refresco automático está en pausa por edición.
+        // Lleva sus propios botones: sin ellos la única salida era guardar o
+        // recargar, y quien solo abrió una ficha y salió se quedaba con el
+        // aviso puesto sin entender por qué.
         const _dirtyPill = document.createElement('div');
         _dirtyPill.id = 'sync-paused-pill';
-        _dirtyPill.textContent = '⏸ Sincronización en pausa — tienes cambios sin guardar';
-        _dirtyPill.style.cssText = 'display:none;position:fixed;bottom:14px;right:14px;z-index:9999;background:#1a1916;color:#f5efe6;padding:8px 14px;border-radius:20px;font-size:11.5px;letter-spacing:.02em;box-shadow:0 4px 18px rgba(0,0,0,.25);opacity:.92;pointer-events:none';
+        _dirtyPill.style.cssText = 'display:none;position:fixed;bottom:14px;right:14px;z-index:9999;'
+          + 'background:#1a1916;color:#f5efe6;padding:7px 8px 7px 14px;border-radius:20px;'
+          + 'font-size:11.5px;letter-spacing:.02em;box-shadow:0 4px 18px rgba(0,0,0,.25);'
+          + 'opacity:.94;align-items:center;gap:10px';
+        const _pillBtn = 'background:transparent;border:1px solid rgba(245,239,230,.35);'
+          + 'color:#f5efe6;border-radius:14px;padding:3px 11px;font-size:11px;cursor:pointer;'
+          + 'font-family:inherit;letter-spacing:.02em;transition:background .15s,border-color .15s';
+        _dirtyPill.innerHTML =
+          '<span>Cambios sin guardar</span>'
+          + `<button type="button" id="pill-guardar" style="${_pillBtn}">Guardar</button>`
+          + `<button type="button" id="pill-descartar" style="${_pillBtn};opacity:.72">Descartar</button>`;
         document.body.appendChild(_dirtyPill);
-        setInterval(() => { _dirtyPill.style.display = window._viewDirty ? '' : 'none'; }, 800);
+        _dirtyPill.querySelectorAll('button').forEach(b => {
+          b.onmouseenter = () => { b.style.background = 'rgba(245,239,230,.12)'; b.style.borderColor = 'rgba(245,239,230,.6)'; };
+          b.onmouseleave = () => { b.style.background = 'transparent'; b.style.borderColor = 'rgba(245,239,230,.35)'; };
+        });
+        setInterval(() => { _dirtyPill.style.display = window._viewDirty ? 'flex' : 'none'; }, 800);
+
+        // Guardar = pulsar el botón principal de lo que esté abierto. No hay un
+        // "guardar" global: cada modal y cada vista tienen el suyo, así que se
+        // busca el que el usuario tiene delante.
+        document.getElementById('pill-guardar').onclick = () => {
+          const btn = _botonGuardarVisible();
+          if (!btn) {
+            alert('No encuentro un botón de guardar en lo que está abierto.\n\n' +
+                  'Guarda desde la pantalla, o usa Descartar si ya no quieres esos cambios.');
+            return;
+          }
+          btn.click();
+        };
+
+        // Descartar no borra nada por su cuenta: lo escrito se pierde igual al
+        // cerrar. Solo reanuda el refresco. Aun así se confirma, porque desde
+        // fuera parece que pudiera tirar trabajo.
+        document.getElementById('pill-descartar').onclick = () => {
+          if (!confirm('¿Descartar los cambios sin guardar?\n\n' +
+                       'Lo que hayas escrito y no guardado se pierde, y se reanuda ' +
+                       'la actualización automática de la pantalla.')) return;
+          window._limpiarEdicion();
+        };
+
+        // El botón principal de lo que esté abierto: primero dentro del modal,
+        // si no en la vista activa.
+        function _botonGuardarVisible() {
+          const modales = Array.prototype.filter.call(
+            document.querySelectorAll('.modal-overlay'),
+            (m) => m.classList.contains('open') || (m.style.display && m.style.display !== 'none')
+          );
+          const zonas = modales.length ? modales : [document.querySelector('.view.active')].filter(Boolean);
+          for (const z of zonas) {
+            const btns = Array.prototype.filter.call(z.querySelectorAll('button'), (b) =>
+              !b.disabled && b.offsetParent !== null && /guardar|aplicar|registrar/i.test(b.textContent || ''));
+            if (btns.length) return btns[btns.length - 1];
+          }
+          return null;
+        }
+
+        // Al cerrarse el último modal, lo que se escribió ahí ya se descartó.
+        let _modalAbiertoAntes = false;
+        setInterval(() => {
+          const abierto = _hayModalAbierto();
+          if (_modalAbiertoAntes && !abierto && window._dirtyEnModal) {
+            window._dirtyEnModal = false;
+            // Solo se libera si no quedaba nada escrito fuera del modal.
+            window._viewDirty = !!window._dirtyEnVista;
+          }
+          _modalAbiertoAntes = abierto;
+        }, 600);
         document.addEventListener('laurean:live-synced', () => {
           if (window._viewDirty) return;
           // No pisar al usuario mientras edita: si hay un modal abierto o un
@@ -2869,7 +2974,7 @@
     }
 
     function showView(name) {
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       if (SESSION && SESSION.role === 'agente_pedidos' && name !== 'pedidos') return;
       if (name === 'logs' && (!SESSION || SESSION.role !== 'superuser')) return;
       if (SESSION && Array.isArray(SESSION.allowedViews) && SESSION.allowedViews.length && !SESSION.allowedViews.includes(name)) return;
@@ -3350,7 +3455,7 @@
       LOOKBOOK_SLIDES = slides.map(normalizeLookbookSlide);
       LOOKBOOK_EDIT_INDEX = LOOKBOOK_SLIDES.length ? Math.min(LOOKBOOK_EDIT_INDEX || 0, LOOKBOOK_SLIDES.length - 1) : null;
       renderLookbook();
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Lookbook guardado.');
     }
 
@@ -3400,7 +3505,7 @@
         instructions: document.getElementById('pay-instructions').value.trim(),
       };
       if (typeof saveSiteSettings === 'function') saveSiteSettings({ payment_config });
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Métodos de pago guardados.');
     }
 
@@ -3966,7 +4071,7 @@
         });
         savePriceOverride(id, val);
       });
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Precios guardados correctamente.');
     }
 
@@ -4998,7 +5103,7 @@
       if (typeof saveSiteSettings === 'function') {
         saveSiteSettings({ shipping_rates });
       }
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Precios de envío guardados.');
     }
 
@@ -5047,7 +5152,7 @@
       if (typeof saveSiteSettings === 'function') {
         saveSiteSettings({ marquee, marquee_size, whatsapp, social_links });
       }
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Contenido del sitio guardado.');
     }
 
@@ -5087,7 +5192,7 @@
         fecha_revision: val('cfg-biz-fecha-revision'),
       };
       if (typeof saveSiteSettings === 'function') saveSiteSettings({ business });
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Datos del negocio guardados.');
     }
 
@@ -5100,7 +5205,7 @@
         discount_pin:      document.getElementById('cfg-discount-pin').value.trim(),
         seller_tiers:      collectTiers(),
       });
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Configuración guardada.');
     }
 
@@ -5563,6 +5668,24 @@
       } else {
         renderProducts();
       }
+
+      // Las cantidades por talla de la ficha dicen qué se ofrece; las
+      // existencias reales viven en Inventario y solo se mueven con un
+      // movimiento que deje traza. Cuando las dos cifras no coinciden hay que
+      // decirlo: si no, el usuario cree que ya ingresó mercadería que no entró.
+      const idGuardado = id || (getCustomProducts().slice(-1)[0] || {}).id;
+      if (idGuardado && variantStock > 0) {
+        const real = existenciasTotalesDe(idGuardado);
+        if (real !== variantStock && confirm(
+            `Guardado. Pero ojo: en la ficha declaraste ${variantStock} unidades por talla ` +
+            `y en Inventario hay ${real}.\n\n` +
+            `La ficha dice QUÉ colores y tallas se venden. Las existencias se ` +
+            `mueven aparte, en Inventario, para que cada unidad tenga su movimiento ` +
+            `y su bodega.\n\n` +
+            `¿Abro el ajuste de inventario con estas cantidades ya puestas?`)) {
+          abrirAjusteDesdeFicha(idGuardado, name, variants);
+        }
+      }
     }
 
     // ─── Editor de variantes (modal de producto) ────────────────────────────────
@@ -5654,7 +5777,9 @@
           </div>
         </div>
         <div class="form-group" style="margin:8px 0 0">
-          <label class="form-label" style="font-size:11px">Cantidad por talla</label>
+          <label class="form-label" style="font-size:11px">Cantidad por talla
+            <span style="color:var(--warm-mid);font-weight:400">— declara qué tallas se venden; las existencias se mueven en Inventario</span>
+          </label>
           <div class="size-grid">${sizeCells}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
             <input class="form-input mpv-newsize" placeholder="Talla # (ej: 3a, 38, 7-8a)" style="max-width:170px;padding:6px 8px;font-size:12px" />
@@ -5740,6 +5865,48 @@
     }
 
     // Suma de stock de todas las variantes (para reflejarlo en el stock total)
+    // Cuánto hay DE VERDAD de un producto, sumando todas las bodegas. Es otra
+    // cifra que la de la ficha: la ficha declara qué se vende y en qué tallas,
+    // el inventario dice cuántas unidades hay y dónde.
+    function existenciasTotalesDe(productId) {
+      if (typeof getProductVariantStock !== 'function') return 0;
+      return getBodegas().reduce((tot, b) =>
+        tot + getProductVariantStock(productId, b.id).reduce((s, c) => s + (c.stock || 0), 0), 0);
+    }
+
+    // Puente de la ficha al inventario. Poner cantidades por talla en la ficha
+    // no crea existencias —y no debería: una existencia sin bodega y sin
+    // movimiento que la respalde es justo lo que descuadra el inventario—,
+    // pero quedarse sin decirlo hacía pensar que el botón no hacía nada.
+    function abrirAjusteDesdeFicha(productId, productName, variants) {
+      showView('inventario');
+      setTimeout(() => {
+        openInvModal('ajuste');
+        selectInvProduct(productId, productName);
+
+        const declaradas = [];
+        (variants || []).forEach(v => {
+          (Array.isArray(v.sizes) ? v.sizes : []).forEach(sz => {
+            const qty = Number(sz && sz.qty) || 0;
+            if (qty > 0) declaradas.push({ color: v.label || '', size: (sz && sz.size) || '', qty });
+          });
+        });
+        declaradas.forEach(d => { _invVarQty[invVarKey(d.color, d.size)] = d.qty; });
+
+        // Si lo declarado suma exactamente lo que hay en «talla única», es un
+        // reparto de esas mismas unidades: se pone la fila única en cero para
+        // que el total no se duplique. Si no coinciden, se deja como está y el
+        // resumen de abajo avisa de la diferencia.
+        const combos = invCombinacionesDe(productId, invBodegaDelMovimiento());
+        const unica = combos.find(c => !c.color && !c.size);
+        const suma = declaradas.reduce((a, d) => a + d.qty, 0);
+        if (unica && unica.stock > 0 && unica.stock === suma) {
+          _invVarQty[invVarKey('', '')] = 0;
+        }
+        renderInvVarGrid();
+      }, 140);
+    }
+
     function variantsTotalStock(variants) {
       return (variants || []).reduce((tot, v) =>
         tot + (Array.isArray(v.sizes) ? v.sizes.reduce((s, x) => s + (x.qty || 0), 0) : 0), 0);
@@ -6662,7 +6829,7 @@
       }
       renderCategories();
       renderCategoriesView();
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Precios guardados.');
     }
 
@@ -7448,7 +7615,7 @@
         const usdInp   = document.querySelector(`#bpp-rows .bpp-usd[data-bodega="${bodegaId}"]`);
         saveBodegaPrice(_bppProductId, bodegaId, parseFloat(inp.value) || 0, parseFloat(usdInp.value) || 0);
       });
-      window._viewDirty = false;
+      window._limpiarEdicion && window._limpiarEdicion();
       alert('Precios por bodega guardados.');
       closeBodegaPricesPanel();
     }
@@ -7940,6 +8107,7 @@
       document.getElementById('inv-product-name').value = '';
       document.getElementById('inv-current-stock').textContent = '';
       _invVarQty = {};
+      _invVarNuevas = []; _invVarNuevasPid = '';
       document.getElementById('inv-var-filter').value = '';
       document.getElementById('inv-var-block').style.display = 'none';  // se abre al elegir producto
       document.getElementById('inv-qty').value  = '';
@@ -8006,8 +8174,10 @@
         </div>
         <div class="form-row" style="margin-bottom:0">
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="font-size:11px">Color</label>
-            <select class="form-input inv-line-color"><option value="">(sin color)</option></select>
+            <label class="form-label" style="font-size:11px">Color <span style="color:var(--warm-mid)">(escribe uno nuevo si no está)</span></label>
+            <input class="form-input inv-line-color" list="dl_${lid}" autocomplete="off"
+                   placeholder="(sin color)" onchange="onInvLineColor(this)" />
+            <datalist id="dl_${lid}"></datalist>
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label" style="font-size:11px">Cantidad</label>
@@ -8074,35 +8244,42 @@
       fillInvLineColors(row, id);
     }
 
-    // Los colores de la línea salen del catálogo del producto: sin color el
-    // ingreso no sabría a qué variante sumarle y no llegaría al POS.
+    // Los colores que ya tiene el producto se ofrecen como sugerencia, pero el
+    // campo es de texto: un producto que se subió sin desglosar (o al que le
+    // llega un color nuevo del proveedor) no tenía forma de recibirlo, y el
+    // ingreso quedaba trabado sin decir por qué.
     function fillInvLineColors(row, productId) {
-      const sel = row.querySelector('.inv-line-color');
-      if (!sel) return;
+      const inp = row.querySelector('.inv-line-color');
+      if (!inp) return;
+      const lista = row.querySelector('datalist');
       const colores = [...new Set(invCombinacionesDe(productId, '').map(c => c.color).filter(Boolean))];
-      sel.innerHTML = colores.length
-        ? colores.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('')
-        : '<option value="">(sin color)</option>';
-      sel.setAttribute('onchange', 'onInvLineColor(this)');
+      if (lista) {
+        lista.innerHTML = colores.map(c => `<option value="${escapeAttr(c)}"></option>`).join('');
+      }
+      inp.placeholder = colores.length ? 'Elige o escribe un color' : '(sin color)';
       fillInvLineSizes(row, productId);
     }
 
-    // Y las tallas, las del color elegido. Con la rejilla genérica se podían
-    // crear combinaciones que el producto no tiene y que luego nadie vende.
+    // Las tallas del color elegido. Si el color es nuevo —o el producto nunca
+    // se desglosó— se ofrece el set estándar de su categoría, porque si no
+    // no habría dónde escribir las cantidades.
     function fillInvLineSizes(row, productId) {
       const grid = row.querySelector('.size-grid');
       if (!grid) return;
-      const color  = row.querySelector('.inv-line-color')?.value || '';
+      const color  = (row.querySelector('.inv-line-color')?.value || '').trim();
       const previo = {};
       grid.querySelectorAll('.inv-line-size-qty').forEach(i => {
         if (i.value) previo[i.dataset.size] = i.value;
       });
       const tallas = [...new Set(invCombinacionesDe(productId, '')
-        .filter(c => (c.color || '') === color)
+        .filter(c => tallaEquivalente(c.color) === tallaEquivalente(color))
         .map(c => c.size).filter(Boolean))];
       const prod = getAllProducts().find(p => p.id === productId);
       const lista = tallas.length ? tallas : sizeSetForCategory(prod && prod.category);
-      grid.innerHTML = lista
+      // Las tallas que el usuario ya escribió a mano no se pierden al cambiar
+      // de color: si tienen cantidad puesta, siguen en la rejilla.
+      const extra = Object.keys(previo).filter(sz => !lista.includes(sz));
+      grid.innerHTML = [...lista, ...extra]
         .map(sz => sizeCellHtml(sz, previo[sz] != null ? previo[sz] : null,
                                 'inv-line-size-qty', 'oninput="syncInvLineQtyFromSizes(this)"'))
         .join('');
@@ -8176,6 +8353,7 @@
       document.getElementById('inv-product-search').value = name;
       document.getElementById('inv-product-dropdown').style.display = 'none';
       _invVarQty = {};
+      _invVarNuevas = []; _invVarNuevasPid = '';
       document.getElementById('inv-var-filter').value = '';
       renderInvVarGrid();
       updateInvSelectedStockLabel();
@@ -8188,6 +8366,11 @@
     // destino, que es lo que hacía parecer que el traslado "no se reflejaba".
 
     let _invVarQty = {};   // 'color||talla' → cantidad escrita en la cuadrícula
+    // Combinaciones que el usuario crea durante el movimiento. Un producto que
+    // se subió sin desglosar solo tiene la fila «única»: sin esto no habría
+    // manera de repartir esas unidades entre los colores y tallas reales.
+    let _invVarNuevas = [];
+    let _invVarNuevasPid = '';
 
     function invVarKey(color, size) { return (color || '') + '||' + (size || ''); }
 
@@ -8226,10 +8409,44 @@
         if (!sizes.length) { add(v.label || '', '', 0); return; }
         sizes.forEach(s => add(v.label || '', (typeof s === 'string' ? s : (s && s.size)) || '', 0));
       });
+      if (productId === _invVarNuevasPid) _invVarNuevas.forEach(c => add(c.color, c.size, 0));
       if (!out.length) add('', '', 0);
       out.sort((a, b) => (a.color || '').localeCompare(b.color || '', 'es')
                       || compararTallas(a.size, b.size));
       return out;
+    }
+
+    // Alta de una combinación desde el propio movimiento.
+    function agregarCombinacionNueva() {
+      const pid = document.getElementById('inv-product-id').value;
+      if (!pid) return;
+      const cInp = document.getElementById('inv-nueva-color');
+      const tInp = document.getElementById('inv-nueva-talla');
+      const color = (cInp.value || '').trim();
+      const talla = (tInp.value || '').trim();
+      if (!color && !talla) {
+        alert('Escribe al menos un color o una talla para la combinación nueva.');
+        return;
+      }
+      // Se compara sin distinguir mayúsculas ni espacios: «4 A» y «4a» son la
+      // misma talla, y duplicarlas parte la existencia en dos líneas.
+      const yaEsta = invCombinacionesDe(pid, invBodegaDelMovimiento()).find(c =>
+        tallaEquivalente(c.color) === tallaEquivalente(color) &&
+        tallaEquivalente(c.size)  === tallaEquivalente(talla));
+      if (yaEsta) {
+        alert(`Esa combinación ya está en la lista, como «${yaEsta.color || '—'} · ${yaEsta.size || 'única'}».\n\n` +
+              'Escribe la cantidad en su fila.');
+        cInp.value = ''; tInp.value = '';
+        document.getElementById('inv-var-filter').value = color || talla;
+        renderInvVarGrid();
+        return;
+      }
+      if (_invVarNuevasPid !== pid) { _invVarNuevas = []; _invVarNuevasPid = pid; }
+      _invVarNuevas.push({ color, size: talla });
+      cInp.value = ''; tInp.value = '';
+      document.getElementById('inv-var-filter').value = '';
+      renderInvVarGrid();
+      cInp.focus();
     }
 
     function renderInvVarGrid() {
@@ -8248,6 +8465,18 @@
         : type === 'salida'   ? 'Colores y tallas a retirar'
         : type === 'ajuste'   ? 'Conteo físico por color y talla'
         : 'Colores y tallas que entran';
+
+      // Crear combinaciones solo tiene sentido donde puede entrar mercadería:
+      // en una salida o un traslado no se puede mover lo que no existe.
+      const alta = document.getElementById('inv-var-nueva');
+      if (alta) {
+        alta.style.display = (type === 'ajuste') ? 'flex' : 'none';
+        const dl = document.getElementById('inv-nueva-colores');
+        if (dl) {
+          dl.innerHTML = [...new Set(combos.map(c => c.color).filter(Boolean))]
+            .map(c => `<option value="${escapeAttr(c)}"></option>`).join('');
+        }
+      }
 
       const visibles = combos.filter(c => !filtro
         || (c.color || '').toLowerCase().includes(filtro)
@@ -8312,13 +8541,37 @@
       const total  = lineas.reduce((s, l) => s + l.qty, 0);
       const box = document.getElementById('inv-var-total');
       if (!box) return;
-      box.textContent = lineas.length
-        ? (type === 'ajuste'
-            ? `${lineas.length} combinación(es) con conteo nuevo · ${total} unidades`
-            : `${lineas.length} combinación(es) · ${total} unidades en total`)
-        : (type === 'ajuste'
-            ? 'Corrige el conteo de las combinaciones que hagan falta.'
-            : 'Escribe cuántas unidades mover de cada combinación.');
+
+      if (type !== 'ajuste') {
+        box.style.color = 'var(--warm-mid)';
+        box.textContent = lineas.length
+          ? `${lineas.length} combinación(es) · ${total} unidades en total`
+          : 'Escribe cuántas unidades mover de cada combinación.';
+        return;
+      }
+
+      // En un ajuste lo que importa no es la suma de lo tecleado, sino en
+      // cuánto queda el producto. Repartir la «talla única» entre tallas
+      // reales no debería cambiar el total: si cambia, hay que verlo aquí y
+      // no descubrirlo días después en el cuadre.
+      const productId = document.getElementById('inv-product-id').value;
+      const combos = productId ? invCombinacionesDe(productId, invBodegaDelMovimiento()) : [];
+      const antes = combos.reduce((a, c) => a + (c.stock || 0), 0);
+      const despues = combos.reduce((a, c) => {
+        const v = _invVarQty[invVarKey(c.color, c.size)];
+        return a + (v === undefined || v === '' ? (c.stock || 0) : (Number(v) || 0));
+      }, 0);
+      const dif = despues - antes;
+
+      if (!lineas.length) {
+        box.style.color = 'var(--warm-mid)';
+        box.textContent = 'Corrige el conteo de las combinaciones que hagan falta.';
+        return;
+      }
+      box.style.color = dif === 0 ? '#4A6B3E' : '#9A6F00';
+      box.textContent = dif === 0
+        ? `${lineas.length} combinación(es) cambian · el total sigue en ${despues} unidades, el reparto cuadra`
+        : `${lineas.length} combinación(es) cambian · el total pasa de ${antes} a ${despues} (${dif > 0 ? '+' : ''}${dif})`;
     }
 
     function invVarTodo() {
@@ -8352,6 +8605,47 @@
         out.push({ color: c.color, size: c.size, qty, disponible: c.stock });
       });
       return out;
+    }
+
+    // Un color o una talla que entra al inventario tiene que quedar declarado
+    // en la ficha, o el producto no lo vende y el cuadre lo marca como
+    // «combinación no declarada». Antes había que acordarse de ir a la ficha a
+    // mano; olvidarlo es justo como aparecieron las combinaciones huérfanas.
+    async function declararCombinacionesEnFicha(productId, productName, lineas) {
+      const prod = (typeof getAdminProducts === 'function' ? getAdminProducts() : []).find(p => p.id === productId)
+                || getAllProducts().find(p => p.id === productId);
+      if (!prod) return null;
+
+      const variants = JSON.parse(JSON.stringify(Array.isArray(prod.variants) ? prod.variants : []));
+      const buscaColor = c => variants.find(v => tallaEquivalente(v.label) === tallaEquivalente(c));
+      const nuevas = [];
+
+      lineas.forEach(l => {
+        const color = (l.color || '').trim();
+        const talla = (l.size  || '').trim();
+        if (!color) return;                       // sin color no hay nada que declarar
+        let v = buscaColor(color);
+        if (!v) {
+          v = { label: color, hex: '#8E3833', sizes: [] };
+          variants.push(v);
+          nuevas.push(talla ? `${color} · ${talla}` : color);
+        }
+        if (!talla) return;
+        if (!Array.isArray(v.sizes)) v.sizes = [];
+        const yaEsta = v.sizes.some(s =>
+          tallaEquivalente(typeof s === 'string' ? s : (s && s.size)) === tallaEquivalente(talla));
+        if (!yaEsta) {
+          v.sizes.push({ size: talla, qty: 0 });
+          if (!nuevas.includes(`${color} · ${talla}`)) nuevas.push(`${color} · ${talla}`);
+        }
+      });
+
+      if (!nuevas.length) return null;
+      // Guardado parcial: solo se manda `variants`, así el resto de la ficha
+      // (precio, fotos, descripción) queda intacto.
+      saveCustomProduct({ id: productId, variants });
+      await Promise.resolve(window.LAUREAN_LAST_PRODUCT_WRITE);
+      return nuevas;
     }
 
     // Todos los movimientos pasan por el mismo motor (`moverInventario`): la
@@ -8407,8 +8701,8 @@
           // podría venderla y el producto quedaría descuadrado. Es exactamente
           // así como aparecieron las combinaciones huérfanas que encontramos.
           if (!sizes) {
-            const conTalla = invCombinacionesDe(pid, '')
-              .filter(c => (c.color || '') === color && c.size);
+            const todas    = invCombinacionesDe(pid, '');
+            const conTalla = todas.filter(c => tallaEquivalente(c.color) === tallaEquivalente(color) && c.size);
             if (conTalla.length) {
               return alert(
                 `"${pname}" se vende por talla${color ? ` en ${color}` : ''}.\n\n` +
@@ -8416,6 +8710,16 @@
                 `en vez de una cantidad suelta.\n\n` +
                 `Si de verdad entraron sin talla definida, primero agrega esa talla al producto.`);
             }
+            // Color nuevo en un producto que sí se vende por talla: la fila
+            // quedaría sin talla y nadie podría venderla. No se bloquea —hay
+            // productos de talla única— pero no debe pasar por descuido.
+            const otrasConTalla = todas.filter(c => c.size);
+            if (color && otrasConTalla.length && !confirm(
+                `"${pname}" se vende por talla en sus otros colores ` +
+                `(${[...new Set(otrasConTalla.map(c => c.size))].join(', ')}), ` +
+                `pero estás ingresando ${color} sin repartir tallas.\n\n` +
+                `Esas ${qty} unidades quedarían en una fila sin talla que la tienda no puede vender.\n\n` +
+                `¿Ingresarlas así de todas formas?`)) return;
           }
 
           parsed.push({
@@ -8429,6 +8733,7 @@
 
         return conBotonGuardando(async () => {
           const fallos = [];
+          const declaradas = [];
           let hechos = 0;
           for (const l of parsed) {
             const r = await moverInventario({
@@ -8436,9 +8741,16 @@
               destino: bodegaId, lineas: l.lineas,
               notas: notes, proveedor: provName, costoUnit: l.costo, pagado,
             });
-            if (r.ok) hechos++; else fallos.push(`${l.pname}: ${r.error}`);
+            if (!r.ok) { fallos.push(`${l.pname}: ${r.error}`); continue; }
+            hechos++;
+            const nuevas = await declararCombinacionesEnFicha(l.pid, l.pname, l.lineas);
+            if (nuevas) declaradas.push(`${l.pname}: ${nuevas.join(', ')}`);
           }
-          await trasVariosMovimientos(fallos, hechos, `Ingreso registrado: ${hechos} producto(s).`);
+          await trasVariosMovimientos(fallos, hechos,
+            `Ingreso registrado: ${hechos} producto(s).` +
+            (declaradas.length
+              ? `\n\nSe agregaron a la ficha para que se puedan vender:\n${declaradas.join('\n')}`
+              : ''));
         });
       }
 
@@ -8500,10 +8812,15 @@
           destino: type === 'ajuste' ? bodegaId : null,
           lineas, motivo, notas: notes,
         });
+        let extra = '';
+        if (r.ok && type === 'ajuste') {
+          const nuevas = await declararCombinacionesEnFicha(productId, productName, lineas);
+          if (nuevas) extra = `\n\nSe agregaron a la ficha para que se puedan vender:\n${nuevas.join(', ')}`;
+        }
         await trasVariosMovimientos(r.ok ? [] : [r.error], r.ok ? 1 : 0,
-          type === 'ajuste'
+          (type === 'ajuste'
             ? `Conteo actualizado en ${lineas.length} combinación(es).`
-            : `Salida registrada: ${total} unidades en ${lineas.length} combinación(es).`);
+            : `Salida registrada: ${total} unidades en ${lineas.length} combinación(es).`) + extra);
       });
     }
 
