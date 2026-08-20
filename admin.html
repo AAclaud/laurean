@@ -2730,6 +2730,13 @@
             if (c && c.id === 'view-clientes' && typeof renderClientes === 'function') renderClientes();
           });
           if (typeof pushLocalOrdersToSupabase === 'function') pushLocalOrdersToSupabase().then(n => { if (n > 0 && typeof syncOrdersFromSupabase === 'function') syncOrdersFromSupabase().then(() => { renderOrders(); if (typeof checkNewOrders === 'function') checkNewOrders(); }); });
+          // Y los que el reintento de tienda no cubre: ventas de POS y pedidos
+          // ya completados cuyo insert original falló.
+          if (typeof reenviarPedidosLocales === 'function') reenviarPedidosLocales().then(r => {
+            if (r.subidos > 0 && typeof syncOrdersFromSupabase === 'function') {
+              syncOrdersFromSupabase().then(() => { renderOrders(); renderDashboard(); });
+            }
+          });
         });
       }
       if (typeof syncVendorAppsFromSupabase === 'function') {
@@ -3775,7 +3782,7 @@
       }
       tbody.innerHTML = recent.map(o => `
         <tr style="cursor:pointer" onclick="openOrderDetail('${jsAttr(o.id)}')">
-          <td class="td-muted" style="font-size:12px">${escapeHtml(o.id.slice(-8))}</td>
+          <td class="td-muted" style="font-size:12px">${escapeHtml(o.id.slice(-8))}${marcaSoloLocal(o)}</td>
           <td class="td-muted">${escapeHtml(fmtDate(o.createdAt))}</td>
           <td>${escapeHtml(o.customerName || o.userName || '—')}</td>
           <td>${originBadge(o)}</td>
@@ -3783,6 +3790,18 @@
           <td>${o.referral_code ? `<span class="code-chip">${escapeHtml(o.referral_code)}</span>` : '<span class="td-muted">—</span>'}</td>
           <td><span class="badge" style="background:${statusColor(o.status)}22;color:${statusColor(o.status)}">${escapeHtml(statusLabel(o.status))}</span></td>
         </tr>`).join('');
+    }
+
+    // Un pedido sin id del servidor solo existe en este navegador: no lo ve
+    // nadie más y no cuenta en los ingresos de los demás equipos. Antes se
+    // mostraba igual que los otros, así que el mismo panel daba cifras
+    // distintas según desde dónde se abriera.
+    function marcaSoloLocal(o) {
+      if (typeof pedidoSoloLocal !== 'function' || !pedidoSoloLocal(o)) return '';
+      return ' <span title="Este pedido no llegó al servidor: solo existe en este equipo."'
+           + ' style="display:inline-block;vertical-align:middle;margin-left:5px;padding:1px 6px;'
+           + 'border-radius:9px;background:#9A6F0022;color:#9A6F00;font-size:9.5px;'
+           + 'letter-spacing:.04em;text-transform:uppercase">solo aquí</span>';
     }
 
     // ─── Productos / Precios ───────────────────────────────────────────────────
@@ -4610,7 +4629,7 @@
       }
       tbody.innerHTML = orders.map(o => `
         <tr class="ord-row" style="cursor:pointer;--st:${statusColor(isPosOrder(o) ? 'completado' : o.status)}" onclick="openOrderDetail('${jsAttr(o.id)}')">
-          <td class="td-muted" style="font-size:11px">${escapeHtml(o.id.slice(-10))}</td>
+          <td class="td-muted" style="font-size:11px">${escapeHtml(o.id.slice(-10))}${marcaSoloLocal(o)}</td>
           <td class="td-muted">${escapeHtml(fmtDate(o.createdAt))}</td>
           <td>
             <strong>${escapeHtml(o.customerName || o.userName || '—')}</strong>

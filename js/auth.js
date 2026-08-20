@@ -936,6 +936,27 @@ async function pushLocalOrdersToSupabase() {
 }
 window.pushLocalOrdersToSupabase = pushLocalOrdersToSupabase;
 
+// Una venta que no llega al servidor solo existe en el navegador que la hizo:
+// no la ve nadie más, no entra en los ingresos y el inventario del servidor no
+// se entera. Pasó de verdad — un pedido de julio que solo aparecía en Safari —
+// y nadie se dio cuenta porque el fallo solo iba a la consola.
+function avisarPedidoSoloLocal(order, detalle) {
+  const ref = (order && (order.order_number || String(order.id || '').slice(-8).toUpperCase())) || '';
+  console.warn('[pedido solo local]', ref, detalle);
+  if (typeof window.avisarFalloGuardado === 'function') {
+    window.avisarFalloGuardado('pedido', ref, detalle);
+  }
+}
+window.avisarPedidoSoloLocal = avisarPedidoSoloLocal;
+
+// Un pedido es "solo local" mientras no tenga id del servidor. Se usa para
+// marcarlo en la lista y para no dar por buenos unos ingresos que solo existen
+// en este equipo.
+function pedidoSoloLocal(o) {
+  return !!o && !o.supabase_id;
+}
+window.pedidoSoloLocal = pedidoSoloLocal;
+
 // Reintento guest-safe: re-empuja pedidos de tienda solo-locales SIN necesitar sesión
 // (insert anónimo + índice único en local_id → un duplicado falla limpio y se marca).
 async function retryPendingOrderPushes() {
@@ -976,6 +997,73 @@ async function retryPendingOrderPushes() {
   return pushed;
 }
 window.retryPendingOrderPushes = retryPendingOrderPushes;
+
+// Los de arriba solo cubren pedidos de TIENDA pendientes. Una venta de POS, o
+// cualquier pedido ya completado cuyo insert original fallara, no se reintentaba
+// nunca: se quedaba en ese navegador para siempre. Asi es como el panel mostraba
+// dos pedidos en un equipo y uno en otro, con ingresos distintos.
+// Necesita sesion: el insert anonimo solo puede crear pedidos de tienda.
+async function reenviarPedidosLocales() {
+  const sb = window.LAUREAN_DB;
+  if (!sb) return { subidos: 0, fallidos: 0 };
+  const pendientes = getOrders().filter(o =>
+    o && !o.supabase_id && !o.push_done
+    && ((o.origin === 'pos' || o.channel === 'pos') || o.status !== 'pendiente')
+    && o.pay_method !== 'card' && o.payment_method !== 'card');
+  if (!pendientes.length) return { subidos: 0, fallidos: 0 };
+
+  const session = (typeof getSession === 'function') ? getSession() : null;
+  let subidos = 0, fallidos = 0;
+  for (const o of pendientes) {
+    const esPos = o.origin === 'pos' || o.channel === 'pos';
+    const items = (o.items || []).map(it => ({
+      id: it.id, name: it.name, qty: it.qty, price_gtq: it.price_gtq,
+      image: it.image, cost_price: it.cost_price ?? 0,
+      color: it.color || null, size: it.size || null,
+    }));
+    const { data: row, error } = await sb.from('orders').insert({
+      local_id: o.id,
+      customer_name: o.customerName || o.userName || 'Cliente',
+      customer_phone: o.customerPhone || null, customer_email: o.customerEmail || null,
+      customer_address: o.address || null, customer_township_code: o.customer_township_code || null,
+      customer_department: o.customerDepartment || null, customer_city: o.customerCity || null,
+      subtotal_gtq: o.subtotal_gtq || 0,
+      discount_gtq: (o.discount_gtq || 0) + (o.manual_discount_gtq || 0) + (o.discountCode_gtq || 0) + (o.referral_discount_gtq || 0),
+      shipping_gtq: o.shipping_gtq || 0, total_gtq: o.total_gtq || 0, items,
+      notes: o.notes || null,
+      status: o.status || (esPos ? 'completado' : 'pendiente'),
+      payment_method: o.pay_method || o.payment_method || null,
+      payment_status: o.payment_status || (esPos ? 'pagado' : 'pendiente'),
+      origin: o.origin || (esPos ? 'pos' : 'store'),
+      channel: o.channel || (esPos ? 'pos' : 'web'),
+      shipping_method: o.shipping_method || null, referral_code: o.referral_code || null,
+      created_by: session ? session.userId : null,
+      bodega_id: o.bodegaId || null,
+      created_at: o.createdAt || null,
+    }).select('id,order_number').single();
+
+    const all = getOrders(); const idx = all.findIndex(x => x.id === o.id);
+    if (error) {
+      // 23505 = el insert original si habia entrado. Se enlaza y no se reintenta mas.
+      if (String(error.code) === '23505' || /duplicate/i.test(error.message || '')) {
+        if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
+      } else {
+        fallidos++;
+        console.warn('[supabase] reenviar pedido:', error.message);
+      }
+      continue;
+    }
+    if (idx !== -1 && row) {
+      all[idx].supabase_id = row.id;
+      all[idx].order_number = row.order_number || all[idx].order_number;
+      all[idx].push_done = true;
+      saveOrders(all);
+    }
+    subidos++;
+  }
+  return { subidos, fallidos };
+}
+window.reenviarPedidosLocales = reenviarPedidosLocales;
 
 // ─── Productos admin desde Supabase ───────────────────────────────────────────
 async function syncProductsFromSupabase() {
@@ -1285,7 +1373,13 @@ function createOrder(data) {
     };
     if (isStoreOrder) {
       orderDb.from('orders').insert(payload).then(({ error }) => {
-        if (error) { console.warn('[supabase] order insert failed:', error.message); return; }
+        if (error) {
+          // Callar aquí es como se pierde una venta: queda en este navegador,
+          // el reintento la recoge después, pero si nunca corre nadie más la ve.
+          console.warn('[supabase] order insert failed:', error.message);
+          avisarPedidoSoloLocal(order, error.message);
+          return;
+        }
         const all = getOrders();
         const idx = all.findIndex(o2 => o2.id === order.id);
         if (idx !== -1) { all[idx].push_done = true; saveOrders(all); }
@@ -1293,7 +1387,11 @@ function createOrder(data) {
     } else {
       orderDb.from('orders').insert(payload).select('id,order_number').single()
         .then(({ data: row, error }) => {
-          if (error) { console.warn('[supabase] order insert failed:', error.message); return; }
+          if (error) {
+            console.warn('[supabase] order insert failed:', error.message);
+            avisarPedidoSoloLocal(order, error.message);
+            return;
+          }
           // Guardar el order_number / supabase_id en la versión local para enlazar luego
           const all = getOrders();
           const idx = all.findIndex(o => o.id === order.id);
