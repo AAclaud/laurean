@@ -264,6 +264,13 @@
     /* Celdas de talla: crecen con el contenido, nunca se montan */
     .size-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
     .size-cell { flex: 0 1 auto; min-width: 54px; text-align: center; }
+    /* La talla se muestra TAL CUAL se guardó. Antes usaba .form-label, que va en
+       mayúsculas, así que «4a», «4A» y «4 A» se veían las tres como «4A»: nadie
+       podía distinguirlas mirando, y por eso las duplicadas duraron meses. */
+    .size-label {
+      font-size: 11px; display: block; margin-bottom: 2px; white-space: nowrap;
+      color: var(--warm-mid); letter-spacing: .02em;
+    }
     .size-cell .form-input {
       width: 100%; min-width: 54px; padding: 6px 4px; text-align: center;
       field-sizing: content;               /* crece con las cifras (Chrome/Edge) */
@@ -5764,9 +5771,40 @@
     const STD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
     // Tallas por edad (niños): m = meses, a = años.
     const KIDS_SIZES = ['12m', '18m', '24m', '1a', '2a', '4a', '6a', '8a', '10a', '12a', '16a'];
-    // Orden por categoría: Kids muestra edades primero; el resto, letras primero.
+    // Cada categoría ofrece SU tallaje y nada más. Antes devolvía las dieciséis
+    // tallas para cualquier producto, así que la rejilla de una blusa de mujer
+    // incluía 12m, 18m, 24m… Así llegó un «24m» a Oversize Sophia: no lo tecleó
+    // nadie, estaba ahí para hacer clic.
+    // Las tallas que un producto ya tenga fuera de su set se siguen mostrando
+    // (addVariantRow y reorderVariantSizeGrids las conservan como `extra`), así
+    // que esto no esconde nada de lo que ya está capturado.
     function sizeSetForCategory(catId) {
-      return String(catId || '') === 'kids' ? [...KIDS_SIZES, ...STD_SIZES] : [...STD_SIZES, ...KIDS_SIZES];
+      return esCategoriaKids(catId) ? [...KIDS_SIZES] : [...STD_SIZES];
+    }
+
+    function esCategoriaKids(catId) {
+      return String(catId || '').toLowerCase() === 'kids';
+    }
+
+    // La categoría del producto viene como `category` desde el formulario y como
+    // `parent_id` desde la base. Mirar solo una dejaba fuera la mitad de los casos.
+    function categoriaDe(prod) {
+      return (prod && (prod.category || prod.parent_id)) || '';
+    }
+
+    // Talla por edad: un número seguido de m (meses) o a (años). Se acepta como
+    // se escriba y se guarda siempre igual — «24 M», «24M» y «24m» son la misma.
+    const RE_TALLA_EDAD = /^(\d{1,2})\s*([maMA])$/;
+
+    function normalizarTalla(t) {
+      const s = String(t || '').trim().replace(/\s+/g, ' ');
+      const m = s.match(RE_TALLA_EDAD);
+      if (m) return m[1] + m[2].toLowerCase();      // 96% del catálogo usa esta forma
+      return s;
+    }
+
+    function esTallaDeEdad(t) {
+      return RE_TALLA_EDAD.test(String(t || '').trim());
     }
     // El comparador de tallas por tallaje (no alfabético) vive en js/auth.js,
     // que lo comparte con el POS y la tienda: `compararTallas(a, b)`.
@@ -5784,7 +5822,7 @@
     function sizeCellHtml(sz, qty, inputClass, extraAttrs) {
       return `
         <div class="size-cell">
-          <label class="form-label" style="font-size:11px;display:block;margin-bottom:2px;white-space:nowrap">${escapeHtml(sz)}</label>
+          <label class="size-label">${escapeHtml(sz)}</label>
           <input class="form-input ${inputClass}" data-size="${escapeAttr(sz)}" type="number" min="0" step="1"
                  value="${qty != null ? qty : ''}" placeholder="0" inputmode="numeric" ${extraAttrs || ''} />
         </div>`;
@@ -5860,12 +5898,37 @@
       document.getElementById('mp-variants').appendChild(row);
     }
 
+    // La fila puede ser una variante del formulario de producto (usa el selector
+    // de categoría que hay en pantalla) o una línea del ingreso (usa la del
+    // producto elegido en esa línea).
+    function categoriaDeLaFila(rowEl) {
+      if (rowEl.classList.contains('inv-line')) {
+        const pid = rowEl.querySelector('.inv-line-pid');
+        const prod = pid && getAllProducts().find(p => p.id === pid.value);
+        return categoriaDe(prod);
+      }
+      return (document.getElementById('mp-category') || {}).value || '';
+    }
+
     function addCustomSizeCell(btn) {
       const rowEl = btn.closest('.mp-variant') || btn.closest('.inv-line');
       const inp = rowEl.querySelector('.mpv-newsize, .inv-newsize');
       const grid = rowEl.querySelector('.size-grid');
-      const sz = (inp.value || '').trim();
-      if (!sz || !grid) return;
+      const escrito = (inp.value || '').trim();
+      if (!escrito || !grid) return;
+      // «24 M», «24M» y «24m» son la misma talla: se guarda siempre en la forma
+      // que usa el 96% del catálogo, para que no nazcan duplicadas.
+      const sz = normalizarTalla(escrito);
+      // Las tallas por edad solo tienen sentido en Kids. Es la regla que habría
+      // evitado el «24m» de Oversize Sophia, que es de mujer. Comprobado contra
+      // los datos: los 19 productos de Kids usan tallas por edad y ninguno de
+      // los 69 de adulto las usa, salvo ese error.
+      if (esTallaDeEdad(sz) && !esCategoriaKids(categoriaDeLaFila(rowEl))) {
+        alert(`«${sz}» es una talla por edad (meses o años) y este producto no es de ` +
+              `Laurean Kids.\n\nSi de verdad se vende por edad, cámbiale la categoría ` +
+              `primero. Si querías una talla de adulto, usa XS, S, M, L, XL, XXL o 1X–4X.`);
+        return;
+      }
       // Comparación tolerante: la talla ya puede estar escrita de otra forma
       // ("4a" vs "4 A"). Si se cuela como celda nueva, esa existencia queda en
       // una talla aparte que el producto no vende.
@@ -5879,7 +5942,7 @@
         if (yaEsta.dataset.size !== sz) {
           alert(`Esa talla ya está en la lista, escrita como «${yaEsta.dataset.size}».\n\n` +
                 `Se marcó para que anotes ahí la cantidad. Si la agregáramos otra vez ` +
-                `como «${sz}», la existencia quedaría partida en dos tallas distintas.`);
+                `como «${escrito}», la existencia quedaría partida en dos tallas distintas.`);
         }
         return;
       }
@@ -8348,7 +8411,7 @@
         .filter(c => tallaEquivalente(c.color) === tallaEquivalente(color))
         .map(c => c.size).filter(Boolean))];
       const prod = getAllProducts().find(p => p.id === productId);
-      const lista = tallas.length ? tallas : sizeSetForCategory(prod && prod.category);
+      const lista = tallas.length ? tallas : sizeSetForCategory(categoriaDe(prod));
       // Las tallas que el usuario ya escribió a mano no se pierden al cambiar
       // de color: si tienen cantidad puesta, siguen en la rejilla.
       const extra = Object.keys(previo).filter(sz => !lista.includes(sz));
@@ -8496,9 +8559,15 @@
       const cInp = document.getElementById('inv-nueva-color');
       const tInp = document.getElementById('inv-nueva-talla');
       const color = (cInp.value || '').trim();
-      const talla = (tInp.value || '').trim();
+      const talla = normalizarTalla(tInp.value);
       if (!color && !talla) {
         alert('Escribe al menos un color o una talla para la combinación nueva.');
+        return;
+      }
+      const prod = getAllProducts().find(p => p.id === pid);
+      if (esTallaDeEdad(talla) && !esCategoriaKids(categoriaDe(prod))) {
+        alert(`«${talla}» es una talla por edad (meses o años) y «${(prod && prod.name) || 'este producto'}» ` +
+              `no es de Laurean Kids.\n\nSi de verdad se vende por edad, cámbiale la categoría primero.`);
         return;
       }
       // Se compara sin distinguir mayúsculas ni espacios: «4 A» y «4a» son la
