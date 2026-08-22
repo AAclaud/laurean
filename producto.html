@@ -529,7 +529,7 @@
         <hr class="prod-divider" />
 
         <!-- Selector de tallas -->
-        <div>
+        <div id="panel-sizes">
           <p class="prod-section-label">Talla</p>
           <div class="size-pills" id="size-pills" role="group" aria-label="Seleccionar talla"></div>
           <button class="size-guide-toggle" id="size-guide-toggle" aria-expanded="false" onclick="toggleSizeGuide()" style="margin-top:14px">
@@ -1242,11 +1242,7 @@
       }
 
       /* Panel: tallas */
-      var sizes = ['XS', 'S', 'M', 'L', 'XL'];
-      var pillsEl = document.getElementById('size-pills');
-      pillsEl.innerHTML = sizes.map(function(s) {
-        return '<button class="size-pill" data-size="' + s + '" onclick="selectSize(\'' + s + '\')" aria-label="Talla ' + s + '">' + s + '</button>';
-      }).join('');
+      pintarTallas(p);
 
       /* Panel: guía de tallas */
       document.getElementById('size-guide-inner').innerHTML = buildSizeTable(p.size_chart || null);
@@ -1292,6 +1288,46 @@
       return (typeof sz === 'string') ? { size: sz, qty: null } : (sz || {});
     }
 
+    /* Las tallas salen de lo que el producto declara. Antes era una lista fija
+       XS…XL igual para todos: un producto de niños ofrecía tallas de adulto, y
+       uno que se vende por talla única ofrecía cinco tallas que no existen.
+       No es solo cosmético — el pedido se lleva la talla elegida, y una que no
+       está en el inventario no encuentra su fila, así que la venta se cobra y
+       no descuenta nada. */
+    function tallasDelProducto(p) {
+      var vistas = {}, out = [];
+      (Array.isArray(p.variants) ? p.variants : []).forEach(function(v) {
+        (Array.isArray(v.sizes) ? v.sizes : []).forEach(function(sz) {
+          var t = String(normalizeVariantSize(sz).size || '').trim();
+          if (!t || vistas[t]) return;
+          vistas[t] = true; out.push(t);
+        });
+      });
+      return out;
+    }
+
+    /* Devuelve las tallas pintadas, o [] si el producto no vende por talla. */
+    function pintarTallas(p, tallas) {
+      var bloque = document.getElementById('panel-sizes');
+      var pills  = document.getElementById('size-pills');
+      var lista  = tallas || tallasDelProducto(p);
+      _tallasVisibles = lista;
+      if (!lista.length) {
+        /* Talla única: mostrar un selector vacío sería ofrecer algo que no hay. */
+        if (bloque) bloque.style.display = 'none';
+        _selectedSize = null;
+        return lista;
+      }
+      if (bloque) bloque.style.display = '';
+      pills.innerHTML = lista.map(function(t) {
+        return '<button class="size-pill" data-size="' + esc(t) + '" onclick="selectSize(\''
+          + jsAttr(t) + '\')" aria-label="Talla ' + esc(t) + '">' + esc(t) + '</button>';
+      }).join('');
+      _selectedSize = null;
+      return lista;
+    }
+    var _tallasVisibles = [];
+
     /* ─── Variantes de color/diseño ──────────────────────────────────────────── */
     var _selectedVariant = null;
 
@@ -1325,18 +1361,25 @@
       if (v.description) document.getElementById('panel-desc').textContent = v.description;
       else if (p.description) document.getElementById('panel-desc').textContent = p.description;
 
-      /* Tallas disponibles de la variante (si trae stock por talla) */
-      if (Array.isArray(v.sizes) && v.sizes.length) {
-        var pillsEl = document.getElementById('size-pills');
-        pillsEl.innerHTML = v.sizes.map(function(sz) {
-          var sizeObj = normalizeVariantSize(sz);
-          var avail = sizeObj.qty == null ? true : (sizeObj.qty > 0);
-          return '<button class="size-pill" data-size="' + esc(sizeObj.size) + '" '
-            + (avail ? '' : 'disabled style="opacity:.35;cursor:not-allowed" ')
-            + 'onclick="selectSize(\'' + esc(sizeObj.size) + '\')" aria-label="Talla ' + esc(sizeObj.size) + '">'
-            + esc(sizeObj.size) + '</button>';
+      /* Tallas del color elegido. Si ese color no se vende por talla, el
+         selector se esconde: dejar las del color anterior ofrecía una talla
+         que este color no tiene. */
+      var bloque = document.getElementById('panel-sizes');
+      var deColor = (Array.isArray(v.sizes) ? v.sizes : []).map(normalizeVariantSize)
+                      .filter(function(o) { return String(o.size || '').trim(); });
+      _tallasVisibles = deColor.map(function(o) { return String(o.size).trim(); });
+      _selectedSize = null;
+      if (!deColor.length) {
+        if (bloque) bloque.style.display = 'none';
+      } else {
+        if (bloque) bloque.style.display = '';
+        document.getElementById('size-pills').innerHTML = deColor.map(function(o) {
+          var hay = o.qty == null ? true : (o.qty > 0);
+          return '<button class="size-pill" data-size="' + esc(o.size) + '" '
+            + (hay ? '' : 'disabled style="opacity:.35;cursor:not-allowed" ')
+            + 'onclick="selectSize(\'' + jsAttr(o.size) + '\')" aria-label="Talla ' + esc(o.size) + '">'
+            + esc(o.size) + '</button>';
         }).join('');
-        _selectedSize = null;
       }
 
       /* Scroll de la galería vertical a la foto enlazada */
@@ -1355,6 +1398,20 @@
     /* ─── Comprar ────────────────────────────────────────────────────────────── */
     function handleComprar() {
       if (!_product) return;
+      /* Si el producto se vende por talla, hay que elegir una. Sin esto la
+         línea viajaba sin talla y el descuento de inventario no encontraba a
+         qué combinación restarle. */
+      if (_tallasVisibles.length && !_selectedSize) {
+        showToast('Elige una talla para continuar.', false);
+        var bloque = document.getElementById('panel-sizes');
+        if (bloque) bloque.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      /* Igual con el color: un producto con varios colores necesita saber cuál. */
+      if (Array.isArray(_product.variants) && _product.variants.length && !_selectedVariant) {
+        showToast('Elige un color para continuar.', false);
+        return;
+      }
       var session  = (typeof getSession === 'function') ? getSession() : null;
       var role     = session ? session.role : null;
       var priceObj = (typeof getProductPrice === 'function')
