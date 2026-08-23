@@ -938,7 +938,7 @@
 <div class="pos-toast" id="pos-toast"></div>
 
 <!-- ── Selección de color y talla ───────────────────────────────────────── -->
-<div class="pv-overlay" id="pv-overlay" onclick="if(event.target===this)posCloseVariant()">
+<div class="pv-overlay" id="pv-overlay" onclick="if(clicEnElFondo(event,this))posCloseVariant()">
   <div class="pv-modal">
     <div class="pv-head">
       <div>
@@ -974,7 +974,7 @@
 </div>
 
 <!-- ── Configurar combo: color y talla por unidad ───────────────────────── -->
-<div class="pv-overlay" id="pc-overlay" onclick="if(event.target===this)posCloseCombo()">
+<div class="pv-overlay" id="pc-overlay" onclick="if(clicEnElFondo(event,this))posCloseCombo()">
   <div class="pv-modal pc-modal">
     <div class="pv-head">
       <div>

@@ -509,6 +509,18 @@ function showSessionExpiredModal() {
 }
 window.showSessionExpiredModal = showSessionExpiredModal;
 
+// ─── Cerrar un modal al hacer clic en el fondo, sin arruinar una selección ────
+// Un `click` se dispara en el ancestro comun de mousedown y mouseup. Si alguien
+// selecciona texto DENTRO del modal y suelta el boton sobre el fondo, el target
+// del click es el fondo — y el modal se cerraba, tirando lo que hubiera escrito.
+// Solo cierra cuando el gesto empezo Y termino en el fondo.
+let _laureanMousedownEn = null;
+document.addEventListener('mousedown', function (e) { _laureanMousedownEn = e.target; }, true);
+function clicEnElFondo(event, overlay) {
+  return event.target === overlay && _laureanMousedownEn === overlay;
+}
+window.clicEnElFondo = clicEnElFondo;
+
 // Vigilante de sesión: revisa/refresca al enfocar la pestaña, al volver visible y cada 60s.
 // Solo aplica a sesiones Supabase reales (no a las locales 'local-...'). Si la sesión no se puede
 // recuperar, dispara onExpired (una sola vez).
