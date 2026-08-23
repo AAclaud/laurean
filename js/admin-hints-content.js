@@ -2,7 +2,9 @@
 
 const secciones = [
   {
-    ancla: '#view-dashboard .view-title',
+    // Se ancla a la fila entera, no al titulo: el titulo comparte fila con el
+    // bloque de alertas y el banner se colaba dentro, rompiendo el flex.
+    ancla: '#view-dashboard .dash-head',
     texto: 'Resume la operación reciente: alertas, pedidos y datos clave para decidir qué atender primero.',
     destino: 'Pedidos · Inventario · Comisiones'
   },

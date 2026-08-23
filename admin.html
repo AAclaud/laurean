@@ -155,7 +155,11 @@
     .stat-value { font-family: var(--fd); font-size: 36px; font-weight: 300; color: var(--carbon); line-height: 1; }
     .stat-sub   { font-size: 12px; color: var(--warm-mid); margin-top: 4px; }
 
-    .dash-alerts { position:relative; margin:18px 0 26px; }
+    /* El titulo y las alertas comparten la fila: a la derecha del saludo hay
+       espacio de sobra y ahi el punto se ve sin competir con las tarjetas. */
+    .dash-head { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:28px; }
+    .dash-head .view-title { margin-bottom:0; }
+    .dash-alerts { position:relative; margin:0; }
     .dash-alert-menu { position:relative; display:inline-flex; max-width:100%; }
     .dash-alert-trigger {
       display:inline-flex; align-items:center; gap:9px; max-width:100%; padding:7px 9px;
@@ -175,7 +179,7 @@
     .dash-alert-chevron { width:6px; height:6px; margin-left:2px; border-right:1px solid var(--warm-mid); border-bottom:1px solid var(--warm-mid); transform:rotate(45deg) translateY(-2px); transition:transform .16s; }
     .dash-alert-menu.is-open .dash-alert-chevron { transform:rotate(225deg) translate(-1px,-1px); }
     .dash-alert-panel {
-      position:absolute; z-index:30; top:calc(100% + 6px); left:0; width:min(360px, calc(100vw - 32px));
+      position:absolute; z-index:30; top:calc(100% + 6px); right:0; left:auto; width:min(360px, calc(100vw - 32px));
       padding:6px; border:1px solid var(--piedra); border-radius:10px; background:#fff;
       box-shadow:0 12px 30px rgba(25,39,41,.12); opacity:0; visibility:hidden;
       pointer-events:none; transform:translateY(-4px); transition:opacity .16s, transform .16s, visibility .16s;
@@ -202,6 +206,38 @@
       .dash-alert-dot { animation:none; }
       .dash-alert-trigger, .dash-alert-chevron, .dash-alert-panel { transition:none; }
     }
+    /* Al envolverse el titulo, el bloque de alertas baja a su propia linea y ahi
+       anclarlo a la derecha lo sacaria de la pantalla. */
+    @media (max-width: 640px) {
+      .dash-head { align-items:flex-start; gap:10px; }
+      .dash-alert-panel { right:auto; left:0; }
+    }
+
+    /* ─── Aviso de cobro mensual ──────────────────────────────────────────── */
+    /* Franja discreta: el modal se cierra, esto no, para que el aviso no se
+       pierda al primer clic. Mismo lenguaje que las alertas, sin gritar. */
+    .cobro-banner {
+      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+      padding:12px 16px; margin:0 0 24px; background:#fff;
+      border:1px solid var(--piedra); border-left:3px solid #E0B34D; border-radius:8px;
+    }
+    .cobro-banner.is-vencido     { border-left-color:var(--vino); background:rgba(143,56,51,.035); }
+    .cobro-banner.is-verificando { border-left-color:#4A6B3E; }
+    .cobro-banner-texto { flex:1 1 260px; min-width:0; font-size:13px; line-height:1.55; color:var(--carbon); }
+    .cobro-dias { font-family:var(--fd,serif); font-size:22px; font-weight:600; color:var(--vino); line-height:1; }
+    /* --warm-bg / --warm-border se usan en varios sitios del archivo pero no
+       estan definidos en brand.css: resuelven a nada. Aqui se usan tokens reales. */
+    .cobro-ficha { border:1px solid var(--piedra); border-radius:8px; padding:16px; background:var(--crema); }
+    .cobro-ficha-fila { display:flex; gap:10px; justify-content:space-between; font-size:13px; padding:5px 0; }
+    .cobro-ficha-fila span:first-child { color:var(--warm-mid); }
+    .cobro-estado-pill {
+      display:inline-block; padding:3px 10px; border-radius:999px;
+      font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    }
+    .cobro-estado-pill.en_ventana    { background:rgba(224,179,77,.16); color:#8A6200; }
+    .cobro-estado-pill.por_verificar { background:rgba(74,107,62,.14);  color:#3C5732; }
+    .cobro-estado-pill.vencido       { background:rgba(143,56,51,.12);  color:var(--vino); }
+    .cobro-estado-pill.confirmado    { background:var(--piedra);        color:var(--warm-mid); }
 
     /* ─── Tablas ──────────────────────────────────────────────────────────── */
     .table-wrap { background: white; border: 1px solid var(--piedra); overflow-x: auto; }
@@ -365,6 +401,12 @@
     #view-dashboard::before,
     #view-dashboard::after { pointer-events: none; z-index: -1; }
     #view-dashboard > * { position: relative; z-index: 1; }
+    /* Esa regla de arriba convierte a cada hijo del dashboard en su propio
+       contexto de apilado: el z-index del panel de alertas quedaba encerrado
+       dentro de .dash-head y .stats-grid, hermano posterior con el mismo z-index,
+       se pintaba encima. Por eso el panel se abria pero no se leia. */
+    #view-dashboard > .dash-head { z-index: 40; }
+    #view-dashboard > #cobro-banner { z-index: 20; }
 
     /* ─── Empty state ─────────────────────────────────────────────────────── */
     .empty-state { text-align: center; padding: 60px 20px; color: var(--warm-mid); }
@@ -811,8 +853,11 @@
 
       <!-- ── DASHBOARD ──────────────────────────────────────────────────────── -->
       <div id="view-dashboard" class="view active">
-        <h1 class="view-title">Bienvenido, <em id="dash-name">—</em></h1>
-        <div id="dash-alerts" class="dash-alerts"></div>
+        <div class="dash-head">
+          <h1 class="view-title">Bienvenido, <em id="dash-name">—</em></h1>
+          <div id="dash-alerts" class="dash-alerts"></div>
+        </div>
+        <div id="cobro-banner"></div>
         <div class="stats-grid" id="stats-grid"></div>
         <div id="birthdays-widget" style="margin:0 0 24px;"></div>
         <div class="table-wrap">
@@ -1192,6 +1237,18 @@
           <div style="margin-top:24px;display:flex;justify-content:flex-end;">
             <button class="btn btn-primary" onclick="saveBusinessInfo()">Guardar datos del negocio</button>
           </div>
+        </div>
+
+        <!-- Solo superusuario. Va antes de la Zona de Peligro a proposito: no es
+             una accion destructiva y no debe quedar entre los botones de borrado. -->
+        <div class="config-section" id="config-cobro" style="display:none">
+          <div class="config-title">Cobro mensual de la plataforma</div>
+          <p style="font-size:13px;color:var(--warm-mid);margin-bottom:18px;line-height:1.6;">
+            El ciclo abre el 25 y vence el 5 del mes siguiente. El cliente marca el pago desde
+            su propio panel; aquí se verifica y se apaga el aviso.
+          </p>
+          <div id="cobro-super-actual"></div>
+          <div id="cobro-super-historial" style="margin-top:22px"></div>
         </div>
 
         <div class="config-section" id="config-danger-zone">
@@ -1746,8 +1803,15 @@
             <div id="inv-single-block">
               <div class="form-group">
                 <label class="form-label">Producto</label>
-                <input class="form-input" id="inv-product-search" placeholder="Buscar producto..." oninput="filterInvProductSearch()" autocomplete="off" />
-                <div id="inv-product-dropdown" style="display:none;position:absolute;z-index:200;background:#fff;border:1px solid var(--warm-border);border-radius:6px;max-height:200px;overflow-y:auto;width:100%;box-shadow:0 4px 16px #0002;"></div>
+                <!-- El campo y su desplegable van juntos en una caja posicionada.
+                     Sin ella el desplegable se anclaba al .modal-overlay
+                     (position:fixed) y su width:100% se estiraba hasta el borde de
+                     la ventana; y como .form-group es flex, su posicion estatica
+                     caia arriba del todo, encima de la etiqueta. -->
+                <div style="position:relative">
+                  <input class="form-input" id="inv-product-search" placeholder="Buscar producto..." oninput="filterInvProductSearch()" autocomplete="off" style="width:100%" />
+                  <div id="inv-product-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:#fff;border:1px solid var(--warm-border);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px #0002;"></div>
+                </div>
                 <input type="hidden" id="inv-product-id" />
                 <input type="hidden" id="inv-product-name" />
                 <div id="inv-current-stock" style="font-size:12px;color:var(--warm-mid);margin-top:4px;"></div>
@@ -2354,6 +2418,18 @@
     </div>
   </div>
 
+  <!-- ── MODAL COBRO MENSUAL ─────────────────────────────────────────────────── -->
+  <!-- Se abre solo una vez por sesion y por estado; cerrarlo no apaga nada,
+       el aviso sigue en la franja del dashboard. -->
+  <div class="modal-overlay" id="cobro-overlay" onclick="if(event.target===this)cerrarCobroModal()" style="display:none;align-items:center;justify-content:center;padding:20px;">
+    <div class="modal" style="max-width:460px">
+      <h2 class="modal-title" id="cobro-title" style="margin-bottom:14px">Pago mensual</h2>
+      <div class="modal-error" id="cobro-error"></div>
+      <div id="cobro-body"></div>
+      <div class="modal-footer" id="cobro-footer"></div>
+    </div>
+  </div>
+
   <!-- ── MODAL DETALLE PEDIDO ────────────────────────────────────────────────── -->
   <div class="modal-overlay" id="order-detail-overlay" onclick="if(event.target===this)closeOrderDetail()" style="display:none;align-items:center;justify-content:center;padding:20px;">
     <div class="modal" style="max-width:780px">
@@ -2760,6 +2836,9 @@
       if (_hashOk) { showView(hash); }
       else if (_av && !_av.includes('dashboard')) { showView(_av[0]); }
       else { renderDashboard(); }
+      // Al iniciar sesión, aunque el usuario no aterrice en el dashboard: si hay
+      // un cobro abierto tiene que verlo igual, y si va atrasado, con los días.
+      revisarCobroMensual();
       if (typeof syncOrdersFromSupabase === 'function') {
         syncOrdersFromSupabase().then(() => {
           renderOrders(); renderDashboard();
@@ -3076,7 +3155,7 @@
       }
       if (name === 'cotizaciones') { renderCotizaciones(); if (typeof syncCotizacionesFromSupabase === 'function') syncCotizacionesFromSupabase().then(ok => { if (ok) renderCotizaciones(); }); }
       if (name === 'envios')       renderEnvios();
-      if (name === 'config')       loadConfig();
+      if (name === 'config')       { loadConfig(); renderCobroSuper(); }
       if (name === 'solicitudes')  {
         renderSolicitudes();
         if (typeof syncVendorAppsFromSupabase === 'function') syncVendorAppsFromSupabase().then(() => renderSolicitudes());
@@ -3838,9 +3917,334 @@
       } catch (e) { /* si falla, la tarjeta simplemente no aparece */ }
     }
 
+    // ══ Cobro mensual de la plataforma ═══════════════════════════════════════
+    // El ciclo va del 25 de un mes al 5 del siguiente. El cliente marca que pagó
+    // y el equipo verifica; hasta que alguien confirme, el aviso sigue vivo y
+    // pasado el 5 se cuentan los días de atraso.
+    //
+    // Quién puede ver o hacer qué lo decide la base: estado_cobro() devuelve
+    // visible:false a quien no es admin, y confirmar/reabrir revientan si quien
+    // llama no es superusuario. Aquí solo se pinta lo que llega — la UI no es la
+    // que guarda el permiso.
+    let _cobro = null;
+
+    const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio',
+                      'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+    function mesDelPeriodo(p) {
+      if (!p) return '';
+      const [a, m] = String(p).split('-');
+      return `${MESES_ES[Number(m) - 1] || m} ${a}`;
+    }
+
+    // Una fecha suelta ('2026-08-25') la parsea el navegador como UTC y en
+    // Guatemala se corre un día hacia atrás. Anclarla al mediodía lo evita.
+    function fechaCobro(v, conAnio) {
+      if (!v) return '';
+      const d = new Date(String(v).length <= 10 ? v + 'T12:00:00' : v);
+      if (isNaN(d.getTime())) return '';
+      return `${d.getDate()} de ${MESES_ES[d.getMonth()]}` + (conAnio ? ` de ${d.getFullYear()}` : '');
+    }
+
+    function montoCobro(c) {
+      if (c == null || c.monto == null || c.monto === '') return '';
+      const n = Number(c.monto);
+      if (!isFinite(n)) return '';
+      return (c.moneda || 'Q') + n.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function diasTexto(n) { return `${n} ${Number(n) === 1 ? 'día' : 'días'}`; }
+
+    // renderDashboard() corre varias veces por carga (settings-ready, tras
+    // sincronizar pedidos, tras comisiones…). Sin este candado serían cuatro
+    // consultas para el mismo dato; con `forzar` se refresca tras una acción.
+    let _cobroConsultado = false;
+
+    async function revisarCobroMensual(opts) {
+      const o = opts || {};
+      if (!window.LAUREAN_DB) return;
+      if (_cobroConsultado && !o.forzar) {
+        pintarCobroBanner();
+        if (o.abrir !== false) quizaAbrirCobroModal();
+        return;
+      }
+      try {
+        const { data, error } = await window.LAUREAN_DB.rpc('estado_cobro');
+        if (error || !data) return;
+        _cobroConsultado = true;
+        _cobro = data;
+        pintarCobroBanner();
+        if (o.abrir !== false) quizaAbrirCobroModal();
+      } catch (e) { /* si falla, el panel simplemente no muestra el aviso */ }
+    }
+
+    function pintarCobroBanner() {
+      const el = document.getElementById('cobro-banner');
+      if (!el) return;
+      const c = _cobro;
+      if (!c || !c.visible) { el.innerHTML = ''; return; }
+
+      const mes   = escapeHtml(mesDelPeriodo(c.periodo));
+      const monto = montoCobro(c);
+      let clase = '', texto = '', boton = 'Ya realicé el pago';
+
+      if (c.estado === 'por_verificar') {
+        clase = 'is-verificando';
+        boton = 'Ver detalle';
+        texto = `Pago de <strong>${mes}</strong> registrado. Lo estamos verificando.`;
+      } else if (c.estado === 'vencido') {
+        clase = 'is-vencido';
+        texto = `<span class="cobro-dias">${c.dias_atraso}</span> `
+              + `${Number(c.dias_atraso) === 1 ? 'día' : 'días'} sin registrar el pago de <strong>${mes}</strong>.`;
+      } else {
+        texto = `Pago mensual de <strong>${mes}</strong>${monto ? ' · ' + escapeHtml(monto) : ''}. `
+              + `Tienes hasta el ${escapeHtml(fechaCobro(c.vence_el))}`
+              + (c.dias_para_vencer > 0 ? ` (${diasTexto(c.dias_para_vencer)})` : '') + '.';
+      }
+
+      el.innerHTML = `
+        <div class="cobro-banner ${clase}">
+          <div class="cobro-banner-texto">${texto}</div>
+          <button class="btn btn-light" type="button" style="padding:7px 14px;font-size:12px"
+                  onclick="abrirCobroModal()">${escapeHtml(boton)}</button>
+        </div>`;
+    }
+
+    // La clave lleva el estado, no solo el periodo: si pasa de "en ventana" a
+    // "vencido" el aviso vuelve a aparecer una vez, que es justo cuando importa.
+    function claveCobroVisto(c) { return `laurean:cobro:${c.periodo}:${c.estado}`; }
+
+    function quizaAbrirCobroModal() {
+      const c = _cobro;
+      if (!c || !c.visible) return;
+      try { if (sessionStorage.getItem(claveCobroVisto(c))) return; } catch (e) { /* modo privado */ }
+      abrirCobroModal();
+    }
+
+    function abrirCobroModal() {
+      const c = _cobro;
+      if (!c || !c.visible) return;
+      try { sessionStorage.setItem(claveCobroVisto(c), '1'); } catch (e) { /* modo privado */ }
+
+      const mes   = escapeHtml(mesDelPeriodo(c.periodo));
+      const monto = montoCobro(c);
+      const err   = document.getElementById('cobro-error');
+      if (err) { err.textContent = ''; err.classList.remove('show'); }
+
+      let titulo = 'Pago mensual', cuerpo = '', pie = '';
+
+      if (c.estado === 'por_verificar') {
+        titulo = 'Pago registrado';
+        cuerpo = `
+          <p style="font-size:13.5px;line-height:1.65;color:var(--carbon);margin-bottom:14px">
+            Recibimos el aviso del pago de <strong>${mes}</strong>. Lo estamos verificando y
+            en cuanto quede confirmado este recordatorio desaparece solo.
+          </p>
+          <div class="cobro-ficha">
+            <div class="cobro-ficha-fila"><span>Marcado por</span><span>${escapeHtml(c.marcado_nombre || '—')}</span></div>
+            <div class="cobro-ficha-fila"><span>Fecha</span><span>${escapeHtml(fechaCobro(c.marcado_en, true))}</span></div>
+            ${c.marcado_nota ? `<div class="cobro-ficha-fila"><span>Referencia</span><span>${escapeHtml(c.marcado_nota)}</span></div>` : ''}
+          </div>`;
+        pie = `<button class="btn btn-dark" onclick="cerrarCobroModal()">Entendido</button>`;
+      } else {
+        const vencido = c.estado === 'vencido';
+        titulo = vencido ? 'Pago pendiente' : `Pago mensual de ${mesDelPeriodo(c.periodo)}`;
+        cuerpo = `
+          <p style="font-size:13.5px;line-height:1.65;color:var(--carbon);margin-bottom:14px">
+            ${vencido
+              ? `Llevas <strong style="color:var(--vino)">${diasTexto(c.dias_atraso)}</strong> sin registrar el pago de <strong>${mes}</strong>.`
+              : `El pago de <strong>${mes}</strong> se recibe del 25 al 5.`}
+          </p>
+          <div class="cobro-ficha" style="margin-bottom:16px">
+            <div class="cobro-ficha-fila"><span>Periodo</span><span>${mes}</span></div>
+            <div class="cobro-ficha-fila"><span>Rango para pagar</span><span>${escapeHtml(fechaCobro(c.abre_el))} — ${escapeHtml(fechaCobro(c.vence_el))}</span></div>
+            ${monto ? `<div class="cobro-ficha-fila"><span>Monto</span><span>${escapeHtml(monto)}</span></div>` : ''}
+            ${!vencido && c.dias_para_vencer > 0
+              ? `<div class="cobro-ficha-fila"><span>Quedan</span><span>${diasTexto(c.dias_para_vencer)}</span></div>` : ''}
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cobro-nota">Referencia del pago <span style="color:var(--warm-mid);text-transform:none;letter-spacing:0">(opcional)</span></label>
+            <input class="form-input" id="cobro-nota" placeholder="Ej: transferencia BI 4471" autocomplete="off" />
+          </div>`;
+        pie = `
+          <button class="btn btn-light" onclick="cerrarCobroModal()">Ahora no</button>
+          <button class="btn btn-dark" id="cobro-btn-pago" onclick="marcarPagoRealizado()">Ya realicé el pago</button>`;
+      }
+
+      document.getElementById('cobro-title').textContent = titulo;
+      document.getElementById('cobro-body').innerHTML    = cuerpo;
+      document.getElementById('cobro-footer').innerHTML  = pie;
+      document.getElementById('cobro-overlay').style.display = 'flex';
+    }
+
+    function cerrarCobroModal() {
+      const el = document.getElementById('cobro-overlay');
+      if (el) el.style.display = 'none';
+    }
+
+    async function marcarPagoRealizado() {
+      const c = _cobro;
+      if (!c || !c.periodo || !window.LAUREAN_DB) return;
+      const btn  = document.getElementById('cobro-btn-pago');
+      const nota = (document.getElementById('cobro-nota') || {}).value || '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Registrando…'; }
+
+      const { data, error } = await window.LAUREAN_DB.rpc('marcar_pago_cobro', {
+        p_periodo: c.periodo, p_nota: nota.trim() || null
+      });
+
+      if (error) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Ya realicé el pago'; }
+        const box = document.getElementById('cobro-error');
+        if (box) { box.textContent = 'No se pudo registrar: ' + error.message; box.classList.add('show'); }
+        return;
+      }
+      _cobro = data;
+      pintarCobroBanner();
+      abrirCobroModal();   // se repinta ya en "por verificar", con el acuse
+    }
+
+    // ── Panel del superusuario (Configuración) ───────────────────────────────
+    async function renderCobroSuper() {
+      const sec = document.getElementById('config-cobro');
+      if (!sec) return;
+      if (!window.SESSION || SESSION.role !== 'superuser' || !window.LAUREAN_DB) {
+        sec.style.display = 'none';
+        return;
+      }
+      sec.style.display = '';
+      const caja = document.getElementById('cobro-super-actual');
+      const tabla = document.getElementById('cobro-super-historial');
+      caja.innerHTML = `<p style="font-size:13px;color:var(--warm-mid)">Cargando…</p>`;
+      tabla.innerHTML = '';
+
+      const { data, error } = await window.LAUREAN_DB.rpc('historial_cobros', { p_limite: 12 });
+      if (error) {
+        caja.innerHTML = `<p style="font-size:13px;color:var(--vino)">No se pudo cargar: ${escapeHtml(error.message)}</p>`;
+        return;
+      }
+      const hist = Array.isArray(data) ? data : [];
+      const hoy  = new Date().toISOString().slice(0, 10);
+
+      // El que manda es el MÁS VIEJO sin confirmar: si agosto quedó sin pagar y
+      // ya abrió septiembre, el que hay que atender es agosto. Sin filtrar por
+      // fecha de apertura: si el único pendiente todavía no abre, destacarlo es
+      // más útil que destacar el último confirmado.
+      const pendientes = hist.filter(r => !r.confirmado_en)
+                             .sort((a, b) => a.abre_el < b.abre_el ? -1 : 1);
+      const foco = pendientes[0] || hist[0] || null;
+
+      caja.innerHTML = foco ? fichaCobroSuper(foco, hoy) :
+        `<p style="font-size:13px;color:var(--warm-mid)">Todavía no hay ningún ciclo registrado.</p>`;
+
+      tabla.innerHTML = `
+        <div class="config-title" style="margin-bottom:10px">Historial</div>
+        <div style="overflow-x:auto">
+        <table style="width:100%">
+          <thead><tr>
+            <th>Periodo</th><th>Rango</th><th>Monto</th><th>Marcado</th><th>Confirmado</th><th>Estado</th>
+          </tr></thead>
+          <tbody>${hist.map(r => filaCobroSuper(r, hoy)).join('') ||
+            `<tr><td colspan="6" class="td-muted" style="text-align:center">Sin ciclos</td></tr>`}</tbody>
+        </table></div>`;
+    }
+
+    function estadoCobroFila(r, hoy) {
+      if (r.confirmado_en)      return { k: 'confirmado',    t: 'Confirmado' };
+      // Que esté marcado manda sobre la fecha: si el cliente pagó por adelantado
+      // el ciclo puede no haber abierto y aun así estar esperando verificación.
+      if (r.marcado_en)         return { k: 'por_verificar', t: 'Por verificar' };
+      if (r.abre_el > hoy)      return { k: 'confirmado',    t: 'Aún no abre' };
+      if (r.vence_el < hoy)     return { k: 'vencido',       t: 'Vencido' };
+      return { k: 'en_ventana', t: 'En ventana' };
+    }
+
+    function fichaCobroSuper(r, hoy) {
+      const est   = estadoCobroFila(r, hoy);
+      const monto = montoCobro(r);
+      const atraso = (!r.confirmado_en && r.vence_el < hoy)
+        ? Math.round((new Date(hoy + 'T12:00:00') - new Date(r.vence_el + 'T12:00:00')) / 86400000) : 0;
+
+      return `
+        <div class="cobro-ficha">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <strong style="font-size:15px">${escapeHtml(mesDelPeriodo(r.periodo))}</strong>
+            <span class="cobro-estado-pill ${est.k}">${escapeHtml(est.t)}</span>
+          </div>
+          <div class="cobro-ficha-fila"><span>Rango</span><span>${escapeHtml(fechaCobro(r.abre_el))} — ${escapeHtml(fechaCobro(r.vence_el))}</span></div>
+          ${atraso > 0 ? `<div class="cobro-ficha-fila"><span>Atraso</span><span style="color:var(--vino)">${diasTexto(atraso)}</span></div>` : ''}
+          <div class="cobro-ficha-fila"><span>Monto</span><span>${monto ? escapeHtml(monto) : '—'}</span></div>
+          <div class="cobro-ficha-fila"><span>Marcado por el cliente</span><span>${
+            r.marcado_en ? escapeHtml(`${r.marcado_nombre || '—'} · ${fechaCobro(r.marcado_en, true)}`) : 'Todavía no'
+          }</span></div>
+          ${r.marcado_nota ? `<div class="cobro-ficha-fila"><span>Referencia</span><span>${escapeHtml(r.marcado_nota)}</span></div>` : ''}
+          ${r.confirmado_en ? `<div class="cobro-ficha-fila"><span>Confirmado</span><span>${
+            escapeHtml(`${r.confirmado_nombre || '—'} · ${fechaCobro(r.confirmado_en, true)}`)
+          }</span></div>` : ''}
+
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--piedra)">
+            <input class="form-input" id="cobro-monto-input" type="number" step="0.01" min="0"
+                   placeholder="Monto" value="${r.monto != null ? escapeAttr(String(r.monto)) : ''}"
+                   style="width:120px;padding:7px 10px;font-size:12px" />
+            <button class="btn btn-light" style="padding:7px 12px;font-size:12px"
+                    onclick="fijarMontoCobroSuper('${jsAttr(r.periodo)}')">Guardar monto</button>
+            <span style="flex:1"></span>
+            ${r.confirmado_en
+              ? `<button class="btn btn-light" style="padding:7px 12px;font-size:12px"
+                         onclick="reabrirCobroSuper('${jsAttr(r.periodo)}')">Reabrir</button>`
+              : `<button class="btn btn-dark" style="padding:7px 14px;font-size:12px"
+                         onclick="confirmarCobroSuper('${jsAttr(r.periodo)}')">Confirmar pago recibido</button>`}
+          </div>
+        </div>`;
+    }
+
+    function filaCobroSuper(r, hoy) {
+      const est = estadoCobroFila(r, hoy);
+      return `
+        <tr>
+          <td>${escapeHtml(mesDelPeriodo(r.periodo))}</td>
+          <td class="td-muted">${escapeHtml(fechaCobro(r.abre_el))} — ${escapeHtml(fechaCobro(r.vence_el))}</td>
+          <td>${escapeHtml(montoCobro(r) || '—')}</td>
+          <td class="td-muted">${r.marcado_en ? escapeHtml(`${r.marcado_nombre || '—'} · ${fechaCobro(r.marcado_en)}`) : '—'}</td>
+          <td class="td-muted">${r.confirmado_en ? escapeHtml(`${r.confirmado_nombre || '—'} · ${fechaCobro(r.confirmado_en)}`) : '—'}</td>
+          <td><span class="cobro-estado-pill ${est.k}">${escapeHtml(est.t)}</span></td>
+        </tr>`;
+    }
+
+    async function accionCobroSuper(rpc, args) {
+      const { error } = await window.LAUREAN_DB.rpc(rpc, args);
+      if (error) { alert('No se pudo completar: ' + error.message); return false; }
+      await renderCobroSuper();
+      // Que la franja del dashboard cuadre con lo que se acaba de hacer, sin
+      // reabrirle el modal a quien está operando desde Configuración.
+      await revisarCobroMensual({ forzar: true, abrir: false });
+      return true;
+    }
+
+    function confirmarCobroSuper(periodo) {
+      if (!confirm(`Confirmar el pago de ${mesDelPeriodo(periodo)}.\n\nEl aviso deja de aparecerle al cliente.`)) return;
+      const nota = prompt('Nota de la verificación (opcional):', '') || '';
+      accionCobroSuper('confirmar_cobro', { p_periodo: periodo, p_nota: nota.trim() || null });
+    }
+
+    function reabrirCobroSuper(periodo) {
+      if (!confirm(`Reabrir el cobro de ${mesDelPeriodo(periodo)}.\n\nEl aviso vuelve a aparecerle al cliente.`)) return;
+      const borrar = confirm('¿Borrar también la marca de "pago realizado" del cliente?\n\nAceptar = sí, Cancelar = conservarla.');
+      accionCobroSuper('reabrir_cobro', { p_periodo: periodo, p_borrar_marca: borrar });
+    }
+
+    function fijarMontoCobroSuper(periodo) {
+      const el = document.getElementById('cobro-monto-input');
+      if (!el) return;
+      const v = Number(el.value);
+      if (!isFinite(v) || v < 0) { alert('Monto no válido.'); return; }
+      accionCobroSuper('fijar_monto_cobro', { p_periodo: periodo, p_monto: v, p_moneda: 'Q' });
+    }
+
     function renderDashboard() {
       renderBirthdaysWidget();
       renderDashAlerts();
+      revisarCobroMensual();
       revisarCuadreEnSegundoPlano();
       const orders      = getOrders();
       const commissions = getCommissions();
