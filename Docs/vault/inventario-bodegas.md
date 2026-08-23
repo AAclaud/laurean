@@ -212,3 +212,24 @@ Cache local (`localStorage`), reconstruido desde la base en cada sync:
 Orden obligatorio de sincronizacion: `syncVariantStockFromSupabase()` **antes**
 de `syncStockFromSupabase()`, porque el segundo completa los totales de los
 productos sin COD sumando variantes.
+
+## Saldo inicial del kardex
+
+La carga inicial del inventario escribio `variant_stock` directo, sin pasar por
+`mover_inventario()`, asi que no dejo movimientos: el kardex arrancaba el 30/07/2026 y de
+121 productos con existencias solo 19 tenian historia. Se declaro un asiento de apertura
+(`motivo = 'saldo inicial'`, fechado 29/07, autor «Carga inicial») por cada variante, sin
+tocar ninguna unidad. Desde entonces el kardex cuadra: saldo inicial + movimientos =
+existencias, en las 1.874 variantes.
+
+Dos trampas al reconstruirlo, ambas documentadas en `supabase/saldo-inicial-kardex.sql`:
+
+- Un traslado viejo dejaba **dos** movimientos con el mismo `from_bodega`/`to_bodega` —
+  uno con el saldo del origen y otro con el del destino. Contar los dos daba el doble y
+  producia saldos iniciales negativos. Se distinguen por el signo de
+  `new_stock - previous_stock` frente a `±quantity`.
+- `quantity` no sirve para deducir el signo: hay un ajuste de `+1347` cuyo delta real fue
+  `-1347`.
+
+El mismo doble registro hacia que el kardex mostrara cada traslado dos veces; en la vista
+se colapsa con `colapsarTrasladosDobles()` de `admin.html`.
