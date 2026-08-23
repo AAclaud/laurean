@@ -161,6 +161,32 @@ Contador propio de visitas del sitio. Columnas: `id`, `site_key`, `page_path`, `
 
 Flujo: las paginas publicas cargan `js/visit-tracker.js`, que deduplica por pagina/sesion y llama la Edge Function publica `supabase/functions/log-visit/`. La funcion inserta con `SUPABASE_SERVICE_ROLE_KEY` para omitir RLS. RLS: `anon` puede INSERT; solo admin puede SELECT. La vista [[orden-dashboards|Analitica]] en `admin.html` lee la tabla con `window.LAUREAN_DB`.
 
+### cobros_mensuales
+Un renglon por ciclo de cobro de la plataforma. Columnas: `periodo` (PK, 'YYYY-MM' del mes en
+que abre), `abre_el` (dia 25), `vence_el` (dia 5 del mes siguiente), `monto`, `moneda`,
+`marcado_en` / `marcado_por` / `marcado_nombre` / `marcado_nota`, `confirmado_en` /
+`confirmado_por` / `confirmado_nombre` / `confirmado_nota`, `created_at`.
+
+El ciclo va **del 25 de un mes al 5 del siguiente** (la fecha de pago acordada es el 30, pero
+ese es el rango que tienen para efectuarlo). Dos manos distintas tocan cada periodo: el cliente
+marca «pago realizado» (`marcado_en`, cualquier rol admin) y el equipo de la agencia verifica y
+apaga el aviso (`confirmado_en`, solo superusuario). Mientras no este confirmado el periodo
+sigue vivo; pasado el 5 sin marcar se cuentan los dias de atraso.
+
+RLS **habilitado sin ninguna policy**: nadie llega por PostgREST. Todo entra por RPC, que es
+donde vive la separacion de permisos — `estado_cobro()` (lo que ve el panel, devuelve
+`visible:false` a quien no es admin), `marcar_pago_cobro()`, `confirmar_cobro()`,
+`reabrir_cobro()`, `fijar_monto_cobro()` e `historial_cobros()`. Las cuatro ultimas exigen
+`es_superuser()`.
+
+`asegurar_cobros()` crea los periodos que ya abrieron partiendo de la fila mas vieja (el ancla
+sembrada es `2026-08`), asi que un atraso largo no se ve como si no hubiera pasado nada.
+`estado_cobro()` e `historial_cobros()` tienen que ser **VOLATILE** para poder llamarla: como
+STABLE no podrian escribir y no se generaria ningun ciclo despues del primero.
+
+SQL: `supabase/cobro-mensual.sql`. Lo consume `admin.html` ([[orden-dashboards|Dashboard]] para
+el aviso del cliente, Configuracion para el panel del superusuario). Ver [[auth-roles]].
+
 ## Storage
 
 Bucket `product-images` (publico):
@@ -176,7 +202,10 @@ Bucket `product-images` (publico):
 - order_tracking_events: admin o dueno del pedido puede leer; escritura admin / Edge Function con service_role.
 - analytics_page_visits: insercion publica; lectura admin.
 
+- cobros_mensuales: RLS sin policies — cerrada por completo, se opera solo por RPC.
+
 Funcion auxiliar `is_admin()` (security definer): retorna true si el `auth.uid()` tiene role admin/superuser y active=true.
+Funcion auxiliar `es_superuser()` (security definer): igual pero solo para role superuser. Es la que separa lo que puede hacer el cliente de lo que solo puede la agencia.
 
 ## Triggers
 
