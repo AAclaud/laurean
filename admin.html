@@ -225,6 +225,17 @@
     .cobro-banner.is-verificando { border-left-color:#4A6B3E; }
     .cobro-banner-texto { flex:1 1 260px; min-width:0; font-size:13px; line-height:1.55; color:var(--carbon); }
     .cobro-dias { font-family:var(--fd,serif); font-size:22px; font-weight:600; color:var(--vino); line-height:1; }
+    /* ─── Filtro por área del registro ────────────────────────────────────── */
+    .log-areas { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+    .log-area {
+      padding:5px 12px; border:1px solid var(--piedra); border-radius:999px;
+      background:transparent; color:var(--warm-mid); font:400 12px var(--fb);
+      cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+    }
+    .log-area:hover { background:var(--crema); }
+    .log-area.is-on { background:var(--carbon); border-color:var(--carbon); color:#fff; }
+    .log-area:focus-visible { outline:2px solid var(--vino); outline-offset:2px; }
+
     .cobro-ficha { border:1px solid var(--piedra); border-radius:8px; padding:16px; background:var(--crema); }
     .cobro-ficha-fila { display:flex; gap:10px; justify-content:space-between; font-size:13px; padding:5px 0; }
     .cobro-ficha-fila span:first-child { color:var(--warm-mid); }
@@ -1265,10 +1276,14 @@
       <!-- ── REGISTRO DE ACTIVIDAD (solo superuser) ─────────────────────────── -->
       <div id="view-logs" class="view">
         <h1 class="view-title">Registro de <em>actividad</em></h1>
-        <div class="filter-row" style="margin-bottom:16px;">
+        <div class="filter-row" style="margin-bottom:12px;">
           <input type="search" class="form-input" id="logs-search" placeholder="Buscar por usuario, acción o entidad…" oninput="renderLogsFilter()" style="width:280px" />
           <button class="btn btn-light" onclick="renderLogs()">Actualizar</button>
+          <span id="logs-conteo" style="font-size:12px;color:var(--warm-mid);align-self:center"></span>
         </div>
+        <!-- Sin filtro por área, los 2.900 cambios de precio tapan todo lo demás:
+             el registro completo solo sirve si se puede mirar por partes. -->
+        <div id="logs-areas" class="log-areas"></div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Qué</th><th>Detalle</th></tr></thead>
@@ -3165,30 +3180,121 @@
     }
 
     let _LOGS_CACHE = [];
+    let _LOGS_AREA  = 'todo';
+
+    // Las áreas agrupan entity_type para que el registro se pueda mirar por
+    // partes. El filtro va a la consulta, no al resultado: si se filtrara
+    // después, el tope de 300 filas ya se habría gastado en cambios de precio.
+    const LOG_AREAS = [
+      { id:'todo',      label:'Todo',       tipos:null },
+      { id:'inventario',label:'Inventario', tipos:['inventario'] },
+      { id:'pedidos',   label:'Pedidos',    tipos:['pedido','pedidos'] },
+      { id:'catalogo',  label:'Catálogo',   tipos:['producto','categoría','subcategoría','combo'] },
+      { id:'precios',   label:'Precios',    tipos:['precio'] },
+      { id:'personas',  label:'Personas',   tipos:['usuario','cliente','proveedor','solicitud','permisos'] },
+      { id:'dinero',    label:'Cobros',     tipos:['cobro','comisión','descuento','cotización'] },
+      { id:'sistema',   label:'Sistema',    tipos:['configuración','bodega','limpieza'] },
+    ];
+
+    function pintarAreasLog() {
+      const cont = document.getElementById('logs-areas');
+      if (!cont) return;
+      cont.innerHTML = LOG_AREAS.map(a =>
+        `<button type="button" class="log-area${a.id === _LOGS_AREA ? ' is-on' : ''}"
+                 onclick="cambiarAreaLog('${a.id}')">${escapeHtml(a.label)}</button>`).join('');
+    }
+
+    function cambiarAreaLog(id) { _LOGS_AREA = id; pintarAreasLog(); renderLogs(); }
+
     async function renderLogs() {
       const tbody = document.getElementById('logs-tbody');
       if (!tbody) return;
+      pintarAreasLog();
       tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">Cargando…</td></tr>`;
       if (!window.LAUREAN_DB) { tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">Sin conexión a la nube</td></tr>`; return; }
-      const { data, error } = await window.LAUREAN_DB.from('activity_log').select('*').order('created_at', { ascending: false }).limit(300);
+
+      const area = LOG_AREAS.find(a => a.id === _LOGS_AREA) || LOG_AREAS[0];
+      let q = window.LAUREAN_DB.from('activity_log').select('*');
+      if (area.tipos) q = q.in('entity_type', area.tipos);
+
+      const { data, error } = await q.order('created_at', { ascending: false }).limit(300);
       if (error) { tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">No se pudo cargar el registro (solo el superusuario puede verlo): ${escapeHtml(error.message)}</td></tr>`; return; }
       _LOGS_CACHE = data || [];
+      const lbl = document.getElementById('logs-conteo');
+      if (lbl) lbl.textContent = _LOGS_CACHE.length >= 300
+        ? 'Mostrando los 300 más recientes' : `${_LOGS_CACHE.length} registro(s)`;
       paintLogs(_LOGS_CACHE);
     }
     function paintLogs(rows) {
       const tbody = document.getElementById('logs-tbody');
       if (!tbody) return;
       if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="td-muted" style="text-align:center">Sin actividad registrada</td></tr>`; return; }
-      const A_LABEL = { crear:'Creó', editar:'Editó', guardar:'Guardó', eliminar:'Eliminó', pago:'Pagó', estado:'Cambió estado', activar:'Activó', desactivar:'Desactivó' };
-      const A_COLOR = { eliminar:'#C62828', crear:'#2E7D32', editar:'#8F3833', estado:'#1565C0', pago:'#2E7D32', desactivar:'#C62828', activar:'#2E7D32' };
+      const A_LABEL = {
+        crear:'Creó', editar:'Editó', guardar:'Guardó', eliminar:'Eliminó',
+        pago:'Marcó el pago', estado:'Cambió estado', activar:'Activó', desactivar:'Desactivó',
+        // Movimientos de inventario: la acción es el tipo del kardex.
+        ingreso:'Ingresó', salida:'Retiró', ajuste:'Ajustó', transferencia:'Trasladó',
+        venta:'Vendió', devolucion:'Devolvió',
+        confirmar:'Confirmó el pago', reabrir:'Reabrió el cobro',
+      };
+      const A_COLOR = {
+        eliminar:'#C62828', crear:'#2E7D32', editar:'#8F3833', estado:'#1565C0',
+        pago:'#2E7D32', desactivar:'#C62828', activar:'#2E7D32',
+        ingreso:'#2E7D32', salida:'#C62828', ajuste:'#9A6F00', transferencia:'#1565C0',
+        venta:'#2E7D32', devolucion:'#9A6F00', confirmar:'#2E7D32', reabrir:'#9A6F00',
+      };
       tbody.innerHTML = rows.map(l => `
         <tr>
           <td class="td-muted" style="white-space:nowrap;font-size:12px">${escapeHtml(new Date(l.created_at).toLocaleString('es-GT', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }))}</td>
           <td>${escapeHtml(l.actor_name || l.actor_email || '—')}</td>
           <td><span style="font-weight:600;color:${A_COLOR[l.action] || 'var(--carbon)'}">${escapeHtml(A_LABEL[l.action] || l.action)}</span></td>
           <td>${escapeHtml(l.entity_type || '')}${l.entity_name ? ` · <strong>${escapeHtml(l.entity_name)}</strong>` : ''}</td>
-          <td class="td-muted" style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.details ? escapeHtml(typeof l.details === 'string' ? l.details : JSON.stringify(l.details)) : ''}</td>
+          <td class="td-muted" style="font-size:11.5px;max-width:340px">${detalleLegible(l)}</td>
         </tr>`).join('');
+    }
+
+    // El detalle se guardaba como JSON crudo en pantalla («{"antes":100,...}»).
+    // Aquí se traduce a la misma frase que diría una persona.
+    //
+    // La base ya guarda el nombre de la bodega tal como estaba al momento del
+    // movimiento. Esto solo cubre lo que quedó con id crudo.
+    function nombreBodegaLog(v) {
+      if (!v) return '';
+      if (!/^bdg_/.test(v)) return v;
+      const b = (typeof getBodegas === 'function' ? getBodegas() : []).find(x => x.id === v);
+      return b ? b.name : v;
+    }
+
+    function detalleLegible(l) {
+      const d = l && l.details;
+      if (!d) return '';
+      if (typeof d === 'string') return escapeHtml(d);
+
+      const partes = [];
+
+      if (l.entity_type === 'inventario') {
+        const variante = [d.color, d.talla].filter(Boolean).join(' / ');
+        if (variante) partes.push(`<strong>${escapeHtml(variante)}</strong>`);
+        if (d.antes != null && d.despues != null) partes.push(`${d.antes} → ${d.despues}`);
+        else if (d.cantidad != null) partes.push(`${Math.abs(d.cantidad)} u.`);
+        if (d.desde && d.hacia) partes.push(`${escapeHtml(nombreBodegaLog(d.desde))} → ${escapeHtml(nombreBodegaLog(d.hacia))}`);
+        else if (d.bodega)      partes.push(escapeHtml(d.bodega));
+        if (d.nota) partes.push(escapeHtml(d.nota));
+        return partes.join(' · ');
+      }
+
+      const ETIQUETA = {
+        cambio:'Cambió', campos:'Campos', tipo:'Tipo', rol:'Rol', correo:'Correo',
+        cliente:'Cliente', total:'Total', origen:'Origen', estado:'Estado',
+        referencia:'Referencia', nota:'Nota', monto:'Monto', antes:'Antes',
+      };
+      if (d.de || d.a) partes.push(`${escapeHtml(d.de || '—')} → <strong>${escapeHtml(d.a || '—')}</strong>`);
+      for (const [k, v] of Object.entries(d)) {
+        if (k === 'de' || k === 'a' || k === 'historico' || v == null || v === '') continue;
+        const valor = Array.isArray(v) ? v.join(', ') : String(v);
+        partes.push(`${escapeHtml(ETIQUETA[k] || k)}: ${escapeHtml(valor)}`);
+      }
+      return partes.join(' · ');
     }
     function renderLogsFilter() {
       const q = (document.getElementById('logs-search').value || '').toLowerCase();
@@ -4773,7 +4879,7 @@
       if (window.LAUREAN_DB && u) {
         const r = await callUserFn({ action: 'deactivate', id, active: !u.active });
         if (!r.ok) alert('No se pudo sincronizar el estado en Supabase: ' + r.error);
-        else if (window.logActivity) window.logActivity(u.active ? 'desactivar' : 'activar', 'usuario', id, u.name || id);
+        // El registro de usuarios lo escribe el trigger log_perfil en la base.
       }
     }
 
@@ -4787,7 +4893,7 @@
         if (!r.ok) { alert('No se pudo eliminar en Supabase: ' + r.error); return; }
       }
       deleteUser(id);
-      if (window.logActivity) window.logActivity('eliminar', 'usuario', id, u?.name || id);
+      // Registrado por el trigger log_perfil.
       renderUsers();
     }
 
@@ -4987,7 +5093,7 @@
             });
             if (!r.ok) { showModalError('Guardado local, pero falló en Supabase: ' + r.error); renderUsers(); return; }
           }
-          if (window.logActivity) window.logActivity('editar', 'usuario', id, name);
+          // Registrado por el trigger log_perfil.
         } else {
           // ── Crear ── (local-first: persiste en local aunque Supabase falle)
           let newId = genId(role === 'vendedor' ? 'vnd' : role === 'bodega' ? 'bdg' : role === 'agente_pedidos' ? 'agp' : 'adm');
@@ -5015,7 +5121,7 @@
             createdAt: new Date().toISOString(),
           });
           if (syncWarn) { showModalError(syncWarn); renderUsers(); return; }
-          if (window.logActivity) window.logActivity('crear', 'usuario', newId, name);
+          // Registrado por el trigger log_perfil.
         }
 
         closeModal();

@@ -161,6 +161,32 @@ Contador propio de visitas del sitio. Columnas: `id`, `site_key`, `page_path`, `
 
 Flujo: las paginas publicas cargan `js/visit-tracker.js`, que deduplica por pagina/sesion y llama la Edge Function publica `supabase/functions/log-visit/`. La funcion inserta con `SUPABASE_SERVICE_ROLE_KEY` para omitir RLS. RLS: `anon` puede INSERT; solo admin puede SELECT. La vista [[orden-dashboards|Analitica]] en `admin.html` lee la tabla con `window.LAUREAN_DB`.
 
+### activity_log
+Registro de actividad: quien hizo que y cuando. Columnas: `id`, `actor_id`, `actor_name`,
+`actor_email`, `action`, `entity_type`, `entity_id`, `entity_name`, `details` (jsonb),
+`created_at`. Lectura SOLO superuser.
+
+**Se escribe desde la base, con triggers, no desde el navegador.** Antes se llenaba solo con
+llamadas a `logActivity()` en `admin.html`, y eso dejaba fuera todo lo que no pasa por un clic:
+los movimientos de inventario (`mover_inventario()` corre en el servidor), las ventas que
+descuentan stock por trigger, las devoluciones al cancelar un pedido, y cualquier accion de
+quien no es admin — la policy de insert exige `is_admin()`. Los 92 movimientos que ya existian
+en el kardex se rellenaron con su fecha original.
+
+`anotar_actividad()` es SECURITY DEFINER, asi que salta esa policy y registra a todos. Triggers
+activos: `log_movimiento_inventario` (inventory_movements), `log_pedido` (orders),
+`log_perfil` (profiles) y `log_cobro` (cobros_mensuales). Al pasar a triggers se quitaron las
+llamadas equivalentes del frontend para no duplicar.
+
+`action` para inventario es el tipo del kardex — `ingreso`, `salida`, `ajuste`,
+`transferencia` — mas `venta` y `devolucion` derivados del motivo. El panel los traduce
+(«Ingreso», «Retiro», «Ajusto», «Traslado», «Vendio», «Devolvio») en `detalleLegible()`.
+
+Los nombres de bodega se guardan resueltos en `details`, no como id: un registro de auditoria
+no puede cambiar si mañana renombran una bodega.
+
+SQL: `supabase/registro-actividad.sql`. Ver [[auth-roles]] e [[inventario-bodegas]].
+
 ### cobros_mensuales
 Un renglon por ciclo de cobro de la plataforma. Columnas: `periodo` (PK, 'YYYY-MM' del mes en
 que abre), `abre_el` (dia 25), `vence_el` (dia 5 del mes siguiente), `monto`, `moneda`,

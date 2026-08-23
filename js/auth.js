@@ -1470,7 +1470,8 @@ function updateOrderStatus(id, status) {
     window.LAUREAN_DB.from('orders').update({ status }).eq('id', orders[idx].supabase_id)
       .then(({ error }) => { if (error) console.warn('[supabase] order status update:', error.message); });
   }
-  logActivity('estado', 'pedido', orders[idx].id, orders[idx].customerName || orders[idx].id, { status });
+  // El cambio de estado lo registra el trigger log_pedido en la base: asi
+  // queda anotado tambien cuando lo mueve el POS o la propia base.
 }
 
 function getOrdersByUser(userId) {
