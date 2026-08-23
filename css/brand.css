@@ -24,6 +24,12 @@
   --piedra:   #E8E3DC;
   --carbon:   #192729;   /* dark principal = Dark Gunmetal oficial */
   --warm-mid: #8F3833;   /* acento vino / texto cálido secundario */
+  /* admin.html las usaba en 33 declaraciones sin que estuvieran definidas. Una
+     variable inexistente invalida la declaración entera: los bordes caían en
+     currentColor (negro puro) y los fondos quedaban transparentes. Son alias de
+     los dos tonos que la UI ya usa para lo mismo. */
+  --warm-bg:     #F1ECE8;   /* = crema  · fondo de cajas y campos */
+  --warm-border: #E8E3DC;   /* = piedra · borde suave de campos y desplegables */
   --vino:     #8F3833;   /* El Salva */
   --vino-dk:  #531F23;   /* Ruby Antiguo */
   --dorado:   #EBC372;   /* Rob Roy (oficial) */

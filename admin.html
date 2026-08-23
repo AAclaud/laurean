@@ -225,8 +225,6 @@
     .cobro-banner.is-verificando { border-left-color:#4A6B3E; }
     .cobro-banner-texto { flex:1 1 260px; min-width:0; font-size:13px; line-height:1.55; color:var(--carbon); }
     .cobro-dias { font-family:var(--fd,serif); font-size:22px; font-weight:600; color:var(--vino); line-height:1; }
-    /* --warm-bg / --warm-border se usan en varios sitios del archivo pero no
-       estan definidos en brand.css: resuelven a nada. Aqui se usan tokens reales. */
     .cobro-ficha { border:1px solid var(--piedra); border-radius:8px; padding:16px; background:var(--crema); }
     .cobro-ficha-fila { display:flex; gap:10px; justify-content:space-between; font-size:13px; padding:5px 0; }
     .cobro-ficha-fila span:first-child { color:var(--warm-mid); }
@@ -4335,6 +4333,24 @@
         </div>`;
     }
 
+    // Cancelar un pedido devuelve la mercadería sola desde el 22/08 (el trigger
+    // pedido_cambia_estado). Antes lo hacía una persona a mano, y si alguien
+    // sigue con esa costumbre las unidades vuelven dos veces. Se dice en el
+    // punto exacto —el detalle del pedido cancelado— y con el tono de las «i».
+    function notaCancelacionDevuelve(o) {
+      if (String(o.status || '') !== 'cancelado') return '';
+      return `<div class="hint-banner" style="margin:10px 0 0">
+          ${ICONO_INFO}
+          <div>
+            <p>La mercadería de este pedido ya volvió al inventario sola, con su movimiento en el kardex.</p>
+            <span class="hint-flujo">No hagas un ajuste a mano para devolverla: se contaría dos veces.</span>
+          </div>
+        </div>`;
+    }
+
+    const ICONO_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
+      + '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6v.6"/></svg>';
+
     async function subirPedidoDesdeDetalle(id) {
       const o = getOrders().find(x => x.id === id);
       if (!o) return;
@@ -5294,7 +5310,8 @@
       badge.style.background = statusColor(o.status) + '22';
       badge.style.color = statusColor(o.status);
       document.getElementById('od-meta').textContent = fmtDate(o.createdAt) + (o.createdAt ? ' · ' + new Date(o.createdAt).toLocaleTimeString('es-GT', {hour:'2-digit',minute:'2-digit'}) : '');
-      document.getElementById('od-origin').innerHTML = originBadge(o) + avisoPedidoSoloLocal(o);
+      document.getElementById('od-origin').innerHTML =
+        originBadge(o) + avisoPedidoSoloLocal(o) + notaCancelacionDevuelve(o);
       const customerDept = o.customerDepartment || o.customer_department || '';
       const customerMuni = o.customerCity || o.customer_city || '';
       const shippingMethod = shippingMethodLabel(o.shipping_method || o.shippingMethod || '');
