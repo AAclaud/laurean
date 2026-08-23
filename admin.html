@@ -225,16 +225,18 @@
     .cobro-banner.is-verificando { border-left-color:#4A6B3E; }
     .cobro-banner-texto { flex:1 1 260px; min-width:0; font-size:13px; line-height:1.55; color:var(--carbon); }
     .cobro-dias { font-family:var(--fd,serif); font-size:22px; font-weight:600; color:var(--vino); line-height:1; }
-    /* ─── Filtro por área del registro ────────────────────────────────────── */
-    .log-areas { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
-    .log-area {
+    /* ─── Chips de filtro (registro por área, usuarios por grupo) ─────────── */
+    .chip-row, .log-areas { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+    .chip, .log-area {
+      display:inline-flex; align-items:center; gap:6px;
       padding:5px 12px; border:1px solid var(--piedra); border-radius:999px;
       background:transparent; color:var(--warm-mid); font:400 12px var(--fb);
       cursor:pointer; transition:background .15s, color .15s, border-color .15s;
     }
-    .log-area:hover { background:var(--crema); }
-    .log-area.is-on { background:var(--carbon); border-color:var(--carbon); color:#fff; }
-    .log-area:focus-visible { outline:2px solid var(--vino); outline-offset:2px; }
+    .chip:hover, .log-area:hover { background:var(--crema); }
+    .chip.is-on, .log-area.is-on { background:var(--carbon); border-color:var(--carbon); color:#fff; }
+    .chip:focus-visible, .log-area:focus-visible { outline:2px solid var(--vino); outline-offset:2px; }
+    .chip-n { font-size:11px; opacity:.7; }
 
     .cobro-ficha { border:1px solid var(--piedra); border-radius:8px; padding:16px; background:var(--crema); }
     .cobro-ficha-fila { display:flex; gap:10px; justify-content:space-between; font-size:13px; padding:5px 0; }
@@ -1006,7 +1008,15 @@
       <!-- ── VENDEDORES / USUARIOS ──────────────────────────────────────────── -->
       <div id="view-vendedores" class="view">
         <h1 class="view-title" id="users-view-title">Gestión de <em>Usuarios</em></h1>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+        <!-- El equipo de Laurean y las vendedoras vivían mezclados en una sola
+             lista, y para ver solo vendedoras había que buscarlas a ojo. -->
+        <div id="users-grupos" class="chip-row"></div>
+        <div class="filter-row" style="margin-bottom:20px;">
+          <input type="search" class="form-input" id="users-search" placeholder="Buscar por nombre, correo o código…"
+                 oninput="renderUsers()" autocomplete="off" style="width:250px" />
+          <select class="form-input" id="users-orden" onchange="renderUsers()" style="width:180px"></select>
+          <span id="users-conteo" style="font-size:12px;color:var(--warm-mid);align-self:center"></span>
+          <span style="flex:1"></span>
           <button class="btn btn-dark" onclick="openUserModal(null)">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nuevo usuario
@@ -1393,7 +1403,12 @@
       <!-- ── VISTA: PROVEEDORES ─────────────────────────────────────────────── -->
       <div id="view-proveedores" class="view">
         <h1 class="view-title">Proveedores</h1>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+        <div class="filter-row" style="margin-bottom:20px;">
+          <input type="search" class="form-input" id="prov-search" placeholder="Buscar por nombre, contacto o ciudad…"
+                 oninput="renderProveedores()" autocomplete="off" style="width:250px" />
+          <select class="form-input" id="prov-orden" onchange="renderProveedores()" style="width:180px"></select>
+          <span id="prov-conteo" style="font-size:12px;color:var(--warm-mid);align-self:center"></span>
+          <span style="flex:1"></span>
           <button class="btn btn-dark" onclick="openProvModal()">+ Agregar proveedor</button>
         </div>
         <table class="tbl">
@@ -1976,7 +1991,12 @@
       <!-- ── VISTA: CLIENTES ──────────────────────────────────────────────── -->
       <div id="view-clientes" class="view">
         <h1 class="view-title">Clientes <em>Registrados</em></h1>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+        <div class="filter-row" style="margin-bottom:20px;">
+          <input type="search" class="form-input" id="clients-search" placeholder="Buscar por nombre, teléfono o correo…"
+                 oninput="renderClientes()" autocomplete="off" style="width:250px" />
+          <select class="form-input" id="clients-orden" onchange="renderClientes()" style="width:180px"></select>
+          <span id="clients-conteo" style="font-size:12px;color:var(--warm-mid);align-self:center"></span>
+          <span style="flex:1"></span>
           <button class="btn btn-dark" onclick="openClientModal(null)">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nuevo cliente
@@ -4767,6 +4787,19 @@
     }
 
     // ─── Usuarios ──────────────────────────────────────────────────────────────
+    // Grupos de la vista de usuarios. El equipo de Laurean y las vendedoras
+    // hacían una sola lista revuelta; separarlos es la diferencia entre buscar
+    // y encontrar.
+    const USER_GRUPOS = [
+      { id:'todos',      label:'Todos',      roles:null },
+      { id:'equipo',     label:'Equipo',     roles:['superuser','admin','agente_pedidos'] },
+      { id:'vendedoras', label:'Vendedoras', roles:['vendedor'] },
+      { id:'bodega',     label:'Bodega',     roles:['bodega'] },
+    ];
+    let _USERS_GRUPO = 'todos';
+
+    function cambiarGrupoUsuarios(id) { _USERS_GRUPO = id; renderUsers(); }
+
     function renderUsers() {
       const all   = getUsers();
       const orders = getOrders();
@@ -4775,12 +4808,46 @@
         ? all.filter(u => u.id !== SESSION.userId)
         : all.filter(u => visibleForAdmin.includes(u.role));
 
+      // Los grupos vacíos no se pintan: un chip que siempre da cero es ruido.
+      const gruposCont = document.getElementById('users-grupos');
+      if (gruposCont) {
+        const conGente = USER_GRUPOS.filter(g =>
+          !g.roles || canSee.some(u => g.roles.includes(u.role)));
+        if (!conGente.some(g => g.id === _USERS_GRUPO)) _USERS_GRUPO = 'todos';
+        gruposCont.innerHTML = conGente.map(g => {
+          const n = g.roles ? canSee.filter(u => g.roles.includes(u.role)).length : canSee.length;
+          return `<button type="button" class="chip${g.id === _USERS_GRUPO ? ' is-on' : ''}"
+                          onclick="cambiarGrupoUsuarios('${g.id}')">${escapeHtml(g.label)} <span class="chip-n">${n}</span></button>`;
+        }).join('');
+      }
+
+      const sel = document.getElementById('users-orden');
+      if (sel && !sel.options.length) sel.innerHTML = opcionesOrdenHtml('nombre');
+
+      const grupo = USER_GRUPOS.find(g => g.id === _USERS_GRUPO) || USER_GRUPOS[0];
+      const q = ((document.getElementById('users-search') || {}).value || '').trim().toLowerCase();
+
+      let lista = canSee;
+      if (grupo.roles) lista = lista.filter(u => grupo.roles.includes(u.role));
+      if (q) lista = lista.filter(u =>
+        [u.name, u.email, u.code, u.phone, roleLabel(u.role)]
+          .filter(Boolean).join(' ').toLowerCase().includes(q));
+
+      lista = ordenarLista(lista, (sel && sel.value) || 'nombre', {
+        nombre: u => u.name || u.email || '',
+        fecha:  u => u.createdAt || u.created_at || 0,
+      });
+
+      const lbl = document.getElementById('users-conteo');
+      if (lbl) lbl.textContent = `${lista.length} de ${canSee.length}`;
+
       const tbody = document.getElementById('users-tbody');
-      if (!canSee.length) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Sin usuarios</p></div></td></tr>`;
+      if (!lista.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>${
+          q ? 'Nadie coincide con la búsqueda' : 'Sin usuarios en este grupo'}</p></div></td></tr>`;
         return;
       }
-      tbody.innerHTML = canSee.map(u => {
+      tbody.innerHTML = lista.map(u => {
         const isVendor = u.role === 'vendedor';
         const lvl = isVendor && typeof getSellerLevel === 'function' ? getSellerLevel(u.id) : null;
         const codeUses = isVendor && u.code
@@ -4855,6 +4922,39 @@
           </td>
         </tr>`;
       }).join('');
+    }
+
+    // ── Orden reutilizable para las listas del panel ─────────────────────────
+    // Varias vistas traían un orden fijo escrito adentro y sin forma de
+    // cambiarlo. Esto da las mismas opciones, con los mismos nombres, en todas.
+    const ORDENES = [
+      { id:'nombre',   label:'Nombre (A–Z)' },
+      { id:'nombre-z', label:'Nombre (Z–A)' },
+      { id:'reciente', label:'Más recientes' },
+      { id:'antiguo',  label:'Más antiguos' },
+    ];
+
+    function opcionesOrdenHtml(pordefecto) {
+      return ORDENES.map(o =>
+        `<option value="${o.id}"${o.id === pordefecto ? ' selected' : ''}>${o.label}</option>`).join('');
+    }
+
+    function ordenarLista(items, modo, campos) {
+      const c = campos || {};
+      const nombreDe = c.nombre || (x => x.name || '');
+      const fechaDe  = c.fecha  || (x => x.createdAt || x.created_at || 0);
+      // localeCompare con 'es' para que los acentos y la ñ caigan donde deben:
+      // con un sort crudo, «Ángela» se iba después de «Zoe».
+      const porNombre = (a, b) =>
+        String(nombreDe(a) || '').localeCompare(String(nombreDe(b) || ''), 'es', { sensitivity: 'base' });
+      const nuevoPrimero = (a, b) => new Date(fechaDe(b) || 0) - new Date(fechaDe(a) || 0);
+      const arr = [...items];
+      switch (modo) {
+        case 'nombre-z': return arr.sort((a, b) => porNombre(b, a));
+        case 'reciente': return arr.sort(nuevoPrimero);
+        case 'antiguo':  return arr.sort((a, b) => nuevoPrimero(b, a));
+        default:         return arr.sort(porNombre);
+      }
     }
 
     function formatUserTenure(value) {
@@ -7613,7 +7713,22 @@
     }
 
     function renderProveedores() {
-      const list  = getProveedores();
+      const todos = getProveedores();
+      const sel = document.getElementById('prov-orden');
+      if (sel && !sel.options.length) sel.innerHTML = opcionesOrdenHtml('nombre');
+      const q = ((document.getElementById('prov-search') || {}).value || '').trim().toLowerCase();
+
+      let list = q
+        ? todos.filter(p => [p.name, p.contact, p.city, p.phone, p.email].filter(Boolean).join(' ').toLowerCase().includes(q))
+        : todos;
+      list = ordenarLista(list, (sel && sel.value) || 'nombre', {
+        nombre: p => p.name || '',
+        fecha:  p => p.createdAt || p.created_at || 0,
+      });
+
+      const lbl = document.getElementById('prov-conteo');
+      if (lbl) lbl.textContent = `${list.length} de ${todos.length}`;
+
       const tbody = document.getElementById('prov-tbody');
       tbody.innerHTML = list.length ? list.map(p => {
         const purchases = getInventoryMovements({ type: 'ingreso', proveedorId: p.id });
@@ -9911,7 +10026,23 @@
 
     // ─── Clientes ──────────────────────────────────────────────────────────────
     function renderClientes() {
-      const list  = [...getCustomers()].sort((a, b) => new Date(b.lastOrderAt||0) - new Date(a.lastOrderAt||0));
+      const todos = getCustomers();
+      const sel = document.getElementById('clients-orden');
+      // Por defecto el que compró más reciente, que era el orden fijo de antes.
+      if (sel && !sel.options.length) sel.innerHTML = opcionesOrdenHtml('reciente');
+      const q = ((document.getElementById('clients-search') || {}).value || '').trim().toLowerCase();
+
+      let list = q
+        ? todos.filter(c => [c.name, c.phone, c.email].filter(Boolean).join(' ').toLowerCase().includes(q))
+        : todos;
+      list = ordenarLista(list, (sel && sel.value) || 'reciente', {
+        nombre: c => c.name || '',
+        fecha:  c => c.lastOrderAt || c.createdAt || 0,
+      });
+
+      const lbl = document.getElementById('clients-conteo');
+      if (lbl) lbl.textContent = `${list.length} de ${todos.length}`;
+
       const tbody = document.getElementById('clients-tbody');
       if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Sin clientes aún. Se crean automáticamente al recibir pedidos.</p></div></td></tr>`;

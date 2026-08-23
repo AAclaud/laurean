@@ -483,13 +483,29 @@ function showSessionExpiredModal() {
   const ov = document.createElement('div');
   ov.id = 'laurean-session-expired';
   ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(25,39,41,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px;';
-  ov.innerHTML = '<div style="background:#F1ECE8;max-width:420px;width:100%;border-radius:12px;padding:32px 28px;text-align:center;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+  // Antes solo tenía «Iniciar sesión» y no se podía cerrar: quien encontraba la
+  // computadora abierta quedaba atrapado en esa pantalla sin forma de salir a
+  // la tienda. Ahora hay salida — y la salida NO reabre la sesión.
+  ov.innerHTML = '<div style="position:relative;background:#F1ECE8;max-width:420px;width:100%;border-radius:12px;padding:32px 28px;text-align:center;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+    '<button id="lse-close-btn" aria-label="Salir a la tienda" title="Salir a la tienda" ' +
+      'style="position:absolute;top:10px;right:12px;width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:#192729;font-size:20px;line-height:1;cursor:pointer;opacity:.55">&times;</button>' +
     '<div style="font-size:32px;margin-bottom:10px">🔒</div>' +
     '<h2 style="margin:0 0 8px;font-size:20px;color:#192729;font-weight:600">Tu sesión expiró</h2>' +
     '<p style="margin:0 0 22px;font-size:14px;color:#8F3833;line-height:1.5">Por seguridad tu sesión se cerró. Vuelve a iniciar sesión para seguir guardando cambios.</p>' +
-    '<button id="lse-login-btn" style="background:#192729;color:#fff;border:0;border-radius:6px;padding:13px 28px;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">Iniciar sesión</button></div>';
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      '<button id="lse-store-btn" style="background:transparent;color:#192729;border:1px solid rgba(25,39,41,.25);border-radius:6px;padding:12px 20px;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">Ir a la tienda</button>' +
+      '<button id="lse-login-btn" style="background:#192729;color:#fff;border:0;border-radius:6px;padding:13px 28px;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">Iniciar sesión</button>' +
+    '</div></div>';
   document.body.appendChild(ov);
-  document.getElementById('lse-login-btn').onclick = function(){ window.location.href = 'login.html'; };
+
+  const irATienda = function () { window.location.href = 'Laurean.html'; };
+  document.getElementById('lse-login-btn').onclick = function () { window.location.href = 'login.html'; };
+  document.getElementById('lse-store-btn').onclick = irATienda;
+  document.getElementById('lse-close-btn').onclick = irATienda;
+  // Escape sale a la tienda, no deja el panel abierto detrás: la sesión ya no
+  // sirve y lo que se vea ahí atrás está desactualizado.
+  ov.addEventListener('keydown', function (e) { if (e.key === 'Escape') irATienda(); });
+  document.getElementById('lse-login-btn').focus();
 }
 window.showSessionExpiredModal = showSessionExpiredModal;
 
@@ -2699,6 +2715,15 @@ function startLiveSync(opts = {}) {
   }
   if (window.LAUREAN_DB) subscribeRealtime();
   else document.addEventListener('laurean:supabase-ready', (ev) => { if (ev && ev.detail && ev.detail.ok) subscribeRealtime(); }, { once: true });
+
+  // Primera ronda al arrancar. Sin esto solo se sincronizaba al enfocar la
+  // pestaña, al minuto, o cuando llegaba un cambio por realtime: al abrir el
+  // panel el dashboard mostraba ceros hasta que uno entraba a cada apartado, y
+  // recargar "arreglaba" el problema solo porque disparaba el focus.
+  if (window.LAUREAN_DB) resync('arranque');
+  else document.addEventListener('laurean:supabase-ready', (ev) => {
+    if (ev && ev.detail && ev.detail.ok) resync('arranque');
+  }, { once: true });
 
   return resync;
 }
