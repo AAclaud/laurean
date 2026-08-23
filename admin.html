@@ -7897,7 +7897,7 @@
         .from('cuadre_inventario')
         .select('product_id,producto,cod,catalogo,detalle,total_bodegas,dif_catalogo,' +
                 'sueltas_unidades,sueltas_detalle,faltantes_combinaciones,faltantes_detalle,' +
-                'tallas_duplicadas,estado')
+                'tallas_duplicadas,tallas_fuera_de_categoria,mismo_nombre_que,estado')
         .order('producto');
       if (error) {
         res.innerHTML = '<span style="color:var(--vino)">No se pudo leer el cuadre: ' + escapeHtml(error.message) + '</span>';
@@ -7919,6 +7919,8 @@
         'combinacion no declarada':    ['Talla que no se vende',  '#E53935'],
         'combinacion sin existencias': ['Falta en el inventario', '#E53935'],
         'talla escrita de dos formas': ['Talla repetida',         '#D4A017'],
+        'talla que no es de su categoria': ['Talla de otra categoría', '#D4A017'],
+        'otro producto se llama igual':    ['Nombre repetido',         '#D4A017'],
         'sin reparto':        ['Sin reparto por talla',   '#D4A017'],
         'detalle vs bodegas': ['No cuadra con bodegas',   '#E53935'],
         'detalle vs catalogo':['No cuadra con catálogo',  '#E53935'],
@@ -7932,7 +7934,9 @@
         const [txt, col] = etiqueta[f.estado] || [f.estado, '#666'];
         const nota = notaHtml('Sobran en el inventario', f.sueltas_detalle, '#E53935')
                    + notaHtml('La ficha las ofrece pero el inventario no las tiene', f.faltantes_detalle, '#E53935')
-                   + notaHtml('Misma talla escrita de dos formas', f.tallas_duplicadas, '#9A6F00');
+                   + notaHtml('Misma talla escrita de dos formas', f.tallas_duplicadas, '#9A6F00')
+                   + notaHtml('Tallas por edad en un producto que no es de Kids', f.tallas_fuera_de_categoria, '#9A6F00')
+                   + notaHtml('Hay otro producto con este mismo nombre', f.mismo_nombre_que, '#9A6F00');
         return `<tr style="cursor:pointer" title="Abrir la ficha de este producto"
                     onclick="abrirProductoDesdeCuadre('${jsAttr(f.product_id)}')">
           <td><strong>${escapeHtml(f.producto)}</strong>${nota}</td>
