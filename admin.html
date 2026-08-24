@@ -7889,6 +7889,11 @@
     // como si el traslado hubiera ocurrido dos veces, y al sumar el saldo salía
     // el doble. Los dos llevan el mismo from/to, así que quedarse con uno da el
     // mismo movimiento sin contarlo dos veces.
+    function capitalizar(t) {
+      var s = String(t || '');
+      return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    }
+
     function colapsarTrasladosDobles(movs) {
       const vistos = new Set();
       return movs.filter(m => {
@@ -7923,7 +7928,10 @@
         const delta = kardexDelta(m, bodega);
         saldo += delta;
         let detalle = '';
-        if (m.type === 'ingreso') detalle = m.proveedorName ? ('Proveedor: ' + m.proveedorName) : 'Ingreso';
+        // El motivo dice más que el tipo: un «saldo inicial» no es un ingreso
+        // cualquiera, y sin distinguirlo la apertura parece mercadería que llegó.
+        if (m.type === 'ingreso') detalle = m.proveedorName ? ('Proveedor: ' + m.proveedorName)
+                                          : (m.motivo && m.motivo !== 'ingreso' ? capitalizar(m.motivo) : 'Ingreso');
         else if (m.type === 'salida') detalle = m.motivo ? ('Motivo: ' + m.motivo) : 'Salida';
         else if (m.type === 'transferencia') detalle = (m.fromBodegaName || m.fromBodega || '—') + ' → ' + (m.toBodegaName || m.toBodega || '—');
         else detalle = m.notes ? m.notes : 'Ajuste';
