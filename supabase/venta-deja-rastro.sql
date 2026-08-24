@@ -1,4 +1,34 @@
 -- ════════════════════════════════════════════════════════════════════════════
+-- ACTUALIZADO — migracion `venta_kardex_con_lo_realmente_movido`
+--
+-- Los dos disparadores AFTER INSERT de abajo (descontar_variant_stock y
+-- pedido_traza_venta) se REEMPLAZARON por uno solo:
+-- `tg_venta_descuenta_y_registra`. Eran independientes: uno bajaba las
+-- existencias y el otro escribia el kardex sin saber cuanto se habia bajado,
+-- deduciendo el saldo anterior como «final + cantidad». Eso solo es cierto si
+-- se descontaron exactamente esas unidades, y hay dos casos en que no:
+--
+--   · La variante no existe en esa bodega → el update no encuentra fila y no
+--     descuenta nada, pero el kardex anotaba igual una salida. Venta inventada.
+--   · Se vende mas de lo que hay → greatest(0, stock - qty) deja el saldo en 0,
+--     pero el kardex anotaba la cantidad pedida y un saldo anterior irreal.
+--
+-- La pantalla del POS impide las dos cosas, pero ese guardarrail vive en el
+-- navegador y depende del cache: dos cajas vendiendo la ultima unidad a la vez
+-- lo saltan. Ahora descontar y anotar son UNA operacion con la fila bloqueada
+-- (select ... for update), asi que el kardex escribe lo que de verdad se movio
+-- o no escribe nada, y en su lugar queda un aviso en el registro de actividad
+-- (action = 'alerta').
+--
+-- registrar_movimiento_pedido() —que sigue usandose al cancelar, reactivar y
+-- borrar— tambien salta las lineas cuya variante no existe en esa bodega:
+-- aplicar_stock_pedido() no devuelve nada ahi, y el kardex no debe decir lo
+-- contrario.
+--
+-- Estado final de los dos: supabase/venta-kardex-real.sql
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Una venta deja rastro, y cancelarla devuelve la mercaderia
 --
 -- APLICADO en dos migraciones: `bodega_compartida_pedido` y

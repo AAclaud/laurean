@@ -3280,12 +3280,14 @@
         ingreso:'Ingresó', salida:'Retiró', ajuste:'Ajustó', transferencia:'Trasladó',
         venta:'Vendió', devolucion:'Devolvió',
         confirmar:'Confirmó el pago', reabrir:'Reabrió el cobro',
+        alerta:'Aviso',
       };
       const A_COLOR = {
         eliminar:'#C62828', crear:'#2E7D32', editar:'#8F3833', estado:'#1565C0',
         pago:'#2E7D32', desactivar:'#C62828', activar:'#2E7D32',
         ingreso:'#2E7D32', salida:'#C62828', ajuste:'#9A6F00', transferencia:'#1565C0',
         venta:'#2E7D32', devolucion:'#9A6F00', confirmar:'#2E7D32', reabrir:'#9A6F00',
+        alerta:'#C62828',
       };
       tbody.innerHTML = rows.map(l => `
         <tr>
@@ -3317,6 +3319,17 @@
       const partes = [];
 
       if (l.entity_type === 'inventario') {
+        // Un aviso explica un problema: el texto va primero y sin recortar.
+        if (d.problema) {
+          partes.push(`<strong style="color:var(--vino)">${escapeHtml(d.problema)}</strong>`);
+          const v = [d.color, d.talla].filter(Boolean).join(' / ');
+          if (v) partes.push(escapeHtml(v));
+          if (d.pedidas != null && d.habia != null) partes.push(`pedidas ${d.pedidas}, había ${d.habia}`);
+          else if (d.cantidad != null) partes.push(`${d.cantidad} u.`);
+          if (d.bodega) partes.push(escapeHtml(d.bodega));
+          if (d.nota) partes.push(escapeHtml(d.nota));
+          return partes.join(' · ');
+        }
         const variante = [d.color, d.talla].filter(Boolean).join(' / ');
         if (variante) partes.push(`<strong>${escapeHtml(variante)}</strong>`);
         if (d.antes != null && d.despues != null) partes.push(`${d.antes} → ${d.despues}`);
