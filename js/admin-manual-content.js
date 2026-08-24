@@ -25,9 +25,11 @@ window.LAUREAN_MANUAL_VIEWS = {
       { type: 'h', text: 'Cómo usarlo' },
       { type: 'steps', items: [
         'Al entrar al panel, esta es la primera pantalla que ves.',
-        'Lee las tarjetas de arriba: ventas, pedidos y alertas de stock bajo.',
+        'Lee las tarjetas: pedidos, ingresos, vendedores activos, comisiones y solicitudes.',
         'Toca cualquier tarjeta o número para ir directo al módulo que lo controla (por ejemplo, la tarjeta de pedidos te lleva a "Pedidos").',
-        'Revisa el punto rojo del menú: indica que hay algo pendiente por atender.',
+        'Arriba a la derecha, junto al saludo, hay un punto que late cuando algo espera. Pasa el cursor o tócalo: se abre el detalle de lo pendiente por área, y cada línea lleva a su módulo.',
+        'Si no hay nada pendiente, ahí dice "Todo al día" y no ocupa más espacio.',
+        'Revisa también el punto rojo del menú lateral: marca la sección que tiene algo por atender.',
       ] },
       { type: 'note', text: 'Si un número se ve raro, no lo corrijas aquí: entra al módulo correspondiente (Pedidos, Inventario, etc.) y ajústalo desde ahí. El Dashboard solo refleja lo que hay en cada sección.' },
       { type: 'roles', items: ['admin', 'superusuario'] },
@@ -68,7 +70,7 @@ window.LAUREAN_MANUAL_VIEWS = {
         ['Procesando', 'se está preparando.'],
         ['Enviado', 'ya salió con el courier.'],
         ['Completado', 'entregado y cerrado. Solo estos cuentan como venta en las estadísticas.'],
-        ['Cancelado', 'anulado. No cuenta como venta.'],
+        ['Cancelado', 'anulado. No cuenta como venta y la mercadería vuelve sola al inventario.'],
       ] },
 
       { type: 'h', text: 'Paso a paso — avisar al cliente por WhatsApp' },
@@ -105,6 +107,7 @@ window.LAUREAN_MANUAL_VIEWS = {
       ] },
 
       { type: 'note', text: 'Los pedidos NO se borran. Si te equivocaste, cambia el estado; para anular uno, ponlo en "Cancelado". El punto rojo del menú se apaga solo cuando ya no quedan pedidos pendientes.' },
+      { type: 'note', text: 'Al cancelar, las unidades vuelven solas al inventario y queda su movimiento en el Kardex. NO hagas además un ajuste a mano para devolverlas: se contarían dos veces. El detalle del pedido cancelado te lo recuerda.' },
       { type: 'roles', items: ['admin', 'superusuario', 'agente de pedidos'] },
     ],
   },
@@ -199,12 +202,13 @@ window.LAUREAN_MANUAL_VIEWS = {
       { type: 'steps', items: [
         'Presiona "Agregar producto". Se abre la ventana "Nuevo producto".',
         'Llena "Nombre del producto" y elige "Categoría" y "Subcategoría".',
-        'Escribe "Stock (unidades)": cuántas piezas tienes disponibles.',
+        'El campo "Stock (unidades)" NO se escribe: sale de sumar las existencias de todas las bodegas. Para cambiarlo, registra un movimiento en Inventario.',
         'Pon "Precio público (Q)" y, si vendes en dólares, "Precio público (USD)".',
         'Llena "Precio costo (interno, Q)": lo que a Laurean le cuesta. Es interno, el cliente nunca lo ve, y sirve para calcular la ganancia.',
         'Presiona "Subir imágenes" para cargar las fotos, o pega una dirección en "Imagen del producto".',
         'Opcional: escribe la "Descripción" y agrega más fotos en "Galería".',
         'Para los colores o diseños, presiona "+ Agregar variante"; dentro de cada variante usa "+ Agregar talla" para las tallas disponibles.',
+        'Las tallas que ofrece la rejilla dependen de la categoría: un producto de Laurean Kids ofrece tallas por edad (12m, 4a) y uno de adulto ofrece letras (XS…XXL, 0X…4X). Es a propósito, para que no se cuele una talla de bebé en una blusa de mujer.',
         'Presiona "Guardar producto".',
         'De vuelta en la tabla, marca la casilla "Publicado" de ese producto para que aparezca en la tienda.',
       ] },
@@ -332,14 +336,15 @@ window.LAUREAN_MANUAL_VIEWS = {
     label: 'Inventario',
     subtitle: 'Cuánto producto hay, dónde está y todo lo que entra y sale',
     blocks: [
-      { type: 'p', text: 'Controla las existencias de cada bodega. Está dividido en cuatro pestañas, cada una con su propósito.' },
+      { type: 'p', text: 'Controla las existencias de cada bodega. Está dividido en cinco pestañas, cada una con su propósito.' },
 
-      { type: 'h', text: 'Las cuatro pestañas' },
+      { type: 'h', text: 'Las cinco pestañas' },
       { type: 'kv', items: [
         ['Stock Actual', 'cuánto hay hoy de cada producto. Desde aquí se registra todo lo que entra y sale.'],
         ['Movimientos', 'el historial: todo lo que se registró, quién lo hizo y cuándo. Solo se consulta.'],
         ['Calendario', 'en qué días entró mercadería durante el mes.'],
         ['Mayoreo', 'el listado maestro de artículos de mayoreo, del que se publican productos a la tienda.'],
+        ['Cuadre', 'la revisión automática: avisa qué productos no cuadran y por qué. Solo se consulta.'],
       ] },
       { type: 'note', text: 'Lo más común es confundirlas: los movimientos se REGISTRAN desde "Stock Actual"; la pestaña "Movimientos" solo sirve para consultar lo ya registrado.' },
 
@@ -397,7 +402,8 @@ window.LAUREAN_MANUAL_VIEWS = {
         'Puedes filtrar por bodega y por tipo de movimiento.',
         'Desde "Stock Actual", "Imprimir reporte" genera el documento con la imagen de Laurean para imprimir o guardar en PDF.',
         '"Exportar CSV" descarga los datos para abrirlos en Excel.',
-        'Para ver toda la vida de un solo producto, abre su "Kardex": ahí está su historial completo.',
+        'Para ver toda la vida de un solo producto, abre su "Kardex": ahí está su historial completo con el saldo corriendo.',
+        'La primera línea del Kardex dice "Saldo inicial": son las existencias con las que arrancó el registro, en julio de 2026. Lo anterior a esa fecha entró con la carga inicial del inventario y no dejó movimiento.',
       ] },
 
       { type: 'h', text: 'La pestaña Calendario' },
@@ -421,6 +427,28 @@ window.LAUREAN_MANUAL_VIEWS = {
       ] },
       { type: 'note', text: 'El "Precio a mostrar sin login de vendedor (Q)" es el que ve cualquier visitante de la tienda. Si lo dejas vacío, el producto se publica sin precio y aparece la opción de contactar a Laurean.' },
 
+      { type: 'h', text: 'La pestaña Cuadre' },
+      { type: 'p', text: 'Revisa sola los 121 productos y señala los que no cuadran. Es la pestaña que hay que mirar cuando un número se ve raro: en vez de buscar el error a mano, ella dice cuál es el producto y de qué tipo es el problema.' },
+      { type: 'steps', items: [
+        'Entra a la pestaña "Cuadre".',
+        'Arriba verás el resumen: cuántos productos están bien y cuántos no.',
+        'La lista muestra solo los que tienen algo. Cada fila trae el producto y una etiqueta de color con el tipo de problema.',
+        'Rojo es una diferencia de cantidades — hay que atenderlo. Ámbar es calidad del catálogo: no se pierde mercadería, pero conviene arreglarlo.',
+        'Haz clic en la fila para ver el detalle: qué color y talla, cuántas unidades y dónde.',
+      ] },
+      { type: 'h', text: 'Qué significa cada aviso del Cuadre' },
+      { type: 'kv', items: [
+        ['Talla que no se vende', 'hay existencias de una combinación de color y talla que la ficha del producto no declara. La tienda no puede venderla porque no aparece; hay mercadería parada.'],
+        ['Falta en el inventario', 'la ficha declara una combinación que no existe en ninguna bodega. La tienda la ofrece y no hay qué entregar.'],
+        ['No cuadra con bodegas', 'la suma por color y talla no da lo mismo que el total por bodega.'],
+        ['No cuadra con catálogo', 'la suma del detalle no da lo mismo que el stock del producto.'],
+        ['Sin reparto por talla', 'el producto tiene existencias pero nadie dijo de qué talla son.'],
+        ['Talla repetida', 'la misma talla escrita de dos formas ("4a" y "4 A"), así que el stock quedó partido en dos.'],
+        ['Talla de otra categoría', 'una talla por edad (12m, 4a) en un producto que no es de Kids. Casi siempre es un clic equivocado.'],
+        ['Nombre repetido', 'dos productos distintos se llaman igual. No hay error de cantidades, pero en la lista y en la tienda no hay forma de saber cuál es cuál.'],
+      ] },
+      { type: 'note', text: 'El Cuadre no arregla nada solo: señala. Los de cantidades se corrigen con un ajuste desde "Stock Actual"; los de catálogo, editando la ficha del producto. El punto de alertas del Dashboard también avisa cuando hay productos sin cuadrar.' },
+
       { type: 'note', text: 'Ningún movimiento se puede borrar: así el inventario siempre cuadra y se puede auditar. Si te equivocaste, registra el movimiento contrario para corregir. El punto rojo del menú avisa cuando hay stock bajo.' },
       { type: 'roles', items: ['admin', 'superusuario', 'bodega'] },
     ],
@@ -431,6 +459,7 @@ window.LAUREAN_MANUAL_VIEWS = {
     subtitle: 'A quién le compras la mercadería y qué le has pedido',
     blocks: [
       { type: 'p', text: 'El directorio de los proveedores de Laurean. Desde aquí también se generan las órdenes de compra, que son el documento formal con el que se le pide mercadería a un proveedor.' },
+      { type: 'p', text: 'Arriba tienes buscador (por nombre, contacto o ciudad) y un selector de orden: nombre A–Z o Z–A, más recientes o más antiguos.' },
       { type: 'h', text: 'Paso a paso — agregar un proveedor' },
       { type: 'steps', items: [
         'Presiona "+ Agregar proveedor".',
@@ -577,6 +606,15 @@ window.LAUREAN_MANUAL_VIEWS = {
     subtitle: 'Crear las personas que usan el sistema y sus permisos',
     blocks: [
       { type: 'p', text: 'Crea y administra a quienes usan el panel, su rol (lo que pueden hacer) y, en el caso de las vendedoras, su código de referido y porcentaje de comisión.' },
+
+      { type: 'h', text: 'Encontrar a alguien en la lista' },
+      { type: 'steps', items: [
+        'Arriba hay grupos con su conteo: "Todos", "Equipo", "Vendedoras" y "Bodega". Toca uno para ver solo esas personas.',
+        '"Equipo" es la gente de Laurean (admins y agentes de pedidos); "Vendedoras" son las que traen ventas con su código.',
+        'El buscador encuentra por nombre, correo, teléfono o código de referido.',
+        'El selector de orden ofrece nombre A–Z, Z–A, más recientes o más antiguos. "Más antiguos" es el orden para ver quién lleva más tiempo.',
+      ] },
+
       { type: 'h', text: 'Paso a paso — crear un usuario' },
       { type: 'steps', items: [
         'Presiona "+ Nuevo usuario".',
@@ -593,6 +631,20 @@ window.LAUREAN_MANUAL_VIEWS = {
         ['Bodega', 'maneja inventario y stock.'],
         ['Agente de pedidos', 'atiende y despacha pedidos.'],
       ] },
+      { type: 'h', text: 'Afinar lo que ve cada persona' },
+      { type: 'p', text: 'El rol es el permiso grueso, pero dentro de un admin se puede recortar más. En el modal del usuario:' },
+      { type: 'list', items: [
+        '"Vistas permitidas": marca solo los módulos que esa persona necesita. Los demás desaparecen de su menú.',
+        '"Solo lectura": puede entrar y consultar, pero no guardar ni borrar nada.',
+        '"Bodegas": a qué bodegas tiene acceso en el POS.',
+      ] },
+
+      { type: 'h', text: 'Dar de baja a alguien' },
+      { type: 'steps', items: [
+        'Usa el botón de desactivar, no el de eliminar.',
+        'Desactivado, ya no puede iniciar sesión, pero se conserva su historial: sus pedidos, sus comisiones y su código siguen ahí.',
+        'Eliminar borra la persona de verdad. Solo el superusuario puede hacerlo, y solo tiene sentido para cuentas creadas por error.',
+      ] },
       { type: 'note', text: 'Da siempre el permiso mínimo necesario: no todos necesitan ser admin. El rol define lo que cada quien puede ver y hacer.' },
       { type: 'roles', items: ['superusuario'] },
     ],
@@ -603,6 +655,7 @@ window.LAUREAN_MANUAL_VIEWS = {
     subtitle: 'El directorio de quienes ya compraron',
     blocks: [
       { type: 'p', text: 'Reúne a las personas que han comprado en la tienda o en el punto de venta. La lista se arma sola con cada pedido: no hay que estar registrando gente a mano.' },
+      { type: 'p', text: 'Arriba tienes buscador (por nombre, teléfono o correo) y un selector de orden: nombre A–Z o Z–A, más recientes o más antiguos. Por defecto ordena por quien compró más recientemente.' },
       { type: 'h', text: 'Qué información guarda de cada cliente' },
       { type: 'kv', items: [
         ['Nombre y teléfono', 'con lo que se le identifica y contacta.'],
@@ -693,7 +746,60 @@ window.LAUREAN_MANUAL_VIEWS = {
         'Métodos de pago: actívalos/edítalos y presiona "Guardar métodos de pago".',
         'Parámetros de precios y comisiones: ajústalos y presiona "Guardar configuración".',
       ] },
+      { type: 'h', text: 'Cobro mensual de la plataforma (solo superusuario)' },
+      { type: 'p', text: 'El bloque desde donde el equipo de AA Projects lleva el pago mensual de Laurean. El ciclo abre el 25 y vence el 5 del mes siguiente.' },
+      { type: 'steps', items: [
+        'Arriba se ve el periodo vigente y en qué estado está.',
+        'Cuando el cliente toca "Ya realicé el pago" en su panel, aquí aparece quién lo marcó, cuándo y con qué referencia.',
+        'Verifica el pago por fuera (banco, transferencia) y presiona "Confirmar pago recibido": el aviso deja de aparecerle al cliente.',
+        '"Reabrir" deshace una confirmación, por si se confirmó por error.',
+        'El campo de monto fija la cifra del periodo. Si se deja vacío, el aviso no muestra ninguna cantidad.',
+        'Abajo está el historial de los últimos 12 ciclos.',
+      ] },
+      { type: 'note', text: 'Si pasa el 5 sin que nadie marque el pago, al cliente le aparecen los días de atraso al entrar al panel. Nunca le bloquea el acceso.' },
+
+      { type: 'h', text: 'Zona de Peligro (solo superusuario)' },
+      { type: 'p', text: 'Borrar todos los pedidos, borrar todas las comisiones o restaurar los precios base. Son acciones irreversibles y sin confirmación posterior: existen para limpiar un entorno de prueba, no para el día a día.' },
+
       { type: 'note', text: 'Lo que cambies aquí afecta a TODA la tienda y a los documentos (por ejemplo el WhatsApp o el NIT). Cámbialo con cuidado y verifica en la tienda después de guardar.' },
+      { type: 'roles', items: ['superusuario'] },
+    ],
+  },
+
+  logs: {
+    label: 'Registro de actividad',
+    subtitle: 'Quién hizo qué, y cuándo',
+    blocks: [
+      { type: 'p', text: 'Es la bitácora del panel. Cada vez que alguien crea, edita, borra o mueve algo, queda anotado con su nombre y la hora. No se edita ni se borra: solo se consulta. Sirve para responder "¿quién cambió este precio?" o "¿cuándo salieron estas unidades?".' },
+
+      { type: 'h', text: 'Cómo leerlo' },
+      { type: 'kv', items: [
+        ['Fecha', 'cuándo pasó.'],
+        ['Usuario', 'quién lo hizo. Si dice "Sistema" o el nombre de un cliente, fue algo automático — una venta de la tienda, por ejemplo.'],
+        ['Acción', 'qué hizo: Creó, Editó, Eliminó, Ajustó, Vendió, Devolvió, Trasladó, Ingresó, Retiró…'],
+        ['Qué', 'sobre qué: el producto, el pedido, la persona.'],
+        ['Detalle', 'los datos del cambio en palabras. Por ejemplo "Verde / 24m · 0 → 1 · Bodega Central".'],
+      ] },
+
+      { type: 'h', text: 'Paso a paso — encontrar algo concreto' },
+      { type: 'steps', items: [
+        'Usa los botones de área para acotar: Inventario, Pedidos, Catálogo, Precios, Personas, Cobros o Sistema.',
+        'Empieza siempre por el área, no por el buscador: hay miles de cambios de precio y sin filtrar tapan todo lo demás.',
+        'Con el área elegida, escribe en el buscador el nombre de la persona, del producto o del pedido.',
+        'La vista muestra los 300 más recientes de esa área. Si dice "Mostrando los 300 más recientes", acota más para no perder de vista lo viejo.',
+        'Presiona "Actualizar" para volver a traerlo de la nube.',
+      ] },
+
+      { type: 'h', text: 'Qué queda registrado' },
+      { type: 'list', items: [
+        'Todo lo que toca el inventario: ingresos, salidas, ajustes, traslados, ventas y devoluciones — lo haga una persona o el sistema.',
+        'Los pedidos: cuando se crean, cuando cambian de estado y cuando se borran.',
+        'Los usuarios: alta, edición, cambio de rol o de permisos, activar y desactivar.',
+        'El catálogo y los precios, los clientes, proveedores, categorías, combos, descuentos y cotizaciones.',
+        'El cobro mensual de la plataforma: cuándo se marcó el pago y cuándo se confirmó.',
+      ] },
+      { type: 'note', text: 'Lo escribe la base de datos, no el navegador. Eso quiere decir que también queda anotado lo que pasa sin que nadie toque el panel — una venta de la tienda a medianoche, o la devolución automática al cancelar un pedido.' },
+      { type: 'note', text: 'El "Saldo inicial" del inventario no aparece aquí a propósito: es un asiento de apertura, no algo que alguien hizo. Vive en el Kardex de cada producto.' },
       { type: 'roles', items: ['superusuario'] },
     ],
   },

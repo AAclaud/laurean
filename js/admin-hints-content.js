@@ -86,7 +86,7 @@ const secciones = [
   {
     ancla: '#view-inventario .view-title',
     tono: 'aviso',
-    texto: 'Aquí viven las existencias reales por producto, bodega, color y talla. Usa movimientos para ingresar, retirar, ajustar o trasladar unidades.',
+    texto: 'Aquí viven las existencias reales por producto, bodega, color y talla. Usa movimientos para ingresar, retirar, ajustar o trasladar unidades; la pestaña Cuadre avisa qué productos no cuadran y por qué.',
     destino: 'Disponibilidad en POS · disponibilidad en tienda'
   },
   {
@@ -131,9 +131,9 @@ const campos = {
   },
   'mp-stock': {
     titulo: 'Stock del catálogo',
-    texto: 'Es un dato informativo guardado con el producto; no representa unidades disponibles en una bodega.',
-    ojo: 'No cambia existencias reales. Usa Inventario → Ingreso, Salida, Ajuste o Traslado.',
-    destino: 'Catálogo del producto; no existencias de bodega'
+    texto: 'Sale de sumar las existencias de todas las bodegas. No se escribe: el campo es de solo lectura y se recalcula solo con cada movimiento.',
+    ojo: 'Para cambiarlo, registra un Ingreso, Salida, Ajuste o Traslado en Inventario.',
+    destino: 'Se calcula desde Inventario · disponibilidad en tienda'
   },
   'mp-price-gtq': {
     titulo: 'Precio público (Q)',

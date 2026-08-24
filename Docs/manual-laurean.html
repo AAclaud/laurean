@@ -219,7 +219,7 @@
         <tr>
           <td><code>admin.html</code></td>
           <td><b>admin, superuser</b></td>
-          <td>Panel completo de gestión. El superuser adicionalmente ve la "zona de peligro" (acciones destructivas e irreversibles).</td>
+          <td>Panel completo de gestión. El superuser adicionalmente ve la "zona de peligro" (acciones destructivas e irreversibles), el Lookbook, el Registro de actividad y el cobro mensual. Sobre el rol hay una capa por persona: <code>allowed_views</code> recorta qué módulos ve un admin y <code>readonly</code> lo deja consultar sin poder guardar.</td>
         </tr>
         <tr>
           <td><code>pos.html</code></td>
@@ -309,17 +309,27 @@
       <div class="module"><h4>Productos</h4><p>Crear, editar y ajustar precios en USD/GTQ. Asignar categoría padre, subcategoría y bandera de nuevo ingreso. Las imágenes se suben a Supabase Storage (bucket <code>product-images</code>).</p></div>
       <div class="module"><h4>Categorías</h4><p>Crear nuevas categorías y gestionar precios por categoría completa.</p></div>
       <div class="module"><h4>Proveedores</h4><p>Crear, editar y listar proveedores del negocio.</p></div>
-      <div class="module"><h4>Bodegas</h4><p>Gestión de inventario por bodega. La distribución de stock por bodega se está digitalizando (tablas <code>inventory_items</code> + <code>inventory_stock</code>).</p></div>
+      <div class="module"><h4>Inventario</h4><p>Las existencias reales, por producto, bodega, color y talla (<code>variant_stock</code> es la fuente de verdad). Cinco pestañas: <b>Stock Actual</b> (donde se registran ingresos, salidas, ajustes y traslados), <b>Movimientos</b> (el kardex, solo consulta), <b>Calendario</b>, <b>Mayoreo</b> y <b>Cuadre</b>. Todo movimiento pasa por la función atómica <code>mover_inventario()</code>; nada se borra.</p></div>
+      <div class="module"><h4>Inventario → Cuadre</h4><p>Revisión automática de los 121 productos contra la vista <code>cuadre_inventario</code>. Detecta ocho clases de problema: combinación con existencias que la ficha no declara, combinación declarada sin existencias, detalle que no cuadra con bodegas o con catálogo, producto sin reparto por talla, misma talla escrita de dos formas, talla por edad fuera de Laurean Kids, y nombres de producto repetidos. El resumen alimenta el punto de alertas del Dashboard vía <code>resumen_cuadre()</code>.</p></div>
+      <div class="module"><h4>Bodegas</h4><p>Alta y edición de las bodegas físicas y lógicas (Central, Website, Dropshipping), con su código de municipio para Forza. El stock por bodega se opera desde Inventario.</p></div>
+      <div class="module"><h4>Clientes</h4><p>Directorio que se arma solo con cada pedido. Buscador y orden por nombre o antigüedad.</p></div>
+      <div class="module"><h4>Combos</h4><p>Paquetes de varios productos con precio propio, asignables a la tienda o a bodegas concretas.</p></div>
+      <div class="module"><h4>Descuentos</h4><p>Códigos de descuento para el checkout, con su vigencia y sus límites de uso.</p></div>
+      <div class="module"><h4>Lookbook</h4><p>Solo superuser. Las diapositivas editoriales de la portada de la tienda.</p></div>
+      <div class="module"><h4>Analítica</h4><p>Visitas propias del sitio, leídas de <code>analytics_page_visits</code>. Ver Capítulo 11.</p></div>
+      <div class="module"><h4>Pagos</h4><p>Configuración de métodos de pago y registro de transacciones de QPayPro.</p></div>
+      <div class="module"><h4>Registro de actividad</h4><p>Solo superuser. La bitácora completa: quién creó, editó, borró o movió qué, y cuándo. <b>Lo escribe la base de datos con triggers</b>, no el navegador, así que también quedan las ventas de la tienda, las devoluciones automáticas al cancelar un pedido y lo que hace quien no es admin. Se filtra por área (Inventario · Pedidos · Catálogo · Precios · Personas · Cobros · Sistema) y el detalle se muestra en texto legible, no en JSON.</p></div>
       <div class="module"><h4>Envíos</h4><p>Cotizar tarifa Forza Delivery directamente desde el admin. Ver Capítulo 06.</p></div>
       <div class="module"><h4>Cotizaciones</h4><p>Generar propuestas comerciales para clientes mayoristas con descuento global y total dinámico. Imprimible directo desde el navegador.</p></div>
-      <div class="module"><h4>Vendedoras / Usuarios</h4><p>Crear vendedoras, asignar código referral automático, ver listado. También gestiona los usuarios de todos los roles via Edge Function <code>create-user</code>.</p></div>
+      <div class="module"><h4>Vendedoras / Usuarios</h4><p>Gestiona a todas las personas del sistema vía Edge Function <code>create-user</code>. La lista se agrupa en <b>Todos · Equipo · Vendedoras · Bodega</b> con su conteo, más buscador y orden (nombre, antigüedad). Además del rol, cada persona puede tener <b>vistas permitidas</b> (<code>allowed_views</code>) y modo <b>solo lectura</b> (<code>readonly</code>), que recortan lo que ve un admin sin cambiarle el rol.</p></div>
       <div class="module"><h4>Solicitudes</h4><p>Bandeja de solicitudes pendientes (formularios enviados desde vendedoras.html).</p></div>
-      <div class="module"><h4>Configuración</h4><p>Solo superuser/admin. Ver Capítulo 09.</p></div>
+      <div class="module"><h4>Configuración</h4><p>Solo superuser/admin. Ver Capítulo 09. Incluye el bloque <b>Cobro mensual de la plataforma</b> (solo superuser): el cliente marca su pago desde el Dashboard y el equipo lo verifica y lo apaga desde ahí.</p></div>
     </div>
 
     <div class="callout danger">
       <h4>Zona de peligro</h4>
       <p>Borrar todos los pedidos · Borrar todas las comisiones · Restaurar precios base. <b>Acciones irreversibles.</b> Solo el superuser tiene acceso. Usar exclusivamente en entornos de prueba o cuando se quiera reiniciar la operación desde cero.</p>
+      <p style="margin-top:10px"><b>Ojo con el inventario:</b> borrar pedidos dispara la devolución automática de su mercadería, porque cancelar o eliminar un pedido reintegra las unidades y deja su movimiento en el kardex.</p>
     </div>
   </section>
 
@@ -478,8 +488,22 @@
         <tr><td>Descuento referido</td><td>configurable</td><td>Descuento aplicado al cliente que usa código referral en checkout.</td></tr>
         <tr><td>Comisión vendedora</td><td>5%</td><td>Porcentaje sobre el total de la venta que se acredita como comisión.</td></tr>
         <tr><td>PIN descuento manual</td><td>(sin default publicado)</td><td>Hasta 6 dígitos. Cambiar el primer día de operación. Aplica en checkout y POS.</td></tr>
+        <tr><td>Monto del cobro mensual</td><td>vacío</td><td>La cifra de la mensualidad de la plataforma. Si se deja vacía, el aviso al cliente no muestra ninguna cantidad. Solo superuser.</td></tr>
       </tbody>
     </table>
+
+    <h3>Cobro mensual de la plataforma</h3>
+    <p>Bloque propio dentro de Configuración, visible <b>solo para el superuser</b>. Lleva el pago mensual de Laurean a AA&nbsp;Projects. El ciclo va <b>del 25 de un mes al 5 del siguiente</b> (la fecha acordada es el 30, pero ese es el rango para efectuarlo).</p>
+    <table>
+      <thead><tr><th>Estado</th><th>Qué significa</th><th>Qué ve el cliente</th></tr></thead>
+      <tbody>
+        <tr><td>En ventana</td><td>El ciclo abrió y aún no vence.</td><td>Aviso con la fecha límite y los días que faltan, más el botón "Ya realicé el pago".</td></tr>
+        <tr><td>Por verificar</td><td>El cliente marcó el pago; el equipo aún no lo confirma.</td><td>"Recibido, lo estamos verificando". Deja de insistir.</td></tr>
+        <tr><td>Vencido</td><td>Pasó el 5 sin que nadie marcara el pago.</td><td>Los días de atraso al iniciar sesión. <b>Nunca bloquea el acceso.</b></td></tr>
+        <tr><td>Confirmado</td><td>El superuser verificó el pago.</td><td>Nada, hasta que abra el ciclo siguiente.</td></tr>
+      </tbody>
+    </table>
+    <p>El aviso lo ven solo los roles <code>admin</code> y <code>superuser</code>. Los permisos los decide la base de datos, no la interfaz: la tabla <code>cobros_mensuales</code> tiene RLS sin ninguna policy y todo entra por RPC — <code>marcar_pago_cobro()</code> exige ser admin, y <code>confirmar_cobro()</code> / <code>reabrir_cobro()</code> / <code>fijar_monto_cobro()</code> exigen ser superuser. Detalle en <code>supabase/cobro-mensual.sql</code>.</p>
   </section>
 
   <!-- 10 -->
