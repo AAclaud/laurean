@@ -159,6 +159,7 @@
     <div class="cat-controls-inner">
       <input type="search" id="cat-search" class="cat-input" placeholder="Buscar por nombre…" oninput="renderCatalog()" />
       <span class="cat-count" id="cat-count"></span>
+      <span id="slot-pag"></span>
     </div>
   </div>
 
@@ -178,6 +179,7 @@
   <script defer src="js/visit-tracker.js"></script>
   <script src="js/catalog-loader.js"></script>
   <script defer src="js/store-actions.js"></script>
+  <script src="js/paginador.js"></script>
 
   <script>
     // ─── Utilidades ───────────────────────────────────────────────────────────
@@ -190,6 +192,7 @@
     // ─── Estado ───────────────────────────────────────────────────────────────
     var _allProducts = [];
     var _rendered    = false;
+    var _ctrlPag     = null;   // el control de rejilla se monta una sola vez
 
     // ─── Precio visible según sesión ─────────────────────────────────────────
     function getPriceDisplay(p) {
@@ -310,11 +313,16 @@
         }
       });
 
+      // Cada sección se pagina por su cuenta pero todas obedecen la misma
+      // rejilla: la grilla nace vacía y el paginador la llena con su página.
+      var porPaginar = [];
       function section(title, arr) {
         if (!arr.length) return '';
-        return '<div class="cat-week-section">'
+        var gid = 'cat-grid-' + porPaginar.length;
+        porPaginar.push({ id: gid, items: arr });
+        return '<div class="cat-week-section" id="' + gid + '-sec">'
           + '<h2 class="cat-week-title"><em>' + esc(title) + '</em></h2>'
-          + '<div class="cat-grid">' + arr.map(buildCard).join('') + '</div>'
+          + '<div class="cat-grid" id="' + gid + '"></div>'
           + '</div>';
       }
 
@@ -330,12 +338,39 @@
 
       var main = document.getElementById('cat-main');
       main.innerHTML = html;
+
+      if (window.LaureanPaginador) {
+        // El buscador rehace todo el HTML en cada tecla: soltar las instancias
+        // cuyas grillas ya no están en la página antes de montar las nuevas.
+        LaureanPaginador.podar();
+        porPaginar.forEach(function(s) {
+          LaureanPaginador.montar({
+            grid:   '#' + s.id,
+            items:  s.items,
+            render: buildCard,
+            ancla:  '#' + s.id + '-sec',
+          });
+        });
+        if (!_ctrlPag && list.length > LaureanPaginador.MINIMO) {
+          _ctrlPag = LaureanPaginador.montarControl('#slot-pag');
+        }
+      } else {
+        porPaginar.forEach(function(s) {
+          document.getElementById(s.id).innerHTML = s.items.map(buildCard).join('');
+        });
+      }
       if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(main);
     }
 
     // ─── Escuchar catalog-ready ───────────────────────────────────────────────
     document.addEventListener('laurean:catalog-ready', function(e) {
-      document.getElementById('cat-loading').style.display = 'none';
+      // El «Cargando catálogo…» vive dentro de #cat-main, y el primer render lo
+      // borra al reescribir el HTML. Sin esta guarda, la segunda rehidratación
+      // reventaba en esta línea y renderCatalog() ya no llegaba a correr: la
+      // página se quedaba con el primer catálogo para siempre y no se enteraba
+      // de los cambios que llegaban por realtime ni del refresco periódico.
+      var cargando = document.getElementById('cat-loading');
+      if (cargando) cargando.style.display = 'none';
       _allProducts = catalogProducts();
       renderCatalog();
     });

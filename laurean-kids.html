@@ -97,6 +97,7 @@
     .lx-row-link { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--acento);
       border-bottom: 1px solid currentColor; padding-bottom: 3px; transition: opacity 0.2s var(--ease); white-space: nowrap; }
     .lx-row-link:hover { opacity: 0.6; }
+    .lx-row-tools { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
     .lx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 28px; }
     @media (max-width: 720px) { .lx-row { padding: 52px 20px; } .lx-grid { gap: 18px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
 
@@ -222,7 +223,10 @@
         <p class="lx-row-eyebrow">Colección</p>
         <h2 class="lx-row-title">La colección <em>Kids</em></h2>
       </div>
-      <a href="coleccion.html?cat=kids" class="lx-row-link">Ver todo →</a>
+      <div class="lx-row-tools">
+        <span id="slot-pag"></span>
+        <a href="coleccion.html?cat=kids" class="lx-row-link">Ver todo →</a>
+      </div>
     </div>
     <div class="lx-grid" id="grid-b"></div>
   </section>
@@ -238,6 +242,7 @@
   <script defer src="js/visit-tracker.js"></script>
   <script src="js/catalog-loader.js"></script>
   <script defer src="js/store-actions.js"></script>
+  <script src="js/paginador.js"></script>
 
   <script>
     var SECCION_PARENT = 'kids';   // categoría de catálogo de esta submarca
@@ -305,6 +310,8 @@
       alert('Precio vendedor: Q' + (pr ? pr.gtq : baseGtq) + ' GTQ');
     }
 
+    var _pag = null;   // instancia del paginador de la colección
+
     function renderSeccion() {
       var data = window.LAUREAN_DATA;
       if (!data || !data.products) return;
@@ -321,10 +328,26 @@
       var first = products.slice(0, 4);
       var rest  = products.slice(4);
       gridA.innerHTML = first.map(buildCard).join('');
-      if (rest.length) {
-        gridB.innerHTML = rest.map(buildCard).join('');
-      } else if (rowB) {
-        rowB.style.display = 'none';
+      if (!rest.length) {
+        if (rowB) rowB.style.display = 'none';
+      } else {
+        if (rowB) rowB.style.display = '';
+        // La colección puede traer decenas de piezas y el hero ya se comió la
+        // primera pantalla: se pagina para que no quede un rollo interminable.
+        if (_pag) {
+          _pag.actualizar(rest);
+        } else if (window.LaureanPaginador) {
+          _pag = LaureanPaginador.montar({
+            grid:      gridB,
+            items:     rest,
+            render:    buildCard,
+            controlEn: '#slot-pag',
+            ancla:     '#row-b',
+            param:     'p',
+          });
+        } else {
+          gridB.innerHTML = rest.map(buildCard).join('');
+        }
       }
       if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(document);
     }

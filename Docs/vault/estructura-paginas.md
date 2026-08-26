@@ -23,7 +23,7 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 | `js/cursor.js` / `css/cursor.css` | Cursor de marca compartido ([[marca-laurean]]): punto + anillo con `mix-blend-mode`, activo solo en hover/pointer fino; `js/cursor.js` crea `.cursor-dot`/`.cursor-ring` en `<body>` y aplica hover en elementos interactivos. | Todas las paginas principales |
 | `js/lookbook.js` | Render/config del lookbook: normaliza slides, consulta `site_settings` key `lookbook`, aplica fallback, maneja rueda/teclado/drag/swipe, barra de progreso y ambiente Women/Men/Kids | — |
 | `js/gt-territorios.js` | Lista local de departamentos y municipios de Guatemala (`window.GT_TERRITORIOS`). La usa el selector de entrega del checkout cuando Forza no responde; si Forza está disponible se prefiere su catálogo (trae HeaderCode → guía 1-clic) | — |
-| `laurean-women.html` / `laurean-men.html` / `laurean-kids.html` | Pantallas editoriales de submarca (estilo Dior: imagen grande → pocas piezas → otra imagen grande). Paleta oficial por `data-seccion` + lockup de `images/categorias/logo-*.jpg` sobre banda del color de la submarca. Filtran `data.products` por `parent` (mujer/hombre/kids) → `producto.html?id=`. CTA → `coleccion.html?cat=`. Copy: ver [[marca-laurean]] | Publico |
+| `laurean-women.html` / `laurean-men.html` / `laurean-kids.html` | Pantallas editoriales de submarca (estilo Dior: imagen grande → pocas piezas → otra imagen grande). Paleta oficial por `data-seccion` + lockup de `images/categorias/logo-*.jpg` sobre banda del color de la submarca. Filtran `data.products` por `parent` (mujer/hombre/kids) → `producto.html?id=`. CTA → `coleccion.html?cat=`. Copy: ver [[marca-laurean]]. La fila "La coleccion" se pagina con `js/paginador.js` | Publico |
 | `admin.html` | Panel de administracion completo (ver [[orden-dashboards]]); modal "Publicar al catalogo" con precio publico validado + curaduria por semana | admin, superuser |
 | `pos.html` | Punto de venta: venta presencial, historial POS, cierre de caja | Roles POS + flags activos |
 | `login.html` | Autenticacion via Supabase Auth; redirige segun rol tras login | Publico |
@@ -53,6 +53,30 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 - Acepta codigos de descuento (`validateDiscountCode`) y codigos de referido de vendedoras.
 - Vitrina "Catalogo disponible": seccion al hacer scroll que revela una seleccion de productos validados (estilo Dior), con enlace "Ver todo el catalogo" → `catalogo.html`.
 
+## js/paginador.js — Paginacion y rejilla de las grillas
+
+- Modulo compartido por las cinco paginas de catalogo: `laurean-women`, `laurean-men`,
+  `laurean-kids`, `coleccion` y `catalogo`. Nacio porque Women tiene 71 productos activos y
+  la pagina medía 15 pantallas en escritorio y casi 25 en telefono.
+- Monta el control **«Ver: N ▾»** con las rejillas `3x8` (24), `4x6` (24), `4x10` (40),
+  `5x8` (40) y `Todos`. La preferencia vive en `localStorage` (`laurean_rejilla_v1`) y es
+  **global**: cambiarla emite `laurean:rejilla-cambio` y toda grilla montada se repinta.
+- **Las columnas del preset solo mandan en escritorio** (desde 1024px, y 5 columnas desde
+  1360px). Por debajo manda el `auto-fill` de cada pagina — cinco columnas en un telefono
+  dejarian tarjetas de 65px — y del preset solo sobrevive cuantos articulos van por pagina.
+- Numeros de pagina al pie con `‹ 1 2 … 9 ›` y la linea «Mostrando 1–24 de 67». Al cambiar
+  de pagina el scroll sube al **ancla** que le pasa cada pagina (el titulo de la seccion), no
+  al hero.
+- El numero de pagina viaja en la URL (`?p=`) donde hay una sola grilla, asi funcionan el
+  boton de atras y compartir el enlace. En `catalogo.html` cada seccion se pagina por su
+  cuenta y no usa parametro.
+- No se pinta control cuando la grilla trae 12 articulos o menos (Men, con 5, queda igual que
+  antes), ni pie cuando todo cabe en una pagina.
+- API: `LaureanPaginador.montar({grid, items, render, controlEn, ancla, param})`,
+  `montarControl(slot)`, `podar()`, `rejillaActual()`.
+- Solo toca el DOM si el HTML de la pagina cambio: el catalogo se rehidrata varias veces al
+  arrancar y repintar de mas le quitaba el lugar al visitante que iba leyendo.
+
 ## catalogo.html — Catalogo publico completo
 
 - Lee `window.LAUREAN_DATA.products` via [[modelo-datos-supabase|catalog-loader]] (solo `active=true`, escucha `laurean:catalog-ready`).
@@ -60,6 +84,8 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 - **Regla de precio**: solo muestra precio si `show_price` y `price_gtq > 0` (via `getProductPrice` segun rol/sesion). Nunca expone costo/proveedor/precios crudos.
 - CTAs por toggle: "Comprar" (con precio) / "Contactar a Laurean" (sin precio, sensacion de asesoria) / "Ver precio vendedor" (sin sesion → `vendedoras.html`; con sesion → precio por rol).
 - Cada tarjeta abre `producto.html?id=` (no enlaza a WhatsApp).
+- Cada seccion se pagina por separado con [[estructura-paginas|js/paginador.js]] y todas
+  obedecen un unico control junto al buscador.
 
 ## coleccion.html — Pagina de coleccion ambientada
 
@@ -67,6 +93,8 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 - Lee `window.LAUREAN_DATA.products` via catalog-loader (escucha `laurean:catalog-ready`, fallback `data/products.js`); filtra por `parent === catId`.
 - Tarjetas con placeholder de marca (`.brand-img` + `js/brand-img.js`); cada una abre `producto.html?id=`. CTA segun `show_price` (igual que catalogo).
 - Logos → `Laurean.html#inicio`. Enlazada desde la seccion "Colecciones" de `Laurean.html` (`coleccion.html?cat=<id>`).
+- El contador de productos y el control de rejilla (`js/paginador.js`) comparten la barra
+  `.col-toolbar`; la grilla se pagina con `?p=`.
 
 ## producto.html — Detalle de producto (estilo Dior)
 

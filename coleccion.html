@@ -86,7 +86,9 @@
 
     /* ─── Sección de productos ──────────────────────────────────────────────── */
     .col-section { max-width: 1280px; margin: 0 auto; padding: 48px 52px 72px; }
-    .col-count { font-size: 13px; color: rgba(25,26,24,0.5); margin-bottom: 32px; }
+    .col-count { font-size: 13px; color: rgba(25,26,24,0.5); }
+    .col-toolbar { display: flex; align-items: center; justify-content: space-between;
+                   gap: 20px; flex-wrap: wrap; margin-bottom: 32px; }
     @media (max-width: 720px) { .col-section { padding: 36px 20px 56px; } }
 
     /* ─── Grid de tarjetas ──────────────────────────────────────────────────── */
@@ -190,7 +192,10 @@
   <!-- Contenido dinámico -->
   <section class="col-section">
     <div class="col-loading" id="col-loading">Cargando productos…</div>
-    <div id="col-count" class="col-count" style="display:none;"></div>
+    <div class="col-toolbar" id="col-toolbar" style="display:none;">
+      <div id="col-count" class="col-count"></div>
+      <span id="slot-pag"></span>
+    </div>
     <div class="col-grid" id="col-grid"></div>
     <div id="col-empty" style="display:none;"></div>
   </section>
@@ -205,6 +210,7 @@
   <script src="js/supabase-client.js"></script>
   <script defer src="js/visit-tracker.js"></script>
   <script src="js/catalog-loader.js"></script>
+  <script src="js/paginador.js"></script>
 
   <script>
     // ─── Utilidades ────────────────────────────────────────────────────────────
@@ -392,6 +398,8 @@
     }
 
     // ─── Render de la colección ───────────────────────────────────────────────
+    var _pag = null;   // instancia del paginador
+
     function renderColeccion() {
       var data = window.LAUREAN_DATA;
       if (!data || !data.products) return;
@@ -400,6 +408,7 @@
       var grid    = document.getElementById('col-grid');
       var empty   = document.getElementById('col-empty');
       var count   = document.getElementById('col-count');
+      var barra   = document.getElementById('col-toolbar');
 
       loading.style.display = 'none';
 
@@ -446,7 +455,7 @@
       updateCollectionSeo(cat, products);
 
       if (!products.length) {
-        count.style.display = 'none';
+        barra.style.display = 'none';
         empty.innerHTML = '<div class="col-empty">'
           + '<div class="col-empty-title">Pronto más piezas</div>'
           + '<p class="col-empty-sub">Estamos preparando esta colección. Mientras tanto, explora todo el catálogo.</p>'
@@ -458,9 +467,24 @@
 
       // Mostrar contador y grid
       count.textContent = products.length + ' producto' + (products.length === 1 ? '' : 's');
-      count.style.display = 'block';
-      grid.innerHTML = products.map(buildCard).join('');
-      if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+      barra.style.display = 'flex';
+      // Una colección puede tener decenas de piezas; el paginador las reparte y
+      // deja que el visitante elija la rejilla.
+      if (_pag) {
+        _pag.actualizar(products);
+      } else if (window.LaureanPaginador) {
+        _pag = LaureanPaginador.montar({
+          grid:      grid,
+          items:     products,
+          render:    buildCard,
+          controlEn: '#slot-pag',
+          ancla:     '.col-section',
+          param:     'p',
+        });
+      } else {
+        grid.innerHTML = products.map(buildCard).join('');
+        if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+      }
     }
 
     // ─── Escuchar catalog-ready ────────────────────────────────────────────────
