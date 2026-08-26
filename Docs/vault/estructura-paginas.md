@@ -60,15 +60,22 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
   Medido a 375px: **66px** de solape en la portada (los botones van a la derecha) y **70px**
   en la ficha de producto, donde al no haber hamburguesa el `space-between` manda la fila
   entera al borde IZQUIERDO (un solo hijo se va a flex-start).
-- De 768px hacia abajo deja visible **solo el carrito** —su contador es medio recordatorio de
-  compra— y pasa el resto a un panel que abre un boton «⋯». Al volver a escritorio restituye
-  todos los botones en su orden original.
+- De 768px hacia abajo deja a la derecha **la lupa y el carrito**, y pasa el resto a un panel
+  cuyo boton «⋯» va a la **izquierda**, junto a la hamburguesa. No es capricho: con el logo
+  centrado solo quedan 118px libres a la derecha y tres botones ocupan 136 — no caben ni
+  encogiendo logo y botones, y a 360px (muy comun en Android) falla igual. Repartidos asi la
+  barra queda simetrica, 88px por lado, con 30px de holgura a cada lado del logo a 375px y 22
+  a 360px. Al volver a escritorio restituye todos los botones en su fila y en su orden.
 - Las etiquetas del panel salen del `aria-label` que cada boton ya traia, via
   `content: attr(aria-label)`: no hay que envolver nada y un boton que se esconde (login vs.
   «Mi cuenta» segun la sesion) se lleva su fila con el.
 - El panel se mide al abrirse y se corre para no salirse de la pantalla, igual que el control
   del [[estructura-paginas|paginador]].
-- Para dejar otro boton siempre visible: `data-nav-fijo`.
+- Para dejar otro boton siempre visible a la derecha: `data-nav-fijo` (hoy la lupa y el carrito).
+- **La lupa manda a `catalogo.html?buscar=1`** desde todas las paginas, no a la portada: ahi
+  estan los 102 productos. Antes caia en la grilla del hero de la portada, que abre en Mujer y
+  parecia una busqueda de esa sola categoria. `catalogo.html` enfoca su buscador al llegar y
+  limpia el parametro de la URL.
 - **Solo se carga en `Laurean.html` y `producto.html`**: las otras 12 paginas llevan un unico
   boton (Iniciar sesion) y no solapan.
 

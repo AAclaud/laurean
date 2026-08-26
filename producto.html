@@ -313,7 +313,10 @@
       position: fixed;
       top: 0; right: -430px;
       width: 400px; max-width: 100%;
+      /* 100vh no descuenta la barra del navegador; en telefono el pie del
+         cajon quedaba debajo de ella y no habia manera de alcanzarlo. */
       height: 100vh;
+      height: 100dvh;
       background: var(--crema);
       z-index: 201;
       display: flex;
@@ -475,7 +478,7 @@
       <li><a href="nosotros.html">Nosotros</a></li>
     </ul>
     <div class="nav-actions">
-      <button class="nav-btn" aria-label="Buscar productos" onclick="window.location.href='Laurean.html?buscar=1'">
+      <button class="nav-btn" aria-label="Buscar productos" data-nav-fijo onclick="window.location.href='catalogo.html?buscar=1'">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
       <button class="nav-btn" aria-label="Mis favoritos" onclick="openFavorites()">

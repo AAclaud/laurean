@@ -363,6 +363,23 @@
     }
 
     // ─── Escuchar catalog-ready ───────────────────────────────────────────────
+    // Llegada desde la lupa de la barra (?buscar=1): esta es «la tienda», donde
+    // estan todos los productos, asi que se enfoca el buscador de una vez.
+    function enfocarBuscadorSiViene() {
+      try {
+        var sp = new URLSearchParams(location.search);
+        if (sp.get('buscar') !== '1') return;
+        var el = document.getElementById('cat-search');
+        if (el) {
+          el.scrollIntoView({ block: 'center' });
+          el.focus({ preventScroll: true });
+        }
+        sp.delete('buscar');
+        var q = sp.toString();
+        history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+      } catch (_) {}
+    }
+
     document.addEventListener('laurean:catalog-ready', function(e) {
       // El «Cargando catálogo…» vive dentro de #cat-main, y el primer render lo
       // borra al reescribir el HTML. Sin esta guarda, la segunda rehidratación
@@ -373,6 +390,7 @@
       if (cargando) cargando.style.display = 'none';
       _allProducts = catalogProducts();
       renderCatalog();
+      enfocarBuscadorSiViene();
     });
   </script>
   <script src="js/site-footer.js"></script>

@@ -1207,7 +1207,14 @@
       position: fixed;
       top: 0; right: -450px;
       width: 420px;
+      /* 100vh mide la pantalla SIN la barra del navegador, asi que en telefono
+         el cajon queda mas alto que lo visible y el pie —donde esta «Proceder
+         al pago»— se va debajo de la barra de direcciones, sin forma de
+         alcanzarlo: el unico que scrollea es el cuerpo, no el cajon. dvh si
+         mide lo que de verdad se ve. Se deja 100vh de respaldo para navegadores
+         que no conozcan dvh. */
       height: 100vh;
+      height: 100dvh;
       background: var(--crema);
       z-index: 201;
       display: flex;
@@ -1918,6 +1925,7 @@
       top: 0; left: -100%;
       width: min(520px, 100%);
       height: 100vh;
+      height: 100dvh;   /* ver la nota del cajon del carrito */
       background: var(--crema);
       z-index: 206;
       display: flex;
@@ -2717,7 +2725,7 @@
     </button>
     <div class="nav-actions">
       <!-- Sin sesión -->
-      <button class="nav-btn" aria-label="Buscar productos" onclick="focusStoreSearch()">
+      <button class="nav-btn" aria-label="Buscar productos" data-nav-fijo onclick="window.location.href='catalogo.html?buscar=1'">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
       <a href="login.html" class="nav-btn" id="nav-login-btn" aria-label="Iniciar sesión">

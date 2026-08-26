@@ -7,14 +7,16 @@
 // botones van a la derecha) y 70px en la ficha de producto, donde al no haber
 // hamburguesa el `space-between` manda la fila al borde izquierdo.
 //
-// A 375px no caben las dos cosas —cinco botones son 200px, el logo 108 y la
-// hamburguesa 40—, asi que de 768px hacia abajo queda visible solo lo que el
-// comprador necesita ver sin tocar nada (el carrito con su contador) y el
-// resto pasa a un panel que se abre con un boton. Al volver a escritorio todo
-// regresa a su orden original.
+// Con el logo centrado, a la derecha solo hay 118px libres y tres botones se
+// comen 136: no caben, y en pantallas de 360px —muy comunes en Android— falla
+// incluso encogiendo logo y botones. Asi que de 768px hacia abajo quedan a la
+// derecha los dos que el comprador usa —la lupa y el carrito con su contador—
+// y el resto pasa a un panel cuyo boton «⋯» va a la IZQUIERDA, junto a la
+// hamburguesa. La barra queda ademas simetrica: 88px por lado. Al volver a
+// escritorio todo regresa a su fila y a su orden original.
 //
 // No hace falta configurarlo: se carga y se aplica solo. Para dejar otro boton
-// siempre visible, marcarlo con `data-nav-fijo`.
+// siempre visible a la derecha, marcarlo con `data-nav-fijo`.
 // ============================================================
 
 (function () {
@@ -26,10 +28,13 @@
   var orden    = null;    // hijos de .nav-actions en su orden original
   var boton    = null;
   var panel    = null;
+  var grupoIzq = null;   // caja del boton «⋯» a la izquierda de la barra
   var plegado  = false;
 
-  // El carrito se queda fuera del panel: si se esconde, quien lleva dos prendas
-  // deja de ver el contador, y ese numero es medio recordatorio de compra.
+  // Se quedan a la vista la lupa y el carrito. El carrito porque si se esconde,
+  // quien lleva dos prendas deja de ver el contador y ese numero es medio
+  // recordatorio de compra; la lupa porque buscar es lo primero que hace quien
+  // llega sin saber que quiere. Ambos van marcados con `data-nav-fijo`.
   function esFijo(el) {
     if (el.nodeType !== 1) return false;
     if (el.hasAttribute('data-nav-fijo')) return true;
@@ -48,7 +53,8 @@
       '.nav-mas svg{fill:var(--carbon,#192729);stroke:none;width:20px;height:20px;}',
       '.nav-mas[aria-expanded="true"]{background:rgba(25,39,41,0.07);}',
 
-      '.nav-mas-panel{position:absolute;top:calc(100% + 12px);right:0;z-index:120;',
+      '.nav-izq{position:relative;display:flex;align-items:center;margin-left:8px;margin-right:auto;}',
+      '.nav-mas-panel{position:absolute;top:calc(100% + 12px);left:0;z-index:120;',
         'min-width:210px;background:var(--crema,#F1ECE8);border:1px solid var(--piedra,#E8E3DC);',
         'border-radius:14px;box-shadow:0 18px 44px rgba(25,39,41,0.16);padding:7px;',
         'display:flex;flex-direction:column;gap:2px;}',
@@ -94,8 +100,18 @@
       if (panel.hidden) abrir(); else cerrar();
     });
 
-    acciones.appendChild(boton);
-    acciones.appendChild(panel);
+    // El boton va a la izquierda, junto a la hamburguesa: a la derecha del
+    // logo centrado no caben tres iconos, y los dos que se quedan son los que
+    // se usan. `margin-right:auto` empuja el resto a su sitio pese al
+    // `space-between` de la barra.
+    var nav = acciones.parentNode;
+    grupoIzq = document.createElement('div');
+    grupoIzq.className = 'nav-izq';
+    grupoIzq.appendChild(boton);
+    grupoIzq.appendChild(panel);
+    var ham = nav.querySelector(':scope > .nav-menu-btn');
+    if (ham) ham.insertAdjacentElement('afterend', grupoIzq);
+    else nav.insertBefore(grupoIzq, nav.firstChild);
     // Tocar cualquier opcion cierra el panel: todas navegan o abren algo.
     panel.addEventListener('click', function (e) {
       if (e.target.closest('.nav-btn,.nav-user-btn')) setTimeout(cerrar, 0);
@@ -108,7 +124,8 @@
     cerrar();
     if (boton) boton.remove();
     if (panel) panel.remove();
-    boton = panel = null;
+    if (grupoIzq) grupoIzq.remove();
+    boton = panel = grupoIzq = null;
     orden.forEach(function (el) { acciones.appendChild(el); });
     plegado = false;
   }
@@ -167,7 +184,7 @@
     document.addEventListener('mousedown', function (e) { bajadaEn = e.target; }, true);
     document.addEventListener('click', function (e) {
       if (!plegado || !panel || panel.hidden) return;
-      if (acciones.contains(e.target) || acciones.contains(bajadaEn)) return;
+      if (grupoIzq && (grupoIzq.contains(e.target) || grupoIzq.contains(bajadaEn))) return;
       cerrar();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
