@@ -2417,6 +2417,8 @@
       color: var(--warm-mid);
       text-transform: uppercase;
     }
+    /* El contador y el control de rejilla comparten la esquina derecha. */
+    #slot-pag-tienda { margin-left: 16px; }
     .products-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -2818,6 +2820,7 @@
             <button class="store-search-clear" id="store-search-clear" onclick="clearStoreSearch()" aria-label="Limpiar búsqueda" style="display:none">✕</button>
           </div>
           <span class="products-count" id="products-count"></span>
+          <span id="slot-pag-tienda"></span>
         </div>
         <div class="products-grid" id="products-grid">
           <!-- Rendered by renderProducts() -->
@@ -3226,6 +3229,7 @@
   <script src="js/forza-client.js"></script>
   <script defer src="js/visit-tracker.js"></script>
   <script src="js/catalog-loader.js"></script>
+  <script src="js/paginador.js"></script>
 
   <script>
     // ─── State ─────────────────────────────────────────────────────────────────
@@ -4925,6 +4929,7 @@
 
     // ─── Render products ───────────────────────────────────────────────────────
     // ─── State del catálogo ────────────────────────────────────────────────────
+    let _pagTienda      = null;   // paginador de la grilla del hero
     let _activeCatId    = null;
     let _activeSubcatId = null;
     let _searchQuery    = '';
@@ -5018,8 +5023,26 @@
         if (selSection) selSection.setAttribute('data-cat', '__combos__');
         const grid = document.getElementById('products-grid');
         if (grid) {
-          grid.innerHTML = _storeCombos.map(comboCardHtml).join('');
-          if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+          // Los combos van por el mismo paginador que el resto. Pintarlos por
+          // fuera dejaria a la instancia creyendo que la grilla sigue teniendo
+          // lo ultimo que ella pinto, y al volver a la categoria se quedaria
+          // mostrando los combos.
+          if (_pagTienda) {
+            _pagTienda.vacio = '';
+            _pagTienda.actualizar(_storeCombos, { contexto: '__combos__' });
+          } else if (window.LaureanPaginador) {
+            _pagTienda = LaureanPaginador.montar({
+              grid:      grid,
+              items:     _storeCombos,
+              render:    comboCardHtml,
+              contexto:  '__combos__',
+              controlEn: '#slot-pag-tienda',
+              ancla:     '.products-section',
+            });
+          } else {
+            grid.innerHTML = _storeCombos.map(comboCardHtml).join('');
+            if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(grid);
+          }
         }
         const titleEl = document.getElementById('products-section-title');
         const countEl = document.getElementById('products-count');
@@ -5095,35 +5118,53 @@
 
       const grid = document.getElementById('products-grid');
       if (grid) {
-        if (!filtered.length) {
-          grid.innerHTML = _q
-            ? `<div class="products-empty">Sin resultados para «${escapeHtml(_qActive)}».</div>`
-            : `<div class="products-empty">No hay productos en esta categoría aún.</div>`;
+        const vacio = _q
+          ? `<div class="products-empty">Sin resultados para «${escapeHtml(_qActive)}».</div>`
+          : `<div class="products-empty">No hay productos en esta categoría aún.</div>`;
+        // Mujer trae 71 piezas: la grilla se pagina y el visitante elige la rejilla.
+        // El contexto (categoría · subcategoría · búsqueda) hace que al cambiar de
+        // pestaña se vuelva a la página 1 en vez de quedar en la 3 de otra lista.
+        const ctx = [_activeCatId, _activeSubcatId, _qActive].join('|');
+        if (_pagTienda) {
+          _pagTienda.vacio = vacio;
+          _pagTienda.actualizar(filtered, { contexto: ctx });
+        } else if (window.LaureanPaginador) {
+          _pagTienda = LaureanPaginador.montar({
+            grid:      grid,
+            items:     filtered,
+            render:    tarjetaTienda,
+            vacio:     vacio,
+            contexto:  ctx,
+            controlEn: '#slot-pag-tienda',
+            ancla:     '.products-section',
+          });
         } else {
-          grid.innerHTML = filtered.map(p => {
-            const showPrice = shouldShowPublicPrice(p);
-            const prices = showPrice ? getProductPrices(p) : null;
-            const isFlash = p.subcat === 'flash' && p.flash_end && new Date(p.flash_end) > new Date();
-            const cta = showPrice
-              ? `<button class="pg-add" onclick="event.stopPropagation();addToCartById('${jsAttr(p.id)}')">+ Agregar al carrito</button>`
-              : `<button class="pg-add" onclick="event.stopPropagation();contactMayoreo('${jsAttr(p.id)}')">Contactar a Laurean</button>`;
-            return `
-            <div class="prod-grid-card" onclick="goProducto('${jsAttr(p.id)}')" role="button" tabindex="0"
-                 onkeydown="if(event.key==='Enter')goProducto('${jsAttr(p.id)}')">
-              <div class="pg-img-wrap brand-img">
-                ${p.is_new_arrival ? '<span class="badge-new">New</span>' : ''}
-                ${isFlash ? '<span class="badge-flash">Flash</span>' : ''}
-                ${favoriteButtonHtml(p.id)}
-                ${shareButtonHtml(p.id)}
-                ${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}
-                ${cta}
-              </div>
-              <div class="pg-name">${escapeHtml(p.name)}</div>
-              ${showPrice ? `<div class="pg-price">Q${Number(prices.laurean_gtq).toLocaleString()}</div>${sellerHookHtml(p)}` : '<div class="pg-price">Precio disponible por asesoría</div>'}
-              <button class="pg-mayoreo" onclick="event.stopPropagation();contactMayoreo('${jsAttr(p.id)}')">Contactar a Laurean · mayoreo</button>
-            </div>`;
-          }).join('');
+          grid.innerHTML = filtered.length ? filtered.map(tarjetaTienda).join('') : vacio;
         }
+      }
+
+      function tarjetaTienda(p) {
+        const showPrice = shouldShowPublicPrice(p);
+        const prices = showPrice ? getProductPrices(p) : null;
+        const isFlash = p.subcat === 'flash' && p.flash_end && new Date(p.flash_end) > new Date();
+        const cta = showPrice
+          ? `<button class="pg-add" onclick="event.stopPropagation();addToCartById('${jsAttr(p.id)}')">+ Agregar al carrito</button>`
+          : `<button class="pg-add" onclick="event.stopPropagation();contactMayoreo('${jsAttr(p.id)}')">Contactar a Laurean</button>`;
+        return `
+        <div class="prod-grid-card" onclick="goProducto('${jsAttr(p.id)}')" role="button" tabindex="0"
+             onkeydown="if(event.key==='Enter')goProducto('${jsAttr(p.id)}')">
+          <div class="pg-img-wrap brand-img">
+            ${p.is_new_arrival ? '<span class="badge-new">New</span>' : ''}
+            ${isFlash ? '<span class="badge-flash">Flash</span>' : ''}
+            ${favoriteButtonHtml(p.id)}
+            ${shareButtonHtml(p.id)}
+            ${p.image ? `<img class="brand-img-photo" src="${escapeAttr(p.image)}" alt="${escapeAttr(p.name)}" loading="lazy" decoding="async" />` : ''}
+            ${cta}
+          </div>
+          <div class="pg-name">${escapeHtml(p.name)}</div>
+          ${showPrice ? `<div class="pg-price">Q${Number(prices.laurean_gtq).toLocaleString()}</div>${sellerHookHtml(p)}` : '<div class="pg-price">Precio disponible por asesoría</div>'}
+          <button class="pg-mayoreo" onclick="event.stopPropagation();contactMayoreo('${jsAttr(p.id)}')">Contactar a Laurean · mayoreo</button>
+        </div>`;
       }
 
       // ── Sweaters ────────────────────────────────────────────────────────────

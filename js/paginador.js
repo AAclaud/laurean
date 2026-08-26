@@ -74,7 +74,7 @@
   function columnasEfectivas(cols) {
     if (!cols) return 0;
     var w = window.innerWidth || document.documentElement.clientWidth;
-    if (w < 1024) return 0;               // que decida la hoja de estilo de la página
+    if (w <= 1024) return 0;              // que decida la hoja de estilo de la página
     if (w < 1360) return Math.min(cols, 4);
     return cols;
   }
@@ -260,6 +260,22 @@
     }
   }
 
+  // El control aparece y desaparece según lo que haya en la grilla: en Laurean.html
+  // se cambia de categoría sin recargar y Hombre (9 piezas) no necesita elegir rejilla.
+  function sincronizarControl(inst) {
+    if (!inst.slotControl) return;
+    var hace = inst.items.length > MINIMO_PARA_CONTROL;
+    if (hace && !inst.control) {
+      inst.control = montarControl(inst.slotControl);
+    } else if (!hace && inst.control) {
+      inst.control.raiz.remove();
+      _controles = _controles.filter(function (c) { return c !== inst.control; });
+      inst.control = null;
+    } else if (inst.control) {
+      inst.control.refrescar();
+    }
+  }
+
   function cerrarTodosLosMenus() {
     podar();
     _controles.forEach(function (c) { c.cerrar(); });
@@ -297,17 +313,24 @@
       nav:      nav,
       info:     info,
       control:  null,
+      vacio:    op.vacio || '',   // qué pintar cuando no hay nada que mostrar
+      slotControl: op.controlEn ? elem(op.controlEn) : null,
+      contexto: null,   // categoría/búsqueda activa: al cambiar se vuelve a la página 1
       _html:    null,   // último HTML pintado, para no repintar de más
     };
 
     inst.pintar    = function (mover) { pintar(inst, mover); };
     inst.aplicar   = function () { pintar(inst, false); };
-    inst.actualizar = function (items) {
+    inst.actualizar = function (items, op2) {
       inst.items = (items || []).slice();
+      // Cambiar de categoría, de subcategoría o de búsqueda es empezar una lista
+      // nueva: quedarse en la página 4 de la anterior no le sirve a nadie.
+      var ctx = op2 && op2.contexto;
+      if (ctx != null && ctx !== inst.contexto) { inst.contexto = ctx; inst.pagina = 1; }
       var tot = totalPaginas(inst);
       if (inst.pagina > tot) inst.pagina = tot;
+      sincronizarControl(inst);
       pintar(inst, false);
-      if (inst.control) inst.control.refrescar();
     };
     inst.leerUrl = function () {
       if (!inst.param) return;
@@ -318,13 +341,8 @@
     inst.leerUrl();
     _vivos.push(inst);
 
-    if (op.controlEn) {
-      var host = elem(op.controlEn);
-      // Sin suficientes artículos el control sobra: dejar la grilla como estaba.
-      if (host && inst.items.length > MINIMO_PARA_CONTROL) inst.control = montarControl(host);
-      else if (host) inst.slotControl = host;
-    }
-
+    if (op.contexto != null) inst.contexto = op.contexto;
+    sincronizarControl(inst);
     pintar(inst, false);
     return inst;
   }
@@ -362,7 +380,9 @@
     // por un instante la página se encoge, el navegador recorta la posición del
     // scroll y el visitante pierde el lugar donde iba leyendo. Se arma el HTML
     // igual —es solo texto— pero solo se toca el DOM si de verdad cambió.
-    var html = inst.items.slice(desde, hasta).map(inst.render).join('');
+    var html = total
+      ? inst.items.slice(desde, hasta).map(inst.render).join('')
+      : (inst.vacio || '');
     if (html !== inst._html) {
       inst._html = html;
       inst.grid.innerHTML = html;
@@ -376,7 +396,12 @@
   }
 
   function pintarPie(inst, tot, desde, hasta, total) {
-    if (tot <= 1) { inst.pie.hidden = true; inst.nav.innerHTML = ''; return; }
+    if (tot <= 1) {
+      inst.pie.hidden = true;
+      inst.nav.innerHTML = '';
+      inst.info.textContent = '';   // no dejar el conteo de la lista anterior colgado
+      return;
+    }
     inst.pie.hidden = false;
     inst.nav.innerHTML = '';
 
@@ -470,7 +495,7 @@
     document.addEventListener('laurean:rejilla-cambio', function () {
       podar();
       _controles.forEach(function (c) { c.refrescar(); });
-      _vivos.forEach(function (i) { i.pagina = 1; i.aplicar(); });
+      _vivos.forEach(function (i) { i.pagina = 1; sincronizarControl(i); i.aplicar(); });
     });
 
     // Al cambiar el ancho puede variar cuántas columnas caben de verdad.
