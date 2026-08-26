@@ -53,6 +53,41 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 - Acepta codigos de descuento (`validateDiscountCode`) y codigos de referido de vendedoras.
 - Vitrina "Catalogo disponible": seccion al hacer scroll que revela una seleccion de productos validados (estilo Dior), con enlace "Ver todo el catalogo" → `catalogo.html`.
 
+## js/nav-movil.js — La barra en telefono
+
+- El logo va centrado y **fuera del flujo** (`position:absolute; left:50%`) en las 14 paginas,
+  asi que la fila de botones se acomoda como si el logo no existiera y le pasa por encima.
+  Medido a 375px: **66px** de solape en la portada (los botones van a la derecha) y **70px**
+  en la ficha de producto, donde al no haber hamburguesa el `space-between` manda la fila
+  entera al borde IZQUIERDO (un solo hijo se va a flex-start).
+- De 768px hacia abajo deja visible **solo el carrito** —su contador es medio recordatorio de
+  compra— y pasa el resto a un panel que abre un boton «⋯». Al volver a escritorio restituye
+  todos los botones en su orden original.
+- Las etiquetas del panel salen del `aria-label` que cada boton ya traia, via
+  `content: attr(aria-label)`: no hay que envolver nada y un boton que se esconde (login vs.
+  «Mi cuenta» segun la sesion) se lleva su fila con el.
+- El panel se mide al abrirse y se corre para no salirse de la pantalla, igual que el control
+  del [[estructura-paginas|paginador]].
+- Para dejar otro boton siempre visible: `data-nav-fijo`.
+- **Solo se carga en `Laurean.html` y `producto.html`**: las otras 12 paginas llevan un unico
+  boton (Iniciar sesion) y no solapan.
+
+## producto.html — la galeria en telefono
+
+- En escritorio la galeria es una columna vertical con el panel `sticky` al lado, y ahi
+  funciona: los colores quedan fijos mientras las fotos pasan.
+- En telefono el panel va **debajo** de la galeria. Con 12 fotos esa columna medía **5.516px**
+  y el selector de color quedaba en y≈5.862 — debajo de todas las fotos. Elegir un color
+  disparaba `scrollIntoView({block:'start'})` y devolvia al visitante arriba; habia que bajar
+  casi 6.000px otra vez para probar el siguiente. Afecta a 87 de 102 productos activos.
+- De 768px hacia abajo la galeria pasa a **tira horizontal** con `scroll-snap` y puntos:
+  463px de alto, pagina de 2.315px, colores a y≈933. Elegir un color mueve **solo el carril**
+  (`g.scrollLeft`), nunca la pagina, asi los colores siguen bajo el pulgar.
+- El salto es **instantaneo a proposito**: el scroll suave programado pelea con
+  `scroll-snap: mandatory` y en pruebas dejaba la galeria una foto atras de lo pedido; ademas
+  deslizar 3.000px entre doce fotos se lee como un borron. El swipe con el dedo sigue siendo
+  el del navegador, con inercia y snap intactos.
+
 ## js/paginador.js — Paginacion y rejilla de las grillas
 
 - Modulo compartido por las seis paginas con grilla: `Laurean.html` (la grilla del hero),

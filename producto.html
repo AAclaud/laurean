@@ -109,6 +109,8 @@
       justify-content: center;
       border-radius: 4px;
     }
+    .prod-dots { display: none; }
+
     .prod-gallery-placeholder span {
       font-family: var(--fd);
       font-size: 14px;
@@ -404,7 +406,46 @@
         grid-template-columns: 1fr;
         padding-top: var(--nav-h);
       }
-      .prod-gallery { padding: 24px 20px 0; }
+      /* La galeria vertical medía 5.516px con 12 fotos, y el selector de color
+         queda DEBAJO de todas ellas: elegir un color mandaba al visitante de
+         vuelta arriba y habia que bajar de nuevo para probar otro. En telefono
+         pasa a ser una tira horizontal: ocupa una pantalla, los colores suben
+         cerca del inicio y elegir uno desliza de lado sin mover la pagina. */
+      .prod-gallery {
+        padding: 16px 0 0;
+        flex-direction: row;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .prod-gallery::-webkit-scrollbar { display: none; }
+      .prod-gallery > * {
+        flex: 0 0 calc(100% - 40px);
+        scroll-snap-align: center;
+      }
+      .prod-gallery > *:first-child { margin-left: 20px; }
+      .prod-gallery > *:last-child  { margin-right: 20px; }
+
+      .prod-dots {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        padding: 14px 20px 0;
+        flex-wrap: wrap;
+      }
+      .prod-dots[hidden] { display: none; }
+      .prod-dot {
+        width: 7px; height: 7px; padding: 0;
+        border: 0; border-radius: 50%;
+        background: rgba(25,26,24,0.2);
+        cursor: pointer;
+        transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+      }
+      .prod-dot.activo { background: var(--vino); transform: scale(1.34); }
       .prod-panel {
         position: static;
         height: auto;
@@ -498,6 +539,7 @@
 
       <!-- Columna izquierda: galería scrolleable -->
       <section class="prod-gallery" id="prod-gallery" aria-label="Galería de imágenes"></section>
+      <div class="prod-dots" id="prod-dots" hidden></div>
 
       <!-- Columna derecha: panel sticky -->
       <aside class="prod-panel" id="prod-panel">
@@ -569,6 +611,7 @@
   <script src="js/supabase-client.js"></script>
   <script defer src="js/visit-tracker.js"></script>
   <script src="js/catalog-loader.js"></script>
+  <script src="js/nav-movil.js"></script>
 
   <script>
     /* ─── Utilidades ─────────────────────────────────────────────────────────── */
@@ -1203,6 +1246,7 @@
         galleryEl.innerHTML = '<div class="prod-gallery-img brand-img"></div>';
       }
       if (window.LAUREAN_BRAND_IMG_SCAN) window.LAUREAN_BRAND_IMG_SCAN(galleryEl);
+      montarPuntos(images.length);
 
       /* Panel: encabezado */
       var eyebrow = [];
@@ -1328,6 +1372,84 @@
     }
     var _tallasVisibles = [];
 
+    /* ─── Carrusel horizontal (solo teléfono) ────────────────────────────────
+       En escritorio la galería sigue siendo la columna vertical con el panel
+       fijo al lado. En teléfono el panel va debajo, así que una galería
+       vertical de 5.516px dejaba el selector de color fuera de alcance. */
+
+    function galeriaEsHorizontal() {
+      var g = document.getElementById('prod-gallery');
+      return !!g && getComputedStyle(g).flexDirection === 'row';
+    }
+
+    function montarPuntos(total) {
+      var cont = document.getElementById('prod-dots');
+      if (!cont) return;
+      if (total < 2) { cont.hidden = true; cont.innerHTML = ''; return; }
+      cont.hidden = false;
+      cont.innerHTML = '';
+      for (var i = 0; i < total; i++) {
+        var d = document.createElement('button');
+        d.type = 'button';
+        d.className = 'prod-dot' + (i === 0 ? ' activo' : '');
+        d.setAttribute('aria-label', 'Ver foto ' + (i + 1) + ' de ' + total);
+        d.setAttribute('data-i', String(i));
+        d.addEventListener('click', function () { irAFoto(+this.getAttribute('data-i')); });
+        cont.appendChild(d);
+      }
+      var g = document.getElementById('prod-gallery');
+      if (g && !g._puntosEnlazados) {
+        g._puntosEnlazados = true;
+        var t = null;
+        g.addEventListener('scroll', function () {
+          clearTimeout(t);
+          t = setTimeout(marcarPuntoVisible, 90);
+        }, { passive: true });
+      }
+    }
+
+    /* Se marca la foto cuya mitad está más cerca del centro del carril. */
+    function marcarPuntoVisible() {
+      var g = document.getElementById('prod-gallery');
+      var cont = document.getElementById('prod-dots');
+      if (!g || !cont || cont.hidden) return;
+      var centro = g.getBoundingClientRect().left + g.clientWidth / 2;
+      var mejor = 0, dif = Infinity;
+      for (var i = 0; i < g.children.length; i++) {
+        var r = g.children[i].getBoundingClientRect();
+        var d = Math.abs((r.left + r.width / 2) - centro);
+        if (d < dif) { dif = d; mejor = i; }
+      }
+      for (var j = 0; j < cont.children.length; j++) {
+        cont.children[j].classList.toggle('activo', j === mejor);
+      }
+    }
+
+    /* Mueve SOLO el carril, nunca la página: con scrollIntoView el navegador
+       subiría la página para encuadrar la foto y se llevaría los colores fuera
+       de pantalla, que es justo lo que se está corrigiendo.
+
+       El salto es instantáneo a propósito. Deslizar 3.000px entre doce fotos no
+       se lee como un movimiento sino como un borrón, y el scroll suave programado
+       pelea con `scroll-snap: mandatory`: en pruebas dejaba la galería una foto
+       atrás de lo pedido. El swipe con el dedo sigue siendo el del navegador,
+       con su inercia y su snap intactos; lo que cambia aquí es solo el salto que
+       dispara elegir un color o tocar un punto. El color elegido se anuncia con
+       su nombre y con el punto activo. */
+    function irAFoto(idx) {
+      var g = document.getElementById('prod-gallery');
+      var target = document.getElementById('prod-img-' + idx);
+      if (!g || !target) return;
+      if (!galeriaEsHorizontal()) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      var delta   = target.getBoundingClientRect().left - g.getBoundingClientRect().left;
+      var centrar = (g.clientWidth - target.getBoundingClientRect().width) / 2;
+      g.scrollLeft = Math.round(g.scrollLeft + delta - centrar);
+      marcarPuntoVisible();
+    }
+
     /* ─── Variantes de color/diseño ──────────────────────────────────────────── */
     var _selectedVariant = null;
 
@@ -1382,11 +1504,10 @@
         }).join('');
       }
 
-      /* Scroll de la galería vertical a la foto enlazada */
-      if (v.imageIndex != null) {
-        var target = document.getElementById('prod-img-' + v.imageIndex);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      /* Llevar la galería a la foto de ese color. En teléfono desliza el
+         carril de lado y la página no se mueve, así los colores siguen bajo
+         el pulgar para probar el siguiente. */
+      if (v.imageIndex != null) irAFoto(v.imageIndex);
     }
 
     /* ─── WhatsApp URL ───────────────────────────────────────────────────────── */
