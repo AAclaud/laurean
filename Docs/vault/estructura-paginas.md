@@ -55,8 +55,8 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
 
 ## js/paginador.js — Paginacion y rejilla de las grillas
 
-- Modulo compartido por las cinco paginas de catalogo: `laurean-women`, `laurean-men`,
-  `laurean-kids`, `coleccion` y `catalogo`. Nacio porque Women tiene 71 productos activos y
+- Modulo compartido por las seis paginas con grilla: `Laurean.html` (la grilla del hero),
+  `laurean-women`, `laurean-men`, `laurean-kids`, `coleccion` y `catalogo`. Nacio porque Women tiene 71 productos activos y
   la pagina medía 15 pantallas en escritorio y casi 25 en telefono.
 - Monta el control **«Ver: N ▾»** con las rejillas `3x8` (24), `4x6` (24), `4x10` (40),
   `5x8` (40) y `Todos`. La preferencia vive en `localStorage` (`laurean_rejilla_v1`) y es
@@ -74,6 +74,11 @@ Ver tambien: [[auth-roles]] | [[orden-dashboards]]
   antes), ni pie cuando todo cabe en una pagina.
 - API: `LaureanPaginador.montar({grid, items, render, controlEn, ancla, param})`,
   `montarControl(slot)`, `podar()`, `rejillaActual()`.
+- En `Laurean.html` la grilla alterna entre categoria, combos y busqueda sin recargar. Por eso
+  el estado vacio lo pinta el paginador (opcion `vacio`) y los combos pasan tambien por el:
+  escribir la grilla por fuera dejaria a la instancia creyendo que sigue conteniendo lo ultimo
+  que ella pinto. El `contexto` (categoria|subcategoria|busqueda) devuelve a la pagina 1 al
+  cambiar de lista, y el control aparece o desaparece segun cuantas piezas haya.
 - Solo toca el DOM si el HTML de la pagina cambio: el catalogo se rehidrata varias veces al
   arrancar y repintar de mas le quitaba el lugar al visitante que iba leyendo.
 
